@@ -12,14 +12,19 @@ export const Devithation3DCanvas: React.FC = () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
+    // Adaptive hardware performance tier
+    const isMobile = window.innerWidth < 768;
+    const isLowPower = typeof navigator !== 'undefined' && (navigator.hardwareConcurrency || 4) <= 4;
+    const particleCount = isMobile ? 35 : isLowPower ? 60 : 120;
+
     // Scene setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 25;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: !isMobile, powerPreference: 'low-power' });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     renderer.domElement.style.pointerEvents = 'none';
     renderer.domElement.style.position = 'fixed';
     renderer.domElement.style.top = '0';
@@ -28,7 +33,6 @@ export const Devithation3DCanvas: React.FC = () => {
     container.appendChild(renderer.domElement);
 
     // Procedural Ember Particles
-    const particleCount = 140;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -112,6 +116,7 @@ export const Devithation3DCanvas: React.FC = () => {
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
+      if (document.hidden) return; // Pause rendering when tab is inactive to save GPU/battery
       const delta = clock.getDelta();
 
       const pos = geometry.attributes.position.array as Float32Array;

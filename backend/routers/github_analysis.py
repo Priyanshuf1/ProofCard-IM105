@@ -18,6 +18,23 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 import os
 import subprocess
+import tempfile
+
+def get_scratch_cache_dir() -> Path:
+    """Returns a cross-platform, environment-configurable cache directory."""
+    env_dir = os.getenv("PROOFCARD_CACHE_DIR")
+    if env_dir:
+        p = Path(env_dir)
+    else:
+        # Check if parent workspace directory exists, else use standard system tempdir
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        parent_dir = repo_root.parent
+        if parent_dir.exists() and ((parent_dir / "cache_repos").exists() or (parent_dir / "proofcard").exists()):
+            p = parent_dir
+        else:
+            p = Path(tempfile.gettempdir()) / "proofcard_scratch"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
 
 def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None):
     """
@@ -32,7 +49,7 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None)
 
     repo_clean = (repo or "").strip().lower()
     owner_clean = (owner or "").strip().lower()
-    scratch_dir = Path(r"C:\Users\apriy\.gemini\antigravity\scratch")
+    scratch_dir = get_scratch_cache_dir()
     cache_base = scratch_dir / "cache_repos"
     cache_base.mkdir(parents=True, exist_ok=True)
     target_cache = cache_base / f"{owner_clean}_{repo_clean}"
@@ -152,14 +169,15 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None)
 def parse_local_git_commits(resolved_repo: str) -> List[Dict[str, Any]]:
     """Check if the repository exists locally in scratch and parse exact commit telemetry."""
     repo_clean = (resolved_repo or "").strip().lower()
+    scratch_dir = get_scratch_cache_dir()
     possible_dirs = [
-        Path(r"C:\Users\apriy\.gemini\antigravity\scratch") / resolved_repo,
-        Path(r"C:\Users\apriy\.gemini\antigravity\scratch") / f"temp_{repo_clean}",
-        Path(r"C:\Users\apriy\.gemini\antigravity\scratch") / repo_clean,
+        scratch_dir / resolved_repo,
+        scratch_dir / f"temp_{repo_clean}",
+        scratch_dir / repo_clean,
         Path.cwd() / resolved_repo,
     ]
     if "sih" in repo_clean or "data" in repo_clean:
-        possible_dirs.insert(0, Path(r"C:\Users\apriy\.gemini\antigravity\scratch\temp_data_sih"))
+        possible_dirs.insert(0, scratch_dir / "temp_data_sih")
     for d in possible_dirs:
         if d.exists() and (d / ".git").exists():
             try:
@@ -306,7 +324,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
             user_res = await client.get(f"https://api.github.com/users/{owner}", headers=headers)
             if user_res.status_code == 404:
                 # Check if this owner has any local directory in scratch
-                scratch_dir = Path(r"C:\Users\apriy\.gemini\antigravity\scratch")
+                scratch_dir = get_scratch_cache_dir()
                 has_local = False
                 if scratch_dir.exists():
                     has_local = any(d.is_dir() and owner.lower() in d.name.lower() for d in scratch_dir.iterdir())
@@ -378,7 +396,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
     # 2. If resolved_repo is still None, check local scratch for candidate repos belonging to owner
     if not resolved_repo:
-        scratch_dir = Path(r"C:\Users\apriy\.gemini\antigravity\scratch")
+        scratch_dir = get_scratch_cache_dir()
         owner_lower = owner.lower()
         if scratch_dir.exists():
             for d in scratch_dir.iterdir():

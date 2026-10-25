@@ -156,6 +156,44 @@ class VivaEngine:
 
         return False
 
+    @classmethod
+    def _is_buzzword_stuffing(cls, text: str, tech_vocab_matches: set, total_words: int) -> bool:
+        """
+        Detects adversarial attempts to game scoring by chaining disconnected
+        technical buzzwords without explanatory sentence structure or verbs.
+        """
+        if total_words < 4:
+            return False
+
+        clean = text.lower().strip()
+        tokens = re.findall(r"[a-z0-9]+", clean)
+        if not tokens:
+            return False
+
+        vocab_ratio = len(tech_vocab_matches) / max(len(tokens), 1)
+
+        explanatory_verbs = {
+            "use", "uses", "using", "used", "prevent", "prevents", "preventing", "prevented",
+            "ensure", "ensures", "ensuring", "ensured", "handle", "handles", "handling", "handled",
+            "wrap", "wraps", "wrapping", "wrapped", "isolate", "isolates", "isolating", "isolated",
+            "cancel", "cancels", "cancelling", "canceled", "invoke", "invokes", "invoking", "invoked",
+            "dispatch", "dispatches", "dispatching", "execute", "executes", "executing", "executed",
+            "mitigate", "mitigates", "mitigating", "mitigated", "guarantee", "guarantees", "guaranteeing",
+            "rely", "relies", "relying", "check", "checks", "checking", "checked",
+            "drop", "drops", "dropping", "throttle", "throttles", "throttling", "flush", "flushes"
+        }
+        verb_matches = [w for w in tokens if w in explanatory_verbs]
+
+        if vocab_ratio >= 0.45 and len(verb_matches) == 0 and len(tokens) >= 5:
+            return True
+
+        connectives = {"to", "by", "for", "with", "in", "when", "if", "after", "before", "so", "that"}
+        conn_matches = [w for w in tokens if w in connectives]
+        if vocab_ratio >= 0.55 and len(conn_matches) <= 1 and len(verb_matches) <= 1 and len(tokens) >= 7:
+            return True
+
+        return False
+
     @staticmethod
     def _stem(word: str) -> str:
         """Strip standard English inflectional and derivational suffixes with strict min length."""
@@ -487,6 +525,16 @@ class VivaEngine:
                 "concepts_demonstrated": [],
                 "concepts_missing": expected_concepts,
                 "feedback": f"Did not address any required technical concepts: {', '.join(top_missing)} (Score: 0/10).",
+                "passed": False
+            }
+
+        # Step 3b: Adversarial Buzzword Stuffing Detection
+        if self._is_buzzword_stuffing(ans_clean, matched_vocab, len(all_raw_tokens)):
+            return {
+                "score": 2,
+                "concepts_demonstrated": list(matched_vocab)[:2],
+                "concepts_missing": expected_concepts,
+                "feedback": "Answer flagged as disconnected keyword stuffing. Merely listing technical terms without explanatory sentence structure or mechanisms earns no placement credit (Score: 2/10).",
                 "passed": False
             }
 

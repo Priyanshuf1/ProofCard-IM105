@@ -14,6 +14,52 @@ class ASTAnalyzer:
     """
 
     @staticmethod
+    def _strip_comments_and_strings(code: str) -> str:
+        """
+        Removes single-line comments, multi-line comments, and string literals
+        so that keywords inside strings or documentation do not artificially inflate complexity.
+        """
+        # Remove multi-line comments
+        code_no_comments = re.sub(r"/\*.*?\*/", "", code, flags=re.DOTALL)
+        # Remove single-line comments
+        code_no_comments = re.sub(r"//.*$", "", code_no_comments, flags=re.MULTILINE)
+        # Remove double-quoted strings
+        code_no_strings = re.sub(r'"(?:\\.|[^"\\])*"', '""', code_no_comments)
+        # Remove single-quoted strings
+        code_no_strings = re.sub(r"'(?:\\.|[^'\\])*'", "''", code_no_strings)
+        # Remove template literals (backticks)
+        code_no_strings = re.sub(r"`(?:\\.|[^`\\])*`", "``", code_no_strings)
+        return code_no_strings
+
+    @staticmethod
+    def _extract_function_block(lines: List[str], start_idx: int) -> Tuple[str, int]:
+        """
+        Tracks opening and closing braces to accurately determine function boundaries,
+        handling functions of any length without naive 35-line truncation.
+        """
+        open_braces = 0
+        found_first_brace = False
+        end_idx = start_idx
+
+        for i in range(start_idx, min(len(lines), start_idx + 150)):
+            line = lines[i]
+            stripped = ASTAnalyzer._strip_comments_and_strings(line)
+            for ch in stripped:
+                if ch == '{':
+                    open_braces += 1
+                    found_first_brace = True
+                elif ch == '}':
+                    open_braces -= 1
+            if found_first_brace and open_braces <= 0:
+                end_idx = i + 1
+                break
+        else:
+            end_idx = min(len(lines), start_idx + 45)
+
+        block_code = "\n".join(lines[start_idx:max(start_idx + 1, end_idx)])
+        return block_code, end_idx
+
+    @staticmethod
     def analyze_python_complexity(code: str, file_path: str) -> List[Dict[str, Any]]:
         results = []
         if HAS_RADON:
@@ -97,13 +143,13 @@ class ASTAnalyzer:
         # For each function found, measure complexity in its block
         for i, (lineno, name) in enumerate(found_funcs):
             start = lineno - 1
-            # Estimate end line
-            next_start = found_funcs[i+1][0] - 1 if i + 1 < len(found_funcs) else len(lines)
-            end = min(start + 35, next_start, len(lines))
-            func_code = "\n".join(lines[start:end])
+            func_code, _ = ASTAnalyzer._extract_function_block(lines, start)
+
+            # Strip comments and string contents so literals/comments don't inflate decisions
+            code_for_scoring = ASTAnalyzer._strip_comments_and_strings(func_code)
 
             # McCabe complexity: count decisions
-            decisions = len(re.findall(r"\b(if|else\s+if|for|while|case|catch)\b|\?|&&|\|\|", func_code))
+            decisions = len(re.findall(r"\b(if|else\s+if|for|while|case|catch)\b|\?|&&|\|\|", code_for_scoring))
             complexity = max(1, decisions + 1)
 
             results.append({
@@ -150,11 +196,12 @@ class ASTAnalyzer:
 
         for i, (lineno, name) in enumerate(found_funcs):
             start = lineno - 1
-            next_start = found_funcs[i+1][0] - 1 if i + 1 < len(found_funcs) else len(lines)
-            end = min(start + 35, next_start, len(lines))
-            func_code = "\n".join(lines[start:end])
+            func_code, _ = ASTAnalyzer._extract_function_block(lines, start)
 
-            decisions = len(re.findall(r"\b(if|else\s+if|for|while|case|catch|match)\b|\?|&&|\|\|", func_code))
+            # Strip comments and string contents so literals/comments don't inflate decisions
+            code_for_scoring = ASTAnalyzer._strip_comments_and_strings(func_code)
+
+            decisions = len(re.findall(r"\b(if|else\s+if|for|while|case|catch|match)\b|\?|&&|\|\|", code_for_scoring))
             complexity = max(1, decisions + 1)
 
             results.append({

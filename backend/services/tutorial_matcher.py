@@ -1,5 +1,6 @@
 import json
 import re
+import zlib
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -34,13 +35,14 @@ class TutorialMatcher:
         """
         Winnowing fingerprint algorithm (MOSS equivalent).
         k-gram tokenization with sliding window minimum selection.
+        Uses deterministic CRC-32 to guarantee stable cross-process fingerprinting.
         """
         tokens = token_seq.split(">")
         if len(tokens) < k:
-            return {hash(token_seq) % (2**32)}
+            return {zlib.crc32(token_seq.encode("utf-8"))}
         
         kgrams = [">".join(tokens[i:i+k]) for i in range(len(tokens) - k + 1)]
-        hashes = [hash(kg) % (2**32) for kg in kgrams]
+        hashes = [zlib.crc32(kg.encode("utf-8")) for kg in kgrams]
         
         selected = set()
         for i in range(max(1, len(hashes) - w + 1)):
