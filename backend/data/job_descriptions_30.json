@@ -1,0 +1,2586 @@
+{
+  "total": 30,
+  "job_descriptions": [
+    {
+      "jd_id": "jd_01",
+      "title": "Python Backend & Microservices Engineer",
+      "domain": "Backend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Python",
+        "FastAPI",
+        "PostgreSQL",
+        "Redis",
+        "Docker",
+        "pytest"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Python Backend & Microservices Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_267",
+        "cand_fresher_105",
+        "cand_fresher_350",
+        "cand_fresher_128",
+        "cand_fresher_263",
+        "cand_fresher_056",
+        "cand_fresher_223",
+        "cand_fresher_233",
+        "cand_fresher_019",
+        "cand_fresher_308",
+        "cand_fresher_135",
+        "cand_fresher_265"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_267",
+          "name": "Ayush Joshi",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Python Backend & Microservices Engineer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_105",
+          "name": "Isha Trivedi",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Python Backend & Microservices Engineer, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_350",
+          "name": "Divya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Python Backend & Microservices Engineer, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_128",
+          "name": "Amit Trivedi",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 85,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Python Backend & Microservices Engineer, 85% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_263",
+          "name": "Riya Gupta",
+          "college": "NIT Surathkal",
+          "college_tier": "Tier-1",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Python Backend & Microservices Engineer, 93% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_02",
+      "title": "React & TypeScript Frontend Systems Developer",
+      "domain": "Frontend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "React",
+        "TypeScript",
+        "TailwindCSS",
+        "Next.js",
+        "Jest"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for React & TypeScript Frontend Systems Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_345",
+        "cand_fresher_017",
+        "cand_fresher_183",
+        "cand_fresher_247",
+        "cand_fresher_148",
+        "cand_fresher_203",
+        "cand_fresher_117",
+        "cand_fresher_102",
+        "cand_fresher_154",
+        "cand_fresher_266",
+        "cand_fresher_386",
+        "cand_fresher_012"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_345",
+          "name": "Rahul Chawla",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for React & TypeScript Frontend Systems Developer, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_017",
+          "name": "Siddharth Tripathi",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for React & TypeScript Frontend Systems Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_183",
+          "name": "Akanksha Bhatia",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for React & TypeScript Frontend Systems Developer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_247",
+          "name": "Arjun Chawla",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for React & TypeScript Frontend Systems Developer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_148",
+          "name": "Vikram Trivedi",
+          "college": "Bundelkhand Institute of Engineering & Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for React & TypeScript Frontend Systems Developer, 88% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_03",
+      "title": "AI / ML Pipeline & GenAI Platform Engineer",
+      "domain": "AI/ML",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "PyTorch",
+        "Python",
+        "FastAPI",
+        "scikit-learn",
+        "Pandas"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for AI / ML Pipeline & GenAI Platform Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_075",
+        "cand_fresher_051",
+        "cand_fresher_299",
+        "cand_fresher_334",
+        "cand_fresher_021",
+        "cand_fresher_255",
+        "cand_fresher_005",
+        "cand_fresher_085",
+        "cand_fresher_118",
+        "cand_fresher_130",
+        "cand_fresher_367",
+        "cand_fresher_368"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_075",
+          "name": "Nikhil Patel",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for AI / ML Pipeline & GenAI Platform Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_051",
+          "name": "Anushka Mehta",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for AI / ML Pipeline & GenAI Platform Engineer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_299",
+          "name": "Mohit Reddy",
+          "college": "NIT Trichy",
+          "college_tier": "Tier-1",
+          "authenticity_score": 90,
+          "viva_score": 10,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for AI / ML Pipeline & GenAI Platform Engineer, 90% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_334",
+          "name": "Priyanshu Choudhury",
+          "college": "IIIT Hyderabad",
+          "college_tier": "Tier-1",
+          "authenticity_score": 95,
+          "viva_score": 9,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for AI / ML Pipeline & GenAI Platform Engineer, 95% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_021",
+          "name": "Nikhil Kapoor",
+          "college": "IIT Bombay",
+          "college_tier": "Tier-1",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 87,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for AI / ML Pipeline & GenAI Platform Engineer, 87% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_04",
+      "title": "Cloud Infrastructure & Kubernetes DevOps Engineer",
+      "domain": "DevOps",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "GitHub Actions",
+        "Prometheus"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Cloud Infrastructure & Kubernetes DevOps Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_149",
+        "cand_fresher_232",
+        "cand_fresher_161",
+        "cand_fresher_352",
+        "cand_fresher_112",
+        "cand_fresher_121",
+        "cand_fresher_053",
+        "cand_fresher_347",
+        "cand_fresher_006",
+        "cand_fresher_107",
+        "cand_fresher_311",
+        "cand_fresher_214"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_149",
+          "name": "Sneha Saxena",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cloud Infrastructure & Kubernetes DevOps Engineer, 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_232",
+          "name": "Kunal Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cloud Infrastructure & Kubernetes DevOps Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_161",
+          "name": "Nikhil Patel",
+          "college": "IIT Kharagpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cloud Infrastructure & Kubernetes DevOps Engineer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_352",
+          "name": "Priyanshu Nair",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cloud Infrastructure & Kubernetes DevOps Engineer, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_112",
+          "name": "Tanvi Trivedi",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cloud Infrastructure & Kubernetes DevOps Engineer, 97% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_05",
+      "title": "Go Distributed Systems & High-Throughput Architect",
+      "domain": "Systems",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Go",
+        "gRPC",
+        "Docker",
+        "PostgreSQL",
+        "Kafka"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Go Distributed Systems & High-Throughput Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_055",
+        "cand_fresher_159",
+        "cand_fresher_238",
+        "cand_fresher_231",
+        "cand_fresher_144",
+        "cand_fresher_259",
+        "cand_fresher_270",
+        "cand_fresher_363",
+        "cand_fresher_037",
+        "cand_fresher_188",
+        "cand_fresher_302",
+        "cand_fresher_064"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_055",
+          "name": "Manish Saxena",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Go Distributed Systems & High-Throughput Architect, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_159",
+          "name": "Sameer Singh",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Go Distributed Systems & High-Throughput Architect, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_238",
+          "name": "Karan Joshi",
+          "college": "Jadavpur University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Go Distributed Systems & High-Throughput Architect, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_231",
+          "name": "Varun Kumar",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 90,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Go Distributed Systems & High-Throughput Architect, 90% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_144",
+          "name": "Siddharth Nair",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 9,
+          "composite_score": 94,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Go Distributed Systems & High-Throughput Architect, 91% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_06",
+      "title": "Java Spring Boot Enterprise Banking Engineer",
+      "domain": "Enterprise",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Java",
+        "Spring Boot",
+        "Hibernate",
+        "PostgreSQL",
+        "Kafka"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Java Spring Boot Enterprise Banking Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_067",
+        "cand_fresher_316",
+        "cand_fresher_346",
+        "cand_fresher_024",
+        "cand_fresher_089",
+        "cand_fresher_208",
+        "cand_fresher_228",
+        "cand_fresher_095",
+        "cand_fresher_396",
+        "cand_fresher_142",
+        "cand_fresher_251",
+        "cand_fresher_083"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_067",
+          "name": "Siddharth Kapoor",
+          "college": "IIIT Hyderabad",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Java Spring Boot Enterprise Banking Engineer, 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_316",
+          "name": "Pooja Kumar",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Java Spring Boot Enterprise Banking Engineer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_346",
+          "name": "Riya Saxena",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Java Spring Boot Enterprise Banking Engineer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_024",
+          "name": "Aditya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Java Spring Boot Enterprise Banking Engineer, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_089",
+          "name": "Manish Verma",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Java Spring Boot Enterprise Banking Engineer, 96% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_07",
+      "title": "Fullstack Node.js & Realtime Web Developer",
+      "domain": "Fullstack",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Node.js",
+        "Express",
+        "TypeScript",
+        "MongoDB",
+        "React"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Fullstack Node.js & Realtime Web Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_088",
+        "cand_fresher_216",
+        "cand_fresher_049",
+        "cand_fresher_258",
+        "cand_fresher_278",
+        "cand_fresher_283",
+        "cand_fresher_134",
+        "cand_fresher_061",
+        "cand_fresher_248",
+        "cand_fresher_164",
+        "cand_fresher_182",
+        "cand_fresher_212"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_088",
+          "name": "Gaurav Choudhury",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Fullstack Node.js & Realtime Web Developer, 97% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_216",
+          "name": "Deepika Choudhury",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Fullstack Node.js & Realtime Web Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_049",
+          "name": "Simran Patel",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Fullstack Node.js & Realtime Web Developer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_258",
+          "name": "Ananya Gupta",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 82,
+          "viva_score": 10,
+          "composite_score": 94,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Fullstack Node.js & Realtime Web Developer, 82% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_278",
+          "name": "Aayushi Saxena",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 8,
+          "composite_score": 94,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Fullstack Node.js & Realtime Web Developer, 98% Git-DNA originality, 8/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_08",
+      "title": "Data Telemetry & Stream Processing Engineer",
+      "domain": "Data",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Python",
+        "Spark",
+        "Kafka",
+        "FastAPI",
+        "PostgreSQL"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Data Telemetry & Stream Processing Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_199",
+        "cand_fresher_276",
+        "cand_fresher_071",
+        "cand_fresher_052",
+        "cand_fresher_298",
+        "cand_fresher_031",
+        "cand_fresher_041",
+        "cand_fresher_378",
+        "cand_fresher_381",
+        "cand_fresher_397",
+        "cand_fresher_079",
+        "cand_fresher_292"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_199",
+          "name": "Shreya Chawla",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Data Telemetry & Stream Processing Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_276",
+          "name": "Deepika Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Data Telemetry & Stream Processing Engineer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_071",
+          "name": "Anushka Saxena",
+          "college": "IIT Bombay",
+          "college_tier": "Tier-1",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Data Telemetry & Stream Processing Engineer, 87% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_052",
+          "name": "Akanksha Sharma",
+          "college": "State Institute of Engineering & Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 82,
+          "viva_score": 10,
+          "composite_score": 94,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Data Telemetry & Stream Processing Engineer, 82% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_298",
+          "name": "Shreya Mishra",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 80,
+          "viva_score": 10,
+          "composite_score": 93,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Data Telemetry & Stream Processing Engineer, 80% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_09",
+      "title": "Mobile Cross-Platform Flutter & Native Developer",
+      "domain": "Mobile",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Flutter",
+        "Dart",
+        "Kotlin",
+        "Firebase",
+        "REST APIs"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Mobile Cross-Platform Flutter & Native Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_033",
+        "cand_fresher_096",
+        "cand_fresher_042",
+        "cand_fresher_098",
+        "cand_fresher_213",
+        "cand_fresher_301",
+        "cand_fresher_249",
+        "cand_fresher_257",
+        "cand_fresher_286",
+        "cand_fresher_349",
+        "cand_fresher_030",
+        "cand_fresher_306"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_033",
+          "name": "Varun Joshi",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Mobile Cross-Platform Flutter & Native Developer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_096",
+          "name": "Vikram Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Mobile Cross-Platform Flutter & Native Developer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_042",
+          "name": "Ritika Kapoor",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Mobile Cross-Platform Flutter & Native Developer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_098",
+          "name": "Vikram Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Mobile Cross-Platform Flutter & Native Developer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_213",
+          "name": "Ritika Mishra",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Mobile Cross-Platform Flutter & Native Developer, 92% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_10",
+      "title": "Cryptographic Systems & Zero-Trust Security Engineer",
+      "domain": "Security",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Python",
+        "Cryptography",
+        "OAuth2",
+        "Linux",
+        "Docker"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Cryptographic Systems & Zero-Trust Security Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_097",
+        "cand_fresher_043",
+        "cand_fresher_379",
+        "cand_fresher_039",
+        "cand_fresher_239",
+        "cand_fresher_204",
+        "cand_fresher_244",
+        "cand_fresher_377",
+        "cand_fresher_086",
+        "cand_fresher_315",
+        "cand_fresher_179",
+        "cand_fresher_296"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_097",
+          "name": "Ananya Patel",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cryptographic Systems & Zero-Trust Security Engineer, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_043",
+          "name": "Kavya Gupta",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cryptographic Systems & Zero-Trust Security Engineer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_379",
+          "name": "Arjun Reddy",
+          "college": "IIT Kanpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cryptographic Systems & Zero-Trust Security Engineer, 96% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_039",
+          "name": "Arjun Pandey",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cryptographic Systems & Zero-Trust Security Engineer, 93% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_239",
+          "name": "Ritika Tripathi",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Cryptographic Systems & Zero-Trust Security Engineer, 87% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_11",
+      "title": "FastAPI Async API Gateway Specialist",
+      "domain": "Backend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "FastAPI",
+        "Python",
+        "asyncio",
+        "Redis",
+        "PostgreSQL"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for FastAPI Async API Gateway Specialist. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_267",
+        "cand_fresher_105",
+        "cand_fresher_350",
+        "cand_fresher_128",
+        "cand_fresher_263",
+        "cand_fresher_056",
+        "cand_fresher_223",
+        "cand_fresher_233",
+        "cand_fresher_019",
+        "cand_fresher_308",
+        "cand_fresher_135",
+        "cand_fresher_265"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_267",
+          "name": "Ayush Joshi",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FastAPI Async API Gateway Specialist, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_105",
+          "name": "Isha Trivedi",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FastAPI Async API Gateway Specialist, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_350",
+          "name": "Divya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FastAPI Async API Gateway Specialist, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_128",
+          "name": "Amit Trivedi",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 85,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FastAPI Async API Gateway Specialist, 85% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_263",
+          "name": "Riya Gupta",
+          "college": "NIT Surathkal",
+          "college_tier": "Tier-1",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FastAPI Async API Gateway Specialist, 93% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_12",
+      "title": "Next.js Serverless & Edge Computing Developer",
+      "domain": "Frontend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Next.js",
+        "TypeScript",
+        "React",
+        "TailwindCSS",
+        "REST APIs"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Next.js Serverless & Edge Computing Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_345",
+        "cand_fresher_017",
+        "cand_fresher_183",
+        "cand_fresher_247",
+        "cand_fresher_148",
+        "cand_fresher_203",
+        "cand_fresher_117",
+        "cand_fresher_102",
+        "cand_fresher_154",
+        "cand_fresher_266",
+        "cand_fresher_386",
+        "cand_fresher_012"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_345",
+          "name": "Rahul Chawla",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 91,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Next.js Serverless & Edge Computing Developer, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_017",
+          "name": "Siddharth Tripathi",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Next.js Serverless & Edge Computing Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_183",
+          "name": "Akanksha Bhatia",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Next.js Serverless & Edge Computing Developer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_247",
+          "name": "Arjun Chawla",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Next.js Serverless & Edge Computing Developer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_148",
+          "name": "Vikram Trivedi",
+          "college": "Bundelkhand Institute of Engineering & Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Next.js Serverless & Edge Computing Developer, 88% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_13",
+      "title": "Deep Learning NLP & LLM Fine-Tuning Engineer",
+      "domain": "AI/ML",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "PyTorch",
+        "Python",
+        "FastAPI",
+        "Pandas",
+        "NumPy"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Deep Learning NLP & LLM Fine-Tuning Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_075",
+        "cand_fresher_051",
+        "cand_fresher_299",
+        "cand_fresher_334",
+        "cand_fresher_021",
+        "cand_fresher_255",
+        "cand_fresher_005",
+        "cand_fresher_085",
+        "cand_fresher_118",
+        "cand_fresher_130",
+        "cand_fresher_367",
+        "cand_fresher_368"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_075",
+          "name": "Nikhil Patel",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Deep Learning NLP & LLM Fine-Tuning Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_051",
+          "name": "Anushka Mehta",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Deep Learning NLP & LLM Fine-Tuning Engineer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_299",
+          "name": "Mohit Reddy",
+          "college": "NIT Trichy",
+          "college_tier": "Tier-1",
+          "authenticity_score": 90,
+          "viva_score": 10,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Deep Learning NLP & LLM Fine-Tuning Engineer, 90% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_334",
+          "name": "Priyanshu Choudhury",
+          "college": "IIIT Hyderabad",
+          "college_tier": "Tier-1",
+          "authenticity_score": 95,
+          "viva_score": 9,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Deep Learning NLP & LLM Fine-Tuning Engineer, 95% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_021",
+          "name": "Nikhil Kapoor",
+          "college": "IIT Bombay",
+          "college_tier": "Tier-1",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 87,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Deep Learning NLP & LLM Fine-Tuning Engineer, 87% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_14",
+      "title": "Site Reliability Engineer (SRE & Observability)",
+      "domain": "DevOps",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Kubernetes",
+        "Docker",
+        "Prometheus",
+        "Bash",
+        "Linux"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Site Reliability Engineer (SRE & Observability). Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_149",
+        "cand_fresher_232",
+        "cand_fresher_161",
+        "cand_fresher_352",
+        "cand_fresher_112",
+        "cand_fresher_121",
+        "cand_fresher_053",
+        "cand_fresher_347",
+        "cand_fresher_006",
+        "cand_fresher_107",
+        "cand_fresher_311",
+        "cand_fresher_214"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_149",
+          "name": "Sneha Saxena",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 91,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Site Reliability Engineer (SRE & Observability), 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_232",
+          "name": "Kunal Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Site Reliability Engineer (SRE & Observability), 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_161",
+          "name": "Nikhil Patel",
+          "college": "IIT Kharagpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Site Reliability Engineer (SRE & Observability), 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_352",
+          "name": "Priyanshu Nair",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Site Reliability Engineer (SRE & Observability), 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_112",
+          "name": "Tanvi Trivedi",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 9,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Site Reliability Engineer (SRE & Observability), 97% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_15",
+      "title": "Kafka Event-Driven Microservices Specialist",
+      "domain": "Systems",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Kafka",
+        "Go",
+        "Docker",
+        "PostgreSQL",
+        "gRPC"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Kafka Event-Driven Microservices Specialist. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_055",
+        "cand_fresher_159",
+        "cand_fresher_238",
+        "cand_fresher_231",
+        "cand_fresher_144",
+        "cand_fresher_259",
+        "cand_fresher_270",
+        "cand_fresher_363",
+        "cand_fresher_037",
+        "cand_fresher_188",
+        "cand_fresher_302",
+        "cand_fresher_064"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_055",
+          "name": "Manish Saxena",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Kafka Event-Driven Microservices Specialist, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_159",
+          "name": "Sameer Singh",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Kafka Event-Driven Microservices Specialist, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_238",
+          "name": "Karan Joshi",
+          "college": "Jadavpur University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Kafka Event-Driven Microservices Specialist, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_231",
+          "name": "Varun Kumar",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 90,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Kafka Event-Driven Microservices Specialist, 90% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_144",
+          "name": "Siddharth Nair",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 9,
+          "composite_score": 94,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Kafka Event-Driven Microservices Specialist, 91% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_16",
+      "title": "Enterprise Microservices Core Java Architect",
+      "domain": "Enterprise",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "Hibernate",
+        "JUnit"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Enterprise Microservices Core Java Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_067",
+        "cand_fresher_316",
+        "cand_fresher_346",
+        "cand_fresher_024",
+        "cand_fresher_089",
+        "cand_fresher_208",
+        "cand_fresher_228",
+        "cand_fresher_095",
+        "cand_fresher_396",
+        "cand_fresher_142",
+        "cand_fresher_251",
+        "cand_fresher_083"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_067",
+          "name": "Siddharth Kapoor",
+          "college": "IIIT Hyderabad",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Enterprise Microservices Core Java Architect, 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_316",
+          "name": "Pooja Kumar",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Enterprise Microservices Core Java Architect, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_346",
+          "name": "Riya Saxena",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Enterprise Microservices Core Java Architect, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_024",
+          "name": "Aditya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Enterprise Microservices Core Java Architect, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_089",
+          "name": "Manish Verma",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Enterprise Microservices Core Java Architect, 96% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_17",
+      "title": "TypeScript Fullstack Cloud Native Engineer",
+      "domain": "Fullstack",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "TypeScript",
+        "Node.js",
+        "React",
+        "Docker",
+        "PostgreSQL"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for TypeScript Fullstack Cloud Native Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_088",
+        "cand_fresher_216",
+        "cand_fresher_049",
+        "cand_fresher_258",
+        "cand_fresher_278",
+        "cand_fresher_283",
+        "cand_fresher_134",
+        "cand_fresher_061",
+        "cand_fresher_248",
+        "cand_fresher_164",
+        "cand_fresher_182",
+        "cand_fresher_212"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_088",
+          "name": "Gaurav Choudhury",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 10,
+          "composite_score": 91,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for TypeScript Fullstack Cloud Native Engineer, 97% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_216",
+          "name": "Deepika Choudhury",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for TypeScript Fullstack Cloud Native Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_049",
+          "name": "Simran Patel",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for TypeScript Fullstack Cloud Native Engineer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_258",
+          "name": "Ananya Gupta",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 82,
+          "viva_score": 10,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for TypeScript Fullstack Cloud Native Engineer, 82% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_278",
+          "name": "Aayushi Saxena",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 8,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for TypeScript Fullstack Cloud Native Engineer, 98% Git-DNA originality, 8/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_18",
+      "title": "Realtime IoT Telemetry & Sensor Streaming Engineer",
+      "domain": "Data",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Python",
+        "Kafka",
+        "FastAPI",
+        "Redis",
+        "Docker"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Realtime IoT Telemetry & Sensor Streaming Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_199",
+        "cand_fresher_267",
+        "cand_fresher_276",
+        "cand_fresher_105",
+        "cand_fresher_350",
+        "cand_fresher_071",
+        "cand_fresher_128",
+        "cand_fresher_263",
+        "cand_fresher_052",
+        "cand_fresher_056",
+        "cand_fresher_223",
+        "cand_fresher_233"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_199",
+          "name": "Shreya Chawla",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Realtime IoT Telemetry & Sensor Streaming Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_267",
+          "name": "Ayush Joshi",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Realtime IoT Telemetry & Sensor Streaming Engineer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_276",
+          "name": "Deepika Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Realtime IoT Telemetry & Sensor Streaming Engineer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_105",
+          "name": "Isha Trivedi",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Realtime IoT Telemetry & Sensor Streaming Engineer, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_350",
+          "name": "Divya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Realtime IoT Telemetry & Sensor Streaming Engineer, 88% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_19",
+      "title": "Android Native Kotlin Architect",
+      "domain": "Mobile",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Kotlin",
+        "Firebase",
+        "REST APIs",
+        "Docker",
+        "Java"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Android Native Kotlin Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_033",
+        "cand_fresher_096",
+        "cand_fresher_042",
+        "cand_fresher_098",
+        "cand_fresher_213",
+        "cand_fresher_301",
+        "cand_fresher_249",
+        "cand_fresher_257",
+        "cand_fresher_286",
+        "cand_fresher_349",
+        "cand_fresher_030",
+        "cand_fresher_306"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_033",
+          "name": "Varun Joshi",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 82,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Android Native Kotlin Architect, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_096",
+          "name": "Vikram Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 82,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Android Native Kotlin Architect, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_042",
+          "name": "Ritika Kapoor",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 81,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Android Native Kotlin Architect, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_098",
+          "name": "Vikram Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 81,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Android Native Kotlin Architect, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_213",
+          "name": "Ritika Mishra",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 81,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Android Native Kotlin Architect, 92% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_20",
+      "title": "Penetration Testing & Secure Coding Auditor",
+      "domain": "Security",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Linux",
+        "Cryptography",
+        "Python",
+        "Docker",
+        "OAuth2"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Penetration Testing & Secure Coding Auditor. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_097",
+        "cand_fresher_043",
+        "cand_fresher_379",
+        "cand_fresher_039",
+        "cand_fresher_239",
+        "cand_fresher_204",
+        "cand_fresher_244",
+        "cand_fresher_377",
+        "cand_fresher_086",
+        "cand_fresher_315",
+        "cand_fresher_179",
+        "cand_fresher_296"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_097",
+          "name": "Ananya Patel",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Penetration Testing & Secure Coding Auditor, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_043",
+          "name": "Kavya Gupta",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Penetration Testing & Secure Coding Auditor, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_379",
+          "name": "Arjun Reddy",
+          "college": "IIT Kanpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Penetration Testing & Secure Coding Auditor, 96% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_039",
+          "name": "Arjun Pandey",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Penetration Testing & Secure Coding Auditor, 93% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_239",
+          "name": "Ritika Tripathi",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Penetration Testing & Secure Coding Auditor, 87% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_21",
+      "title": "High-Performance Caching & Redis Architect",
+      "domain": "Backend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Redis",
+        "FastAPI",
+        "Python",
+        "PostgreSQL",
+        "asyncio"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for High-Performance Caching & Redis Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_267",
+        "cand_fresher_105",
+        "cand_fresher_350",
+        "cand_fresher_128",
+        "cand_fresher_263",
+        "cand_fresher_056",
+        "cand_fresher_223",
+        "cand_fresher_233",
+        "cand_fresher_019",
+        "cand_fresher_308",
+        "cand_fresher_135",
+        "cand_fresher_265"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_267",
+          "name": "Ayush Joshi",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for High-Performance Caching & Redis Architect, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_105",
+          "name": "Isha Trivedi",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for High-Performance Caching & Redis Architect, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_350",
+          "name": "Divya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for High-Performance Caching & Redis Architect, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_128",
+          "name": "Amit Trivedi",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 85,
+          "viva_score": 10,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for High-Performance Caching & Redis Architect, 85% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_263",
+          "name": "Riya Gupta",
+          "college": "NIT Surathkal",
+          "college_tier": "Tier-1",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 95,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for High-Performance Caching & Redis Architect, 93% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_22",
+      "title": "Modern Design Systems & WebGL 3D Developer",
+      "domain": "Frontend",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "React",
+        "TypeScript",
+        "TailwindCSS",
+        "Next.js",
+        "Zustand"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Modern Design Systems & WebGL 3D Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_345",
+        "cand_fresher_017",
+        "cand_fresher_183",
+        "cand_fresher_247",
+        "cand_fresher_148",
+        "cand_fresher_203",
+        "cand_fresher_117",
+        "cand_fresher_102",
+        "cand_fresher_154",
+        "cand_fresher_266",
+        "cand_fresher_386",
+        "cand_fresher_012"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_345",
+          "name": "Rahul Chawla",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Modern Design Systems & WebGL 3D Developer, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_017",
+          "name": "Siddharth Tripathi",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Modern Design Systems & WebGL 3D Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_183",
+          "name": "Akanksha Bhatia",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Modern Design Systems & WebGL 3D Developer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_247",
+          "name": "Arjun Chawla",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Modern Design Systems & WebGL 3D Developer, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_148",
+          "name": "Vikram Trivedi",
+          "college": "Bundelkhand Institute of Engineering & Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for Modern Design Systems & WebGL 3D Developer, 88% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_23",
+      "title": "Computer Vision & Edge Inference Engineer",
+      "domain": "AI/ML",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Python",
+        "PyTorch",
+        "NumPy",
+        "FastAPI",
+        "Docker"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Computer Vision & Edge Inference Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_075",
+        "cand_fresher_267",
+        "cand_fresher_051",
+        "cand_fresher_105",
+        "cand_fresher_001",
+        "cand_fresher_299",
+        "cand_fresher_334",
+        "cand_fresher_350",
+        "cand_fresher_021",
+        "cand_fresher_128",
+        "cand_fresher_255",
+        "cand_fresher_263"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_075",
+          "name": "Nikhil Patel",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 82,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Computer Vision & Edge Inference Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_267",
+          "name": "Ayush Joshi",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 82,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Computer Vision & Edge Inference Engineer, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_051",
+          "name": "Anushka Mehta",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 81,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Computer Vision & Edge Inference Engineer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_105",
+          "name": "Isha Trivedi",
+          "college": "VIT Vellore",
+          "college_tier": "Tier-2",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 81,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Computer Vision & Edge Inference Engineer, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_001",
+          "name": "Priyanshu Awasthi & Team",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 80,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 60% skills for Computer Vision & Edge Inference Engineer, 96% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_24",
+      "title": "CI/CD Automation & GitOps Engineer",
+      "domain": "DevOps",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "GitHub Actions",
+        "Docker",
+        "Kubernetes",
+        "Terraform",
+        "Bash"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for CI/CD Automation & GitOps Engineer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_149",
+        "cand_fresher_232",
+        "cand_fresher_161",
+        "cand_fresher_352",
+        "cand_fresher_112",
+        "cand_fresher_121",
+        "cand_fresher_053",
+        "cand_fresher_347",
+        "cand_fresher_006",
+        "cand_fresher_107",
+        "cand_fresher_311",
+        "cand_fresher_214"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_149",
+          "name": "Sneha Saxena",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for CI/CD Automation & GitOps Engineer, 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_232",
+          "name": "Kunal Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for CI/CD Automation & GitOps Engineer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_161",
+          "name": "Nikhil Patel",
+          "college": "IIT Kharagpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for CI/CD Automation & GitOps Engineer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_352",
+          "name": "Priyanshu Nair",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 10,
+          "composite_score": 97,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for CI/CD Automation & GitOps Engineer, 91% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_112",
+          "name": "Tanvi Trivedi",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for CI/CD Automation & GitOps Engineer, 97% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_25",
+      "title": "Distributed Consensus & Raft/Paxos Developer",
+      "domain": "Systems",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Go",
+        "gRPC",
+        "Docker",
+        "PostgreSQL",
+        "Linux"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Distributed Consensus & Raft/Paxos Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_055",
+        "cand_fresher_159",
+        "cand_fresher_238",
+        "cand_fresher_231",
+        "cand_fresher_144",
+        "cand_fresher_259",
+        "cand_fresher_270",
+        "cand_fresher_363",
+        "cand_fresher_037",
+        "cand_fresher_188",
+        "cand_fresher_302",
+        "cand_fresher_064"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_055",
+          "name": "Manish Saxena",
+          "college": "GLA University (Mathura)",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Distributed Consensus & Raft/Paxos Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_159",
+          "name": "Sameer Singh",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Distributed Consensus & Raft/Paxos Developer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_238",
+          "name": "Karan Joshi",
+          "college": "Jadavpur University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Distributed Consensus & Raft/Paxos Developer, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_231",
+          "name": "Varun Kumar",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 90,
+          "viva_score": 10,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Distributed Consensus & Raft/Paxos Developer, 90% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_144",
+          "name": "Siddharth Nair",
+          "college": "Techno India College of Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 91,
+          "viva_score": 9,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Distributed Consensus & Raft/Paxos Developer, 91% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_26",
+      "title": "FinTech Distributed Transaction Architect",
+      "domain": "Enterprise",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Java",
+        "Spring Boot",
+        "Kafka",
+        "PostgreSQL",
+        "Hibernate"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for FinTech Distributed Transaction Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_067",
+        "cand_fresher_316",
+        "cand_fresher_346",
+        "cand_fresher_024",
+        "cand_fresher_089",
+        "cand_fresher_208",
+        "cand_fresher_228",
+        "cand_fresher_095",
+        "cand_fresher_396",
+        "cand_fresher_142",
+        "cand_fresher_251",
+        "cand_fresher_083"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_067",
+          "name": "Siddharth Kapoor",
+          "college": "IIIT Hyderabad",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 10,
+          "composite_score": 99,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FinTech Distributed Transaction Architect, 98% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_316",
+          "name": "Pooja Kumar",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FinTech Distributed Transaction Architect, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_346",
+          "name": "Riya Saxena",
+          "college": "Babu Banarasi Das Institute",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 98,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FinTech Distributed Transaction Architect, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_024",
+          "name": "Aditya Verma",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 88,
+          "viva_score": 10,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FinTech Distributed Transaction Architect, 88% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_089",
+          "name": "Manish Verma",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 96,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 100% skills for FinTech Distributed Transaction Architect, 96% Git-DNA originality, 9/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_27",
+      "title": "API Modernization & GraphQL Developer",
+      "domain": "Fullstack",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "TypeScript",
+        "Node.js",
+        "Express",
+        "React",
+        "PostgreSQL"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for API Modernization & GraphQL Developer. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_088",
+        "cand_fresher_216",
+        "cand_fresher_049",
+        "cand_fresher_258",
+        "cand_fresher_278",
+        "cand_fresher_283",
+        "cand_fresher_134",
+        "cand_fresher_061",
+        "cand_fresher_248",
+        "cand_fresher_164",
+        "cand_fresher_182",
+        "cand_fresher_212"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_088",
+          "name": "Gaurav Choudhury",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 97,
+          "viva_score": 10,
+          "composite_score": 91,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for API Modernization & GraphQL Developer, 97% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_216",
+          "name": "Deepika Choudhury",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for API Modernization & GraphQL Developer, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_049",
+          "name": "Simran Patel",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for API Modernization & GraphQL Developer, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_258",
+          "name": "Ananya Gupta",
+          "college": "Dr. A.P.J. Abdul Kalam Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 82,
+          "viva_score": 10,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for API Modernization & GraphQL Developer, 82% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_278",
+          "name": "Aayushi Saxena",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 98,
+          "viva_score": 8,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for API Modernization & GraphQL Developer, 98% Git-DNA originality, 8/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_28",
+      "title": "Big Data Lakehouse & Spark ETL Specialist",
+      "domain": "Data",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Spark",
+        "Python",
+        "Kafka",
+        "PostgreSQL",
+        "Docker"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for Big Data Lakehouse & Spark ETL Specialist. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_199",
+        "cand_fresher_276",
+        "cand_fresher_071",
+        "cand_fresher_052",
+        "cand_fresher_298",
+        "cand_fresher_031",
+        "cand_fresher_041",
+        "cand_fresher_378",
+        "cand_fresher_381",
+        "cand_fresher_397",
+        "cand_fresher_079",
+        "cand_fresher_292"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_199",
+          "name": "Shreya Chawla",
+          "college": "PSG College of Technology",
+          "college_tier": "Tier-2",
+          "authenticity_score": 94,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Big Data Lakehouse & Spark ETL Specialist, 94% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_276",
+          "name": "Deepika Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Big Data Lakehouse & Spark ETL Specialist, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_071",
+          "name": "Anushka Saxena",
+          "college": "IIT Bombay",
+          "college_tier": "Tier-1",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 87,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Big Data Lakehouse & Spark ETL Specialist, 87% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_052",
+          "name": "Akanksha Sharma",
+          "college": "State Institute of Engineering & Technology",
+          "college_tier": "Tier-3",
+          "authenticity_score": 82,
+          "viva_score": 10,
+          "composite_score": 86,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Big Data Lakehouse & Spark ETL Specialist, 82% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_298",
+          "name": "Shreya Mishra",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 80,
+          "viva_score": 10,
+          "composite_score": 85,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for Big Data Lakehouse & Spark ETL Specialist, 80% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_29",
+      "title": "iOS Native Swift & Mobile Architect",
+      "domain": "Mobile",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Kotlin",
+        "Flutter",
+        "Firebase",
+        "REST APIs",
+        "TypeScript"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for iOS Native Swift & Mobile Architect. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_033",
+        "cand_fresher_096",
+        "cand_fresher_042",
+        "cand_fresher_098",
+        "cand_fresher_213",
+        "cand_fresher_301",
+        "cand_fresher_249",
+        "cand_fresher_257",
+        "cand_fresher_286",
+        "cand_fresher_349",
+        "cand_fresher_030",
+        "cand_fresher_306"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_033",
+          "name": "Varun Joshi",
+          "college": "United College of Engineering & Research",
+          "college_tier": "Tier-3",
+          "authenticity_score": 93,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for iOS Native Swift & Mobile Architect, 93% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_096",
+          "name": "Vikram Sharma",
+          "college": "Thapar Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 95,
+          "viva_score": 10,
+          "composite_score": 90,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for iOS Native Swift & Mobile Architect, 95% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_042",
+          "name": "Ritika Kapoor",
+          "college": "Anna University",
+          "college_tier": "Tier-2",
+          "authenticity_score": 98,
+          "viva_score": 9,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for iOS Native Swift & Mobile Architect, 98% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_098",
+          "name": "Vikram Saxena",
+          "college": "Government Engineering College Bilaspur",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for iOS Native Swift & Mobile Architect, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_213",
+          "name": "Ritika Mishra",
+          "college": "IIT Delhi",
+          "college_tier": "Tier-1",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for iOS Native Swift & Mobile Architect, 92% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    },
+    {
+      "jd_id": "jd_30",
+      "title": "SOC2 Compliance & Zero-Trust Cloud Auditor",
+      "domain": "Security",
+      "experience_level": "Fresher / Campus Graduate (0-1 Years)",
+      "required_skills": [
+        "Docker",
+        "Linux",
+        "Python",
+        "Cryptography",
+        "Terraform"
+      ],
+      "preferred_skills": [
+        "Git Workflow",
+        "Automated Testing",
+        "Clean Architecture"
+      ],
+      "description": "Integraminds Campus Hiring for SOC2 Compliance & Zero-Trust Cloud Auditor. Seeking verified builders with proven code ownership, git commit discipline, and solid technical viva defense.",
+      "ground_truth_shortlist_ids": [
+        "cand_fresher_097",
+        "cand_fresher_043",
+        "cand_fresher_379",
+        "cand_fresher_039",
+        "cand_fresher_239",
+        "cand_fresher_204",
+        "cand_fresher_244",
+        "cand_fresher_377",
+        "cand_fresher_086",
+        "cand_fresher_315",
+        "cand_fresher_179",
+        "cand_fresher_296"
+      ],
+      "ground_truth_count": 12,
+      "sample_shortlisted": [
+        {
+          "candidate_id": "cand_fresher_097",
+          "name": "Ananya Patel",
+          "college": "Rajiv Gandhi Technical University Affiliate",
+          "college_tier": "Tier-3",
+          "authenticity_score": 96,
+          "viva_score": 10,
+          "composite_score": 91,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for SOC2 Compliance & Zero-Trust Cloud Auditor, 96% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_043",
+          "name": "Kavya Gupta",
+          "college": "Chhatrapati Shahu Ji Maharaj University",
+          "college_tier": "Tier-3",
+          "authenticity_score": 92,
+          "viva_score": 10,
+          "composite_score": 89,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for SOC2 Compliance & Zero-Trust Cloud Auditor, 92% Git-DNA originality, 10/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_379",
+          "name": "Arjun Reddy",
+          "college": "IIT Kanpur",
+          "college_tier": "Tier-1",
+          "authenticity_score": 96,
+          "viva_score": 9,
+          "composite_score": 88,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for SOC2 Compliance & Zero-Trust Cloud Auditor, 96% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_039",
+          "name": "Arjun Pandey",
+          "college": "SRM Institute",
+          "college_tier": "Tier-2",
+          "authenticity_score": 93,
+          "viva_score": 9,
+          "composite_score": 87,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for SOC2 Compliance & Zero-Trust Cloud Auditor, 93% Git-DNA originality, 9/10 viva defense."
+        },
+        {
+          "candidate_id": "cand_fresher_239",
+          "name": "Ritika Tripathi",
+          "college": "Regional Engineering College Warangal",
+          "college_tier": "Tier-3",
+          "authenticity_score": 87,
+          "viva_score": 10,
+          "composite_score": 87,
+          "human_readable_reason": "Recruiter Shortlisted: Matched 80% skills for SOC2 Compliance & Zero-Trust Cloud Auditor, 87% Git-DNA originality, 10/10 viva defense."
+        }
+      ]
+    }
+  ]
+}

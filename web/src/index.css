@@ -1,0 +1,473 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-battlefield: #0a0503;
+    --surface-warrior-card: #150a06;
+    --surface-card-hover: #1f0f09;
+    --surface-inner: #0d0604;
+    --border-gold-subtle: rgba(230, 194, 128, 0.16);
+    --border-gold-glow: rgba(244, 140, 6, 0.45);
+    --flame-orange: #E85D04;
+    --flame-amber: #F48C06;
+    --flame-crimson: #C82314;
+    --ancient-gold: #E6C280;
+    --ancient-gold-bright: #FFD166;
+    --terracotta-mist: #3d1b0f;
+  }
+
+  body {
+    background-color: #0a0503;
+    color: #f7f3ee;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, .font-deviathon {
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    letter-spacing: 0.04em;
+  }
+
+  h3, h4, .font-warrior {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.03em;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Fira Code', ui-monospace, monospace;
+  }
+}
+
+/* Custom battlefield scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0503;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a150c;
+  border-radius: 4px;
+  border: 1px solid rgba(230, 194, 128, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E85D04;
+}
+
+/* Deviathon Official Banner Hero Background with Atmospheric Vignette */
+.deviathon-hero-banner {
+  background-image: 
+    linear-gradient(to bottom, rgba(10, 5, 3, 0.4) 0%, rgba(10, 5, 3, 0.85) 75%, #0a0503 100%),
+    url('/deviathon-banner.png');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* Full Deviathon Battlefield Panoramic Background */
+.deviathon-full-bg-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/deviathon-full-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.deviathon-full-bg-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 25%, rgba(10, 5, 3, 0.38) 0%, rgba(8, 4, 3, 0.65) 65%, rgba(4, 2, 1, 0.85) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Deviathon Battle-Forged Card with Atmospheric Transparency */
+.deviathon-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(22, 11, 7, 0.72) 0%, rgba(17, 7, 4, 0.82) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(230, 194, 128, 0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 209, 102, 0.12);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.deviathon-card:hover {
+  border-color: rgba(232, 93, 4, 0.55);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(232, 93, 4, 0.2), inset 0 1px 0 rgba(255, 209, 102, 0.25);
+}
+
+/* Primary Flame Battle Button */
+.btn-deviathon-flame {
+  background: linear-gradient(135deg, #F48C06 0%, #E85D04 45%, #C82314 100%);
+  color: #ffffff;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.6rem;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(232, 93, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-deviathon-flame:hover {
+  background: linear-gradient(135deg, #ff9f1c 0%, #f48c06 45%, #d90429 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(232, 93, 4, 0.65), 0 0 16px rgba(244, 140, 6, 0.4);
+}
+
+/* Ancient Gold Button */
+.btn-deviathon-gold {
+  background: linear-gradient(135deg, #FFD166 0%, #E6C280 50%, #C5A059 100%);
+  color: #1a0a04;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 240, 180, 0.5);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(230, 194, 128, 0.35);
+  transition: all 0.25s ease;
+}
+
+.btn-deviathon-gold:hover {
+  background: linear-gradient(135deg, #ffe599 0%, #ffd166 50%, #dfba73 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 209, 102, 0.55);
+}
+
+/* Dark Armor Action Button */
+.btn-deviathon-armor {
+  background: #180c07;
+  color: #E6C280;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(230, 194, 128, 0.22);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-deviathon-armor:hover {
+  background: #25130b;
+  border-color: rgba(244, 140, 6, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Glowing text effects */
+.text-flame-glow {
+  color: #ff9f1c;
+  text-shadow: 0 0 16px rgba(232, 93, 4, 0.65), 0 0 32px rgba(200, 35, 20, 0.4);
+}
+
+.text-gold-glow {
+  color: #E6C280;
+  text-shadow: 0 0 12px rgba(230, 194, 128, 0.5);
+}
+
+/* Shimmer Gold Pill */
+.parchment-pill {
+  background: rgba(30, 15, 9, 0.85);
+  border: 1px solid rgba(230, 194, 128, 0.3);
+  color: #E6C280;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 0 rgba(255, 215, 0, 0.15);
+}
+
+/* Medieval Divider Rune */
+.deviathon-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: rgba(230, 194, 128, 0.4);
+}
+.deviathon-divider::before,
+.deviathon-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(230, 194, 128, 0.25), transparent);
+}
+
+/* ==========================================================================
+   OFFICIAL DEVITHATION DESIGN SYSTEM TOKENS (from Reference Style Guide)
+   ========================================================================== */
+:root {
+  --color-primary-gold: #D4AF37;
+  --color-crimson-red: #8B1E1E;
+  --color-dark-bg: #080808;
+  --color-card-bg: #1A1A1A;
+  --color-parchment-card: #2A241B;
+  --color-text-primary: #F5E9C7;
+  --color-text-secondary: #C9B89A;
+  --color-muted-text: #8A7F6B;
+  --color-border-divider: #3A2F27;
+}
+
+/* 1. BUTTON TEMPLATES */
+.btn-dev-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #8B1E1E;
+  color: #F5E9C7;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(139, 30, 30, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-dev-primary:hover:not(:disabled) {
+  background-color: #a32424;
+  border-color: #D4AF37;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(212, 175, 55, 0.5), 0 0 12px rgba(139, 30, 30, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.btn-dev-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: rotate(25deg);
+  pointer-events: none;
+  transition: all 0.65s ease;
+}
+
+.btn-dev-primary:hover::after {
+  left: 120%;
+}
+
+.btn-dev-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #080808;
+  color: #C9B89A;
+  border: 1px solid #3A2F27;
+  border-radius: 9999px;
+  padding: 0.7rem 1.6rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-dev-outline:hover:not(:disabled) {
+  border-color: #D4AF37;
+  color: #D4AF37;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-dev-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #1F140E;
+  color: #C9B89A;
+  border: 1px solid #3A2F27;
+  border-radius: 9999px;
+  padding: 0.7rem 1.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-dev-secondary:hover:not(:disabled) {
+  background-color: #2E1A11;
+  border-color: #8A7F6B;
+  color: #F5E9C7;
+  transform: translateY(-1px);
+}
+
+.btn-dev-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #151515;
+  color: #555555;
+  border: 1px solid #282828;
+  border-radius: 9999px;
+  padding: 0.7rem 1.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* 2. CARD & CONTAINER TEMPLATES */
+.dev-card-dark {
+  background-color: #1A1A1A;
+  border: 1px solid #3A2F27;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.dev-card-dark:hover {
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.85), 0 0 20px rgba(212, 175, 55, 0.12);
+  transform: translateY(-2px);
+}
+
+.dev-card-parchment {
+  background-color: #2A241B;
+  border: 1px solid #D4AF37;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dev-card-glass {
+  background-color: rgba(26, 26, 26, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+}
+
+.dev-card-outline {
+  background-color: transparent;
+  border: 1px solid #3A2F27;
+  border-radius: 0.75rem;
+  transition: all 0.25s ease;
+}
+
+.dev-card-outline:hover {
+  border-color: #D4AF37;
+}
+
+/* 3. ORNAMENTS & BADGES */
+.dev-badge-popular {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #8B1E1E;
+  border: 1px solid #D4AF37;
+  color: #F5E9C7;
+  font-family: 'Cinzel', serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.dev-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #1A1A1A;
+  border: 1px solid #3A2F27;
+  color: #F5E9C7;
+  font-family: 'Cinzel', serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.dev-badge-upcoming {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: transparent;
+  border: 1px solid #D4AF37;
+  color: #D4AF37;
+  font-family: 'Cinzel', serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.dev-divider-ornate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #D4AF37;
+  margin: 1.5rem 0;
+}
+
+.dev-divider-ornate::before,
+.dev-divider-ornate::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #3A2F27, transparent);
+}
+
+/* 4. ANIME VFX & KEYFRAME ANIMATIONS */
+@keyframes impactPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(0.98); filter: brightness(1.4) drop-shadow(0 0 16px #D4AF37); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.anime-impact {
+  animation: impactPulse 0.16s ease-out;
+}

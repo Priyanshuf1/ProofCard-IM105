@@ -1,0 +1,548 @@
+{
+  "tutorials": [
+    {
+      "id": "traversy_mern_2023",
+      "name": "Traversy Media MERN Stack Tutorial",
+      "source": "https://github.com/bradtraversy/mern-tutorial",
+      "youtube_url": "https://www.youtube.com/watch?v=-0exw-9YJBo",
+      "uploaded": "2023-03-15",
+      "author": "Brad Traversy",
+      "key_files": [
+        "server.js",
+        "backend/routes/goalRoutes.js",
+        "backend/controllers/goalController.js",
+        "backend/models/goalModel.js",
+        "backend/middleware/errorMiddleware.js",
+        "frontend/src/features/goals/goalSlice.js"
+      ],
+      "ast_signature": "Program>ExpressionStatement>CallExpression>VariableDeclaration>FunctionDeclaration>TryStatement>MemberExpression",
+      "dependencies": {
+        "express": "4.18.2",
+        "mongoose": "7.0.3",
+        "dotenv": "16.0.3",
+        "bcryptjs": "2.4.3"
+      }
+    },
+    {
+      "id": "clever_programmer_netflix",
+      "name": "Clever Programmer Netflix Clone",
+      "source": "https://github.com/CleverProgrammer/netflix-clone",
+      "youtube_url": "https://www.youtube.com/watch?v=s0H3bJd8kC4",
+      "uploaded": "2022-08-10",
+      "author": "Clever Programmer",
+      "key_files": [
+        "src/App.js",
+        "src/Row.js",
+        "src/Banner.js",
+        "src/Nav.js",
+        "src/requests.js",
+        "src/axios.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>FunctionDeclaration>CallExpression>MemberExpression>ReturnStatement>JSXElement",
+      "dependencies": {
+        "react": "17.0.2",
+        "axios": "0.21.1",
+        "react-youtube": "7.13.1",
+        "movie-trailer": "2.0.6"
+      }
+    },
+    {
+      "id": "codewithharry_django_blog",
+      "name": "CodeWithHarry Django Full Blog",
+      "source": "https://github.com/CodeWithHarry/Django-Blog",
+      "youtube_url": "https://www.youtube.com/watch?v=JxzZxdpr-48",
+      "uploaded": "2022-11-20",
+      "author": "CodeWithHarry",
+      "key_files": [
+        "manage.py",
+        "blog/models.py",
+        "blog/views.py",
+        "blog/urls.py",
+        "templates/blog/blogPost.html",
+        "home/views.py"
+      ],
+      "ast_signature": "Module>ImportFrom>ClassDef>FunctionDef>Return>Assign>Call>Attribute",
+      "dependencies": {
+        "django": "4.1.3",
+        "pillow": "9.3.0"
+      }
+    },
+    {
+      "id": "freecodecamp_10_react_projects",
+      "name": "FreeCodeCamp 10 React Projects",
+      "source": "https://github.com/john-smilga/react-projects",
+      "youtube_url": "https://www.youtube.com/watch?v=a_7Z7C_JCyo",
+      "uploaded": "2021-06-18",
+      "author": "John Smilga",
+      "key_files": [
+        "01-birthday-reminder/src/App.js",
+        "01-birthday-reminder/src/List.js",
+        "02-tours/src/App.js",
+        "02-tours/src/Tours.js",
+        "02-tours/src/Tour.js",
+        "03-reviews/src/Review.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>FunctionDeclaration>VariableDeclaration>ReturnStatement>JSXElement>MemberExpression",
+      "dependencies": {
+        "react": "17.0.2",
+        "react-icons": "4.2.0"
+      }
+    },
+    {
+      "id": "sonny_sangha_amazon",
+      "name": "Sonny Sangha Amazon 2.0 Clone",
+      "source": "https://github.com/sonnysangha/amazon-clone",
+      "youtube_url": "https://www.youtube.com/watch?v=RDV3Z1KCBvo",
+      "uploaded": "2022-09-05",
+      "author": "Sonny Sangha",
+      "key_files": [
+        "src/Header.js",
+        "src/Home.js",
+        "src/Product.js",
+        "src/Checkout.js",
+        "src/Subtotal.js",
+        "src/StateProvider.js",
+        "src/reducer.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>VariableDeclaration>ArrowFunctionExpression>ReturnStatement>JSXElement>CallExpression",
+      "dependencies": {
+        "react": "18.2.0",
+        "@stripe/stripe-js": "1.35.0",
+        "firebase": "9.9.2"
+      }
+    },
+    {
+      "id": "webdevsimplified_shopping_cart",
+      "name": "Web Dev Simplified React Shopping Cart",
+      "source": "https://github.com/WebDevSimplified/react-shopping-cart",
+      "youtube_url": "https://www.youtube.com/watch?v=lATafp15HWA",
+      "uploaded": "2022-07-28",
+      "author": "Web Dev Simplified",
+      "key_files": [
+        "src/context/ShoppingCartContext.tsx",
+        "src/components/StoreItem.tsx",
+        "src/components/Navbar.tsx",
+        "src/components/ShoppingCart.tsx",
+        "src/hooks/useLocalStorage.ts"
+      ],
+      "ast_signature": "Program>ImportDeclaration>ExportNamedDeclaration>FunctionDeclaration>ReturnStatement>CallExpression",
+      "dependencies": {
+        "react": "18.2.0",
+        "react-bootstrap": "2.5.0",
+        "react-router-dom": "6.3.0"
+      }
+    },
+    {
+      "id": "net_ninja_node_auth",
+      "name": "The Net Ninja Node.js Auth Tutorial",
+      "source": "https://github.com/iamshaunjp/node-auth-tutorial",
+      "youtube_url": "https://www.youtube.com/watch?v=SnoAwLP1a-0",
+      "uploaded": "2021-04-12",
+      "author": "Shaun Pelling",
+      "key_files": [
+        "app.js",
+        "models/User.js",
+        "controllers/authControllers.js",
+        "routes/authRoutes.js",
+        "middleware/authMiddleware.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration>TryStatement",
+      "dependencies": {
+        "express": "4.17.1",
+        "mongoose": "5.12.3",
+        "jsonwebtoken": "8.5.1",
+        "cookie-parser": "1.4.5"
+      }
+    },
+    {
+      "id": "angela_yu_flask_secrets",
+      "name": "Angela Yu 100 Days of Code Flask Secrets",
+      "source": "https://github.com/angelabauer/flask-secrets",
+      "youtube_url": "https://www.udemy.com/course/100-days-of-code",
+      "uploaded": "2021-01-15",
+      "author": "Angela Yu",
+      "key_files": [
+        "main.py",
+        "templates/login.html",
+        "templates/success.html",
+        "templates/denied.html"
+      ],
+      "ast_signature": "Module>ImportFrom>Assign>Call>FunctionDef>If>Return",
+      "dependencies": {
+        "flask": "2.0.1",
+        "flask-wtf": "0.15.1",
+        "flask-bootstrap": "3.3.7.1"
+      }
+    },
+    {
+      "id": "javascript_mastery_nft",
+      "name": "JS Mastery React Native NFT Marketplace",
+      "source": "https://github.com/adrianhajdin/project_nft_marketplace",
+      "youtube_url": "https://www.youtube.com/watch?v=_vg530xNpwE",
+      "uploaded": "2022-04-30",
+      "author": "Adrian Hajdin",
+      "key_files": [
+        "App.js",
+        "components/NFTCard.js",
+        "components/FocusedStatusBar.js",
+        "components/HomeHeader.js",
+        "components/Button.js",
+        "constants/assets.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>VariableDeclaration>ArrowFunctionExpression>ReturnStatement>JSXElement",
+      "dependencies": {
+        "react-native": "0.68.2",
+        "expo": "45.0.0"
+      }
+    },
+    {
+      "id": "fireship_nextjs_firebase",
+      "name": "Fireship Next.js Firebase Full Course",
+      "source": "https://github.com/fireship-io/next-firebase-course",
+      "youtube_url": "https://www.youtube.com/watch?v=3oxkPzLgU-g",
+      "uploaded": "2021-10-14",
+      "author": "Jeff Delaney",
+      "key_files": [
+        "pages/_app.js",
+        "pages/enter.js",
+        "pages/admin/index.js",
+        "lib/firebase.js",
+        "lib/hooks.js",
+        "lib/context.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>ExportDefaultDeclaration>FunctionDeclaration>CallExpression>ReturnStatement",
+      "dependencies": {
+        "next": "11.1.2",
+        "firebase": "9.1.1",
+        "react-firebase-hooks": "3.0.4"
+      }
+    },
+    {
+      "id": "deved_portfolio_react",
+      "name": "DevelopedbyEd React Portfolio",
+      "source": "https://github.com/developedbyed/react-portoflio-with-tailwind",
+      "youtube_url": "https://www.youtube.com/watch?v=k-Pi5ZMxHWg",
+      "uploaded": "2022-12-01",
+      "author": "Dev Ed",
+      "key_files": [
+        "pages/index.js",
+        "styles/globals.css",
+        "tailwind.config.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>ExportDefaultDeclaration>FunctionDeclaration>ReturnStatement>JSXElement",
+      "dependencies": {
+        "react": "18.2.0",
+        "react-icons": "4.7.1"
+      }
+    },
+    {
+      "id": "lamadev_social_media",
+      "name": "Lama Dev MERN Social Media App",
+      "source": "https://github.com/safak/youtube/tree/mern-social",
+      "youtube_url": "https://www.youtube.com/watch?v=1bEZv3GKTa4",
+      "uploaded": "2022-03-22",
+      "author": "Safak K",
+      "key_files": [
+        "api/index.js",
+        "api/routes/users.js",
+        "api/routes/auth.js",
+        "api/routes/posts.js",
+        "client/src/pages/home/Home.jsx",
+        "client/src/components/topbar/Topbar.jsx"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration",
+      "dependencies": {
+        "express": "4.17.2",
+        "mongoose": "6.1.7",
+        "bcrypt": "5.0.1"
+      }
+    },
+    {
+      "id": "codevolution_redux_toolkit",
+      "name": "Codevolution Redux Toolkit Demo",
+      "source": "https://github.com/gopinav/Redux-Toolkit-Tutorials",
+      "youtube_url": "https://www.youtube.com/watch?v=9zySeP5vH9c",
+      "uploaded": "2022-06-15",
+      "author": "Vishwas",
+      "key_files": [
+        "app/store.js",
+        "features/cake/cakeSlice.js",
+        "features/icecream/icecreamSlice.js",
+        "features/user/userSlice.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExportNamedDeclaration",
+      "dependencies": {
+        "@reduxjs/toolkit": "1.8.2",
+        "axios": "0.27.2"
+      }
+    },
+    {
+      "id": "florinpop_10_js_projects",
+      "name": "Florin Pop 10 JavaScript Projects",
+      "source": "https://github.com/florinpop17/10-projects-10-hours",
+      "youtube_url": "https://www.youtube.com/watch?v=dtKciwk_si4",
+      "uploaded": "2020-09-08",
+      "author": "Florin Pop",
+      "key_files": [
+        "countdown-timer/script.js",
+        "recipe-app/script.js",
+        "quiz-app/script.js",
+        "movie-app/script.js",
+        "notes-app/script.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>ArrowFunctionExpression",
+      "dependencies": {}
+    },
+    {
+      "id": "colt_steele_yelpcamp",
+      "name": "Colt Steele Web Dev Bootcamp YelpCamp",
+      "source": "https://github.com/Colt/YelpCamp",
+      "youtube_url": "https://www.udemy.com/course/the-web-developer-bootcamp",
+      "uploaded": "2021-02-10",
+      "author": "Colt Steele",
+      "key_files": [
+        "app.js",
+        "models/campground.js",
+        "models/user.js",
+        "routes/campgrounds.js",
+        "views/campgrounds/index.ejs",
+        "views/campgrounds/show.ejs"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration",
+      "dependencies": {
+        "express": "4.17.1",
+        "mongoose": "5.11.15",
+        "passport": "0.4.1",
+        "ejs": "3.1.5"
+      }
+    },
+    {
+      "id": "traversy_vanilla_20_projects",
+      "name": "Traversy 20 Web Projects With Vanilla JS",
+      "source": "https://github.com/bradtraversy/vanillawebprojects",
+      "youtube_url": "https://www.youtube.com/watch?v=w9I4s4qgQGk",
+      "uploaded": "2020-04-18",
+      "author": "Brad Traversy",
+      "key_files": [
+        "movie-seat-booking/script.js",
+        "custom-video-player/script.js",
+        "exchange-rate-calculator/script.js",
+        "dom-array-methods/script.js",
+        "landing-page-modal-forms/script.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration>ForStatement",
+      "dependencies": {}
+    },
+    {
+      "id": "academind_react_complete",
+      "name": "Academind React Complete Guide Expenses",
+      "source": "https://github.com/academind/react-complete-guide-code",
+      "youtube_url": "https://www.youtube.com/watch?v=Dorf8i6lCuk",
+      "uploaded": "2022-01-20",
+      "author": "Maximilian Schwarzmüller",
+      "key_files": [
+        "src/components/Expenses/ExpenseItem.js",
+        "src/components/Expenses/Expenses.js",
+        "src/components/NewExpense/NewExpense.js",
+        "src/components/NewExpense/ExpenseForm.js",
+        "src/components/Chart/Chart.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>FunctionDeclaration>VariableDeclaration>ReturnStatement>JSXElement",
+      "dependencies": {
+        "react": "18.0.0",
+        "react-dom": "18.0.0"
+      }
+    },
+    {
+      "id": "edroh_react_admin_dashboard",
+      "name": "EdRoh React Admin Dashboard",
+      "source": "https://github.com/ed-roh/react-admin-dashboard",
+      "youtube_url": "https://www.youtube.com/watch?v=wYpCWwD1oz8",
+      "uploaded": "2022-10-18",
+      "author": "Ed Roh",
+      "key_files": [
+        "src/scenes/dashboard/index.jsx",
+        "src/scenes/team/index.jsx",
+        "src/scenes/contacts/index.jsx",
+        "src/scenes/bar/index.jsx",
+        "src/theme.js"
+      ],
+      "ast_signature": "Program>ImportDeclaration>VariableDeclaration>ArrowFunctionExpression>ReturnStatement>JSXElement",
+      "dependencies": {
+        "@mui/material": "5.10.8",
+        "@nivo/core": "0.80.0",
+        "react-router-dom": "6.4.2"
+      }
+    },
+    {
+      "id": "pedrotech_fullstack_chat",
+      "name": "PedroTech Fullstack Chat App",
+      "source": "https://github.com/machadop1407/chat-app-react-nodejs",
+      "youtube_url": "https://www.youtube.com/watch?v=NU-HfZY3110",
+      "uploaded": "2021-08-11",
+      "author": "PedroTech",
+      "key_files": [
+        "server/index.js",
+        "client/src/App.js",
+        "client/src/Chat.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration",
+      "dependencies": {
+        "socket.io": "4.1.3",
+        "socket.io-client": "4.1.3",
+        "express": "4.17.1"
+      }
+    },
+    {
+      "id": "dave_gray_mern_notes",
+      "name": "Dave Gray MERN Stack TechNotes Project",
+      "source": "https://github.com/gitdagray/mern_stack_course",
+      "youtube_url": "https://www.youtube.com/watch?v=CvCIDZXnE0g",
+      "uploaded": "2022-08-25",
+      "author": "Dave Gray",
+      "key_files": [
+        "server/server.js",
+        "server/models/Note.js",
+        "server/models/User.js",
+        "server/routes/noteRoutes.js",
+        "client/src/features/notes/NotesList.js"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration>TryStatement",
+      "dependencies": {
+        "express": "4.18.1",
+        "mongoose": "6.5.2",
+        "bcrypt": "5.0.1",
+        "jsonwebtoken": "8.5.1"
+      }
+    },
+    {
+      "id": "shadcn_ui_dashboard",
+      "name": "shadcn/ui Taxonomy & Next.js Dashboard Template",
+      "source": "https://github.com/shadcn-ui/taxonomy",
+      "youtube_url": "https://ui.shadcn.com/templates",
+      "uploaded": "2023-05-10",
+      "author": "shadcn",
+      "key_files": [
+        "app/(dashboard)/dashboard/page.tsx",
+        "components/dashboard-shell.tsx",
+        "components/dashboard-nav.tsx",
+        "lib/utils.ts",
+        "components/ui/button.tsx"
+      ],
+      "ast_signature": "Program>ImportDeclaration>ExportNamedDeclaration>FunctionDeclaration>ReturnStatement>JSXElement",
+      "dependencies": {
+        "next": "14.0.0",
+        "tailwindcss": "3.3.0",
+        "@radix-ui/react-dropdown-menu": "2.0.0",
+        "lucide-react": "0.290.0"
+      }
+    },
+    {
+      "id": "create_react_app_default",
+      "name": "Official Create-React-App Default Boilerplate",
+      "source": "https://github.com/facebook/create-react-app",
+      "youtube_url": "https://create-react-app.dev/",
+      "uploaded": "2021-01-01",
+      "author": "Facebook / Meta Open Source",
+      "key_files": [
+        "src/App.js",
+        "src/App.test.js",
+        "src/index.js",
+        "src/logo.svg",
+        "public/index.html"
+      ],
+      "ast_signature": "Program>ImportDeclaration>FunctionDeclaration>ReturnStatement>JSXElement>JSXOpeningElement",
+      "dependencies": {
+        "react-scripts": "5.0.1",
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
+      }
+    },
+    {
+      "id": "angela_yu_keeper_app",
+      "name": "Angela Yu 100 Days of Code React Keeper App",
+      "source": "https://github.com/appbrewery/keeper-app",
+      "youtube_url": "https://www.udemy.com/course/the-complete-web-development-bootcamp/",
+      "uploaded": "2022-03-12",
+      "author": "Angela Yu (App Brewery)",
+      "key_files": [
+        "src/components/App.jsx",
+        "src/components/Header.jsx",
+        "src/components/Footer.jsx",
+        "src/components/Note.jsx",
+        "src/components/CreateArea.jsx"
+      ],
+      "ast_signature": "Program>ImportDeclaration>FunctionDeclaration>CallExpression>ReturnStatement>JSXElement",
+      "dependencies": {
+        "react": "18.0.0",
+        "@material-ui/core": "4.12.3",
+        "@material-ui/icons": "4.11.2"
+      }
+    },
+    {
+      "id": "fastapi_realworld_boilerplate",
+      "name": "FastAPI RealWorld Conduit Backend Template",
+      "source": "https://github.com/nsidnev/fastapi-realworld-example-app",
+      "youtube_url": "https://realworld-docs.netlify.app/",
+      "uploaded": "2021-09-18",
+      "author": "Nikita Sidnev",
+      "key_files": [
+        "app/main.py",
+        "app/core/config.py",
+        "app/api/routes/api.py",
+        "app/api/routes/authentication.py",
+        "app/db/repositories/users.py"
+      ],
+      "ast_signature": "Module>ImportFrom>ClassDef>AsyncFunctionDef>Return",
+      "dependencies": {
+        "fastapi": "0.95.0",
+        "pydantic": "1.10.7",
+        "asyncpg": "0.27.0",
+        "alembic": "1.10.2"
+      }
+    },
+    {
+      "id": "krish_naik_mlops_pipeline",
+      "name": "Krish Naik End-to-End MLOps Pipeline Template",
+      "source": "https://github.com/krishnaik06/End-to-End-Machine-Learning-Project",
+      "youtube_url": "https://www.youtube.com/watch?v=1m3CPP-zxAY",
+      "uploaded": "2023-01-20",
+      "author": "Krish Naik",
+      "key_files": [
+        "src/pipeline/predict_pipeline.py",
+        "src/components/data_ingestion.py",
+        "src/components/data_transformation.py",
+        "src/components/model_trainer.py",
+        "setup.py"
+      ],
+      "ast_signature": "Module>ImportFrom>ClassDef>FunctionDef>Try>ExceptHandler",
+      "dependencies": {
+        "pandas": "2.0.0",
+        "numpy": "1.24.0",
+        "scikit-learn": "1.2.0",
+        "dill": "0.3.6"
+      }
+    },
+    {
+      "id": "django_rest_framework_starter",
+      "name": "Official Django REST Framework Tutorial Boilerplate",
+      "source": "https://github.com/encode/rest-framework-tutorial",
+      "youtube_url": "https://www.django-rest-framework.org/tutorial/1-serialization/",
+      "uploaded": "2020-04-15",
+      "author": "Tom Christie / Encode",
+      "key_files": [
+        "snippets/models.py",
+        "snippets/serializers.py",
+        "snippets/views.py",
+        "snippets/urls.py",
+        "manage.py"
+      ],
+      "ast_signature": "Module>ImportFrom>ClassDef>ClassDef>FunctionDef",
+      "dependencies": {
+        "django": "4.2.0",
+        "djangorestframework": "3.14.0",
+        "pygments": "2.14.0"
+      }
+    }
+  ]
+}
