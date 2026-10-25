@@ -77,61 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-50 bg-black/60 backdrop-blur-md border-b border-[#D4AF37]/25 shadow-2xl">
-      {/* Top Banner - Authentic Deviathon GLA University Official Header */}
-      <div className="bg-black/70 border-b border-[#D4AF37]/15 px-4 sm:px-8 py-2 text-xs text-[#E6C280]/80 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {/* Flame dot */}
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E85D04] shadow-[0_0_8px_#E85D04] animate-pulse"></span>
-          <span className="font-warrior font-bold text-white tracking-widest text-[11px] uppercase">
-            GLA UNIVERSITY MATHURA (NAAC A+)
-          </span>
-          <span className="text-[#D4AF37]/30">|</span>
-          <span className="text-[#E6C280] font-semibold text-[11px]">
-            DEPARTMENT OF COMPUTER ENGINEERING AND APPLICATIONS & DATUM
-          </span>
-          <span className="text-[#D4AF37]/30 hidden md:inline">|</span>
-          <span className="text-[#f7f3ee]/70 text-[11px] hidden md:inline font-mono">
-            Problem Statement: IM-105 · "Proof of skill, not a template resume" (Integraminds AI Frontier)
-          </span>
-        </div>
-
-        {/* Quick Candidate Preset Pills */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-[#D4AF37] font-warrior font-bold uppercase tracking-wider">Test Candidates:</span>
-          <button 
-            onClick={() => onSelectDemoProfile(0)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8B1E1E]/40 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#8B1E1E]/70 transition text-xs font-semibold cursor-pointer shadow-sm"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>⚡ Data_SIH (157 Commits)</span>
-          </button>
-          <button 
-            onClick={() => onSelectDemoProfile(1)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 border border-[#3A2F27] text-[#C9B89A] hover:border-[#D4AF37] hover:text-[#F5E9C7] transition text-xs font-medium cursor-pointer"
-          >
-            <span>Priyanshu (Insta GUI)</span>
-          </button>
-          <button 
-            onClick={() => onSelectDemoProfile(2)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/40 border border-red-700/50 text-red-300 hover:bg-red-900/40 transition text-xs font-medium cursor-pointer"
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-            <span>Tutorial Clone (Flagged 89%)</span>
-          </button>
-
-          {onOpenImatsModal && (
-            <button
-              onClick={onOpenImatsModal}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] text-[#FFD166] hover:bg-[#D4AF37]/40 transition text-xs font-warrior font-bold cursor-pointer shadow-[0_0_10px_rgba(212,175,55,0.3)] ml-2"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>⚡ IMATS Enterprise API</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Main Hackathon Branding Bar with Official Deviathon Logo */}
+      {/* Main Branding Bar */}
       <div className="px-4 sm:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {/* Deviathon Omega & Flaming Sword Emblem */}
@@ -158,20 +104,39 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Hackathon Callouts */}
-        <div className="hidden lg:flex items-center gap-3 text-xs font-warrior text-[#E6C280]/90">
-          <div className="px-3 py-1.5 rounded-lg bg-black/60 border border-[#D4AF37]/30 flex items-center gap-2">
-            <span className="text-[#D4AF37] font-bold">&lt; BUILD &gt;</span>
-            <span className="text-neutral-300">INNOVATE</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-lg bg-black/60 border border-[#D4AF37]/30 flex items-center gap-2">
-            <span className="text-[#D4AF37] font-bold">&lt; CODE &gt;</span>
-            <span className="text-neutral-300">CREATE</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-lg bg-black/60 border border-[#D4AF37]/30 flex items-center gap-2">
-            <span className="text-[#D4AF37] font-bold">&lt; CONQUER &gt;</span>
-            <span className="text-neutral-300">THE FUTURE</span>
-          </div>
+        {/* Quick Candidate Presets & Enterprise API Modal Trigger */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] text-[#D4AF37] font-warrior font-bold uppercase tracking-wider hidden lg:inline">Test Candidates:</span>
+          <button 
+            onClick={() => onSelectDemoProfile(0)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8B1E1E]/40 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#8B1E1E]/70 transition text-xs font-semibold cursor-pointer shadow-sm"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>⚡ Data_SIH (157 Commits)</span>
+          </button>
+          <button 
+            onClick={() => onSelectDemoProfile(1)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 border border-[#3A2F27] text-[#C9B89A] hover:border-[#D4AF37] hover:text-[#F5E9C7] transition text-xs font-medium cursor-pointer hidden sm:flex"
+          >
+            <span>Priyanshu (Insta GUI)</span>
+          </button>
+          <button 
+            onClick={() => onSelectDemoProfile(2)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/40 border border-red-700/50 text-red-300 hover:bg-red-900/40 transition text-xs font-medium cursor-pointer"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+            <span>Tutorial Clone (Flagged)</span>
+          </button>
+
+          {onOpenImatsModal && (
+            <button
+              onClick={onOpenImatsModal}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] text-[#FFD166] hover:bg-[#D4AF37]/40 transition text-xs font-warrior font-bold cursor-pointer shadow-[0_0_10px_rgba(212,175,55,0.3)] ml-1"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>⚡ IMATS API</span>
+            </button>
+          )}
         </div>
       </div>
 
