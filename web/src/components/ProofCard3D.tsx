@@ -133,7 +133,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       </div>
 
       {/* The 3D ProofCard Container */}
-      <div className="p-7 sm:p-9 rounded-3xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
+      <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
         {/* Amber Ambient Vignette */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
 

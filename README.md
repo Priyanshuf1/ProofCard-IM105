@@ -1,16 +1,29 @@
 # 🛡️ ProofCard (IM-105)
 ### *Proof of skill, not a template resume.*
 
+[![CI Pipeline](https://github.com/Priyanshuf1/ProofCard-IM105/actions/workflows/ci.yml/badge.svg)](https://github.com/Priyanshuf1/ProofCard-IM105/actions/workflows/ci.yml)
 [![Deviathon 2.0](https://img.shields.io/badge/Deviathon%202.0-Hackathon%20Submission-orange?style=for-the-badge)](https://whereuelevate.com)
 [![Problem Statement](https://img.shields.io/badge/Integraminds-IM--105-red?style=for-the-badge)](https://integraminds.com)
-[![Fairness EEOC Compliant](https://img.shields.io/badge/EEOC%20Four--Fifths-0.93%20Compliant-emerald?style=for-the-badge)](#-fairness-constraint--eeoc-compliance)
-[![Recruiter Agreement](https://img.shields.io/badge/Recruiter%20Agreement-100%25%20(30%20JDs)-blue?style=for-the-badge)](#-official-benchmark-results)
-[![Pytest Suite](https://img.shields.io/badge/Tests-47%2F47%20Passed-brightgreen?style=for-the-badge)](#-automated-test-suite)
+[![Fairness EEOC Compliant](https://img.shields.io/badge/EEOC%20Four--Fifths-1.00%20Parity-emerald?style=for-the-badge)](#-fairness-constraint--eeoc-compliance)
+[![Pytest Suite](https://img.shields.io/badge/Tests-48%2F48%20Passing-brightgreen?style=for-the-badge)](#-automated-test-suite)
+[![Docker Ready](https://img.shields.io/badge/Docker-Compose%20Ready-blue?style=for-the-badge)](#-docker-quickstart)
 
-> **Deviathon 2.0 Official Hackathon Solution**  
+> **Official Solution & Reference Implementation**  
 > **Problem Statement**: `IM-105 ADVANCED · Proof of skill, not a template resume`  
 > **Industry Partner**: **Integraminds Industry Solutions Pvt Ltd**  
-> **Academic Institution**: **GLA University Mathura** (NAAC A+ Accredited · Department of Computer Engineering & Applications)
+> **Executive PDF Report**: [Download 6-Page Engineering Report PDF (A4)](ProofCard_IM105_Comprehensive_Project_Report.pdf)
+
+---
+
+## 🚀 Docker Quickstart (1-Command Launch)
+
+Run both the FastAPI backend and React frontend instantly with zero local environment setup:
+
+```bash
+docker compose up --build
+```
+* **Web UI:** `http://localhost:5173`
+* **API Documentation:** `http://localhost:8000/docs`
 
 ---
 

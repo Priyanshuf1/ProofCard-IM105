@@ -477,3 +477,49 @@
 .anime-impact {
   animation: impactPulse 0.16s ease-out;
 }
+
+/* ==============================================
+   5. PRINT STYLES FOR OFFICIAL PROOFCARD CREDENTIAL
+   ============================================== */
+@media print {
+  header,
+  .deviathon-full-bg-layer,
+  .deviathon-full-bg-overlay,
+  canvas,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+
+  .proofcard-printable {
+    box-shadow: none !important;
+    border: 2px solid #b8860b !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .proofcard-printable h1,
+  .proofcard-printable h2,
+  .proofcard-printable h3 {
+    color: #8b0000 !important;
+  }
+
+  .proofcard-printable span,
+  .proofcard-printable p {
+    color: #1e293b !important;
+  }
+
+  .proofcard-printable strong {
+    color: #000000 !important;
+  }
+}
+
