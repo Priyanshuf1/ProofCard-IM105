@@ -36,7 +36,7 @@ def get_scratch_cache_dir() -> Path:
     p.mkdir(parents=True, exist_ok=True)
     return p
 
-def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None):
+def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None, target_subpath: Optional[str] = None):
     """
     Fetches 100% accurate git commit history and code files.
     Tries:
@@ -138,9 +138,20 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None)
 
             # Read sample code files for AST analysis
             code_snippets = {}
-            valid_exts = (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java", ".cpp")
+            valid_exts = (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java", ".cpp", ".html", ".css")
             code_files = [f for f in raw_files if f.endswith(valid_exts) and not f.endswith(".d.ts") and not any(ign in f for ign in ["node_modules", "dist", "build", ".next", ".git"])]
-            for cf in code_files[:8]:
+
+            # Prioritize files based on target_subpath or tutorial keywords
+            def file_rank(fpath: str) -> tuple:
+                p_lower = fpath.lower()
+                is_sub = 0 if (target_subpath and (target_subpath.lower() in p_lower or Path(target_subpath).parent.as_posix().lower() in p_lower)) else 1
+                is_key = 0 if any(k in p_lower for k in ["spotify", "clone", "script", "clock", "car", "notes", "calculator", "app.js", "main", "server", "index.html"]) else 1
+                ext_prio = 0 if p_lower.endswith((".js", ".ts", ".py", ".html")) else 1
+                return (is_sub, is_key, ext_prio, len(fpath))
+
+            code_files.sort(key=file_rank)
+
+            for cf in code_files[:30]:
                 try:
                     content = subprocess.check_output(["git", "-C", str(found_dir), "show", f"HEAD:{cf}"], encoding="utf-8", errors="ignore")
                     code_snippets[cf] = content
@@ -275,6 +286,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
     # Match repo URL (github.com/owner/repo) or user profile URL (github.com/owner)
     match_repo = re.search(r"github\.com/([^/?#]+)/([^/?#]+)", raw_url)
     match_user = re.search(r"github\.com/([^/?#]+)/?$", raw_url)
+    subpath_match = re.search(r"github\.com/[^/?#]+/[^/?#]+/(?:blob|tree)/[^/?#]+/(.+)", raw_url)
+    target_subpath = subpath_match.group(1).strip() if subpath_match else None
 
     if match_repo and match_repo.group(2).strip():
         owner = match_repo.group(1).strip()
@@ -291,6 +304,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
         )
 
     candidate_name = req.candidate_name
+    if not candidate_name or candidate_name.strip() in ["Priyanshu Awasthi", "Ananya Patel", "Rohan Sharma", "Candidate Name"]:
+        candidate_name = owner
     college_name = req.college or "Verified Institution"
 
     live_success = False
@@ -412,7 +427,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if resolved_repo:
         try:
             gh_token = get_github_auth_token(req.github_token)
-            real_commits, real_files, real_snippets = fetch_real_git_telemetry(owner, resolved_repo, gh_token)
+            real_commits, real_files, real_snippets = fetch_real_git_telemetry(owner, resolved_repo, gh_token, target_subpath=target_subpath)
+            if target_subpath:
+                sub_folder = target_subpath.split("/")[0] if "/" in target_subpath else target_subpath
+                project_type = f"{sub_folder.replace('_', ' ').replace('-', ' ').title()} Web Application"
             if real_commits:
                 commits_data = real_commits
                 if real_files:
@@ -635,7 +653,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
         file_tree=raw_files if 'raw_files' in locals() and raw_files else detected_files,
         code_snippets=code_snippets,
         structural_tokens=structural_tokens,
-        candidate_name=candidate_name or owner
+        candidate_name=candidate_name or owner,
+        target_subpath=target_subpath
     )
 
     # Real 5-factor authenticity score directly from git DNA

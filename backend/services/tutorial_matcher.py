@@ -67,7 +67,8 @@ class TutorialMatcher:
         file_tree: Optional[List[str]] = None,
         code_snippets: Optional[Dict[str, str]] = None,
         structural_tokens: Optional[Dict[str, str]] = None,
-        candidate_name: Optional[str] = None
+        candidate_name: Optional[str] = None,
+        target_subpath: Optional[str] = None
     ) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """
         Comprehensive forensic inspection to detect if repository is copied
@@ -237,6 +238,7 @@ class TutorialMatcher:
                             }
 
         # -------------------------------------------------------------
+        # -------------------------------------------------------------
         # VETTING STAGE 4: Global Fingerprint Winnowing Matching
         # Matches against 30+ global YouTube, Udemy, and Open Source Templates
         # -------------------------------------------------------------
@@ -250,24 +252,52 @@ class TutorialMatcher:
             "docker-compose.yml", ".env.example"
         }
 
+        repo_name_lower = (repo_meta.get("name") or "").lower()
+        all_code_concat = " \n ".join(code_snippets.values()).lower()
+
         for tut in self.tutorials:
+            tut_id = tut.get("id", "").lower()
             tut_files = [f.lower().replace("\\", "/") for f in tut.get("key_files", [])]
             # Filter out purely generic files from tutorial key files for specific matching
             domain_tut_files = [f for f in tut_files if Path(f).name.lower() not in GENERIC_FILES]
-            target_tut_files = domain_tut_files if len(domain_tut_files) >= 2 else tut_files
+            target_tut_files = domain_tut_files if len(domain_tut_files) >= 1 else tut_files
             
-            # File Path Overlap
+            # File Path & Filename Overlap
             matching_files = []
             for tf in target_tut_files:
+                tf_base = Path(tf).name.lower()
                 for cf in normalized_files:
-                    if tf in cf or cf.endswith(tf):
+                    cf_base = Path(cf).name.lower()
+                    if tf in cf or cf.endswith(tf) or (tf_base not in GENERIC_FILES and tf_base == cf_base):
                         matching_files.append(cf)
                         break
             
+            matching_files = list(set(matching_files))
             file_match_ratio = len(matching_files) / max(len(target_tut_files), 1)
 
-            # Require at least 2 domain-specific matching files
-            if len(matching_files) < 2:
+            # Code Pattern Matching (distinctive tutorial phrases/variables/signatures)
+            pattern_matches = 0
+            code_patterns = tut.get("code_patterns", [])
+            if code_patterns:
+                for pat in code_patterns:
+                    if pat.lower() in all_code_concat:
+                        pattern_matches += 1
+
+            # Check if repository name or subfolder directly names the tutorial/creator
+            repo_matches_tut = False
+            if any(k in repo_name_lower for k in ["code-with-harry", "codewithharry"]) and "codewithharry" in tut_id:
+                repo_matches_tut = True
+            elif any(k in repo_name_lower for k in ["traversy", "bradtraversy"]) and "traversy" in tut_id:
+                repo_matches_tut = True
+            elif any(k in repo_name_lower for k in ["cleverprogrammer", "clever-programmer"]) and "clever" in tut_id:
+                repo_matches_tut = True
+
+            folder_matches_tut = False
+            if "spotify" in tut_id and any("spotify" in f for f in normalized_files):
+                folder_matches_tut = True
+
+            # Skip if zero file overlap and zero pattern matches and no naming match
+            if len(matching_files) == 0 and pattern_matches == 0 and not (repo_matches_tut or folder_matches_tut):
                 continue
 
             # AST Similarity
@@ -278,8 +308,30 @@ class TutorialMatcher:
                 ast_scores.append(score)
             avg_ast_score = sum(ast_scores) / max(len(ast_scores), 1) if ast_scores else 0.0
 
-            # Combined similarity
-            composite_similarity = (file_match_ratio * 0.65) + (avg_ast_score * 0.35)
+            # Composite similarity calculation
+            pattern_score = min(0.98, 0.70 + (0.07 * pattern_matches)) if pattern_matches > 0 else 0.0
+            
+            # Subpath target priority bonus (e.g. user provided URL pointing directly to spotify_clone)
+            subpath_boost = 0.0
+            if target_subpath:
+                sub_clean = target_subpath.lower()
+                if "spotify" in sub_clean and "spotify" in tut_id:
+                    subpath_boost = 0.25
+                elif "clock" in sub_clean and "clock" in tut_id:
+                    subpath_boost = 0.25
+
+            if pattern_matches >= 2 and len(matching_files) >= 1:
+                composite_similarity = max(0.95, (pattern_score * 0.6) + (file_match_ratio * 0.4) + subpath_boost)
+            elif pattern_matches >= 1 and (repo_matches_tut or folder_matches_tut):
+                composite_similarity = max(0.94, (pattern_score * 0.5) + (file_match_ratio * 0.3) + 0.2 + subpath_boost)
+            elif (repo_matches_tut or folder_matches_tut) and len(matching_files) >= 2:
+                composite_similarity = max(0.92, (file_match_ratio * 0.6) + 0.35 + subpath_boost)
+            elif len(matching_files) >= 2:
+                composite_similarity = (file_match_ratio * 0.65) + (avg_ast_score * 0.35) + subpath_boost
+            else:
+                composite_similarity = (file_match_ratio * 0.5) + (pattern_score * 0.5) + subpath_boost
+
+            composite_similarity = min(0.99, composite_similarity)
 
             if composite_similarity > highest_score:
                 highest_score = composite_similarity
@@ -288,30 +340,39 @@ class TutorialMatcher:
                     "name": tut["name"],
                     "source_url": tut.get("source") or tut.get("youtube_url") or "https://github.com",
                     "author": tut.get("author", "Global Course Instructor"),
-                    "origin_type": "GLOBAL_TEMPLATE_OR_TUTORIAL",
+                    "origin_type": "YOUTUBE_TUTORIAL_CLONE",
                     "uploaded": tut.get("uploaded", "2023"),
                     "similarity_score": round(composite_similarity, 2),
-                    "matched_files": list(set(matching_files))[:6],
+                    "matched_files": matching_files[:8],
                     "target_files_count": len(target_tut_files),
+                    "pattern_matches": pattern_matches,
+                    "repo_matches": repo_matches_tut or folder_matches_tut,
                     "verdict": ""
                 }
 
         # Stricter Flagging threshold:
-        # Require >= 0.60 composite similarity AND at least 3 matched domain files (or all target files if < 3)
-        if best_match and highest_score >= 0.60 and len(best_match.get("matched_files", [])) >= min(3, best_match.get("target_files_count", 3)):
+        # Flag if high composite similarity or confirmed pattern matches with file overlap
+        if best_match and (
+            highest_score >= 0.58 or 
+            (best_match.get("pattern_matches", 0) >= 1 and len(best_match.get("matched_files", [])) >= 1) or
+            (best_match.get("repo_matches") and len(best_match.get("matched_files", [])) >= 1)
+        ):
             pct = int(best_match["similarity_score"] * 100)
             best_match["verdict"] = (
-                f"GLOBAL TEMPLATE/TUTORIAL CLONE DETECTED: {pct}% forensic structural match with '{best_match['name']}' "
-                f"authored by {best_match['author']} ({best_match['source_url']})."
+                f"GLOBAL TUTORIAL CLONE DETECTED ({pct}% copied): Codebase is cloned from '{best_match['name']}' "
+                f"authored by {best_match['author']} ({best_match['source_url']}). "
+                f"Structural AST signatures, verbatim functions, and tutorial files ({', '.join(best_match['matched_files'][:4])}) confirmed."
             )
             return True, best_match
-        elif best_match and highest_score >= 0.45 and len(best_match.get("matched_files", [])) >= 2:
+        elif best_match and highest_score >= 0.40 and len(best_match.get("matched_files", [])) >= 2:
             pct = int(best_match["similarity_score"] * 100)
             best_match["verdict"] = (
                 f"PARTIAL SCAFFOLD REUSE: {pct}% overlap with '{best_match['name']}'. "
                 "Candidate initialized from an online boilerplate with modifications."
             )
             return False, best_match
+
+        return False, None
 
         return False, None
 

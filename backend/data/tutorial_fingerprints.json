@@ -47,6 +47,59 @@
       }
     },
     {
+      "id": "codewithharry_spotify_clone",
+      "name": "CodeWithHarry Spotify Web Player Clone",
+      "source": "https://github.com/CodeWithHarry/Sigma-Web-Dev-Course",
+      "youtube_url": "https://www.youtube.com/watch?v=CYwEq1Ud8ii",
+      "uploaded": "2022-09-12",
+      "author": "CodeWithHarry (Haris Khan)",
+      "key_files": [
+        "scriptSpotify.js",
+        "styleSpotify.css",
+        "spotify_clone/index.html",
+        "spotify_clone/scriptSpotify.js",
+        "spotify_clone/styleSpotify.css",
+        "playing.gif",
+        "spotify_clone/playing.gif"
+      ],
+      "code_patterns": [
+        "Welcome to Spotify",
+        "let audioElement = new Audio",
+        "masterPlay",
+        "myProgressBar",
+        "masterSongName",
+        "songItem",
+        "makeAllPlays",
+        "Warriyo - Mortals"
+      ],
+      "ast_signature": "Program>ExpressionStatement>VariableDeclaration>NewExpression>VariableDeclaration>CallExpression>MemberExpression>VariableDeclaration>ArrayExpression>CallExpression>FunctionDeclaration"
+    },
+    {
+      "id": "codewithharry_web_dev_projects",
+      "name": "CodeWithHarry Web Development Projects (Spotify, Analog Clock, Car, Notes)",
+      "source": "https://github.com/CodeWithHarry/Sigma-Web-Dev-Course",
+      "youtube_url": "https://www.youtube.com/playlist?list=PLu0W_9lII9agq5TrH9XLIKQvv0iaF2X3w",
+      "uploaded": "2022-09-01",
+      "author": "CodeWithHarry (Haris Khan)",
+      "key_files": [
+        "spotify_clone/scriptSpotify.js",
+        "Analog Clock/scriptClock.js",
+        "Animated car/scriptCar.js",
+        "Gym_LandingPage/scriptGym.js",
+        "magic notes/app.js",
+        "calculator/scriptcalculator.js",
+        "window11/index.html"
+      ],
+      "code_patterns": [
+        "Welcome to Spotify",
+        "scriptSpotify",
+        "styleSpotify",
+        "scriptClock",
+        "scriptCar"
+      ],
+      "ast_signature": "Program>VariableDeclaration>CallExpression>ExpressionStatement>FunctionDeclaration"
+    },
+    {
       "id": "codewithharry_django_blog",
       "name": "CodeWithHarry Django Full Blog",
       "source": "https://github.com/CodeWithHarry/Django-Blog",
