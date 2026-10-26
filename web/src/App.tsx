@@ -135,21 +135,6 @@ export const App: React.FC = () => {
           <BiasMirror />
         )}
       </main>
-
-      {/* Clean Production Footer */}
-      <footer className="border-t border-[#D4AF37]/15 bg-black/60 py-5 px-6 text-xs text-[#E6C280]/60">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-white font-medium">ProofCard Talent Intelligence</span>
-            <span className="text-neutral-500">·</span>
-            <span className="text-neutral-400 font-mono text-[11px]">IM-105 Engine</span>
-          </div>
-          <div className="text-neutral-400 text-[11px] font-mono">
-            Autonomous Skill Verification & Recruiter Bias Audit
-          </div>
-        </div>
-      </footer>
       </div>
     </div>
   );

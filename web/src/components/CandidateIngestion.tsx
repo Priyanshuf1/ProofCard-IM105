@@ -455,14 +455,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       {/* Hero Header - Deviathon Theme */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E85D04]/15 border border-[#E85D04]/40 text-[#ff9f1c] text-xs font-warrior font-bold mb-2 uppercase tracking-wider shadow-sm">
-            <Flame className="w-3.5 h-3.5 text-[#E85D04]" />
-            <span>Deviathon Module 01 · High-Throughput Forensic Ingestion</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-deviathon tracking-wider">
             Applicant Ingestion & Forensics Queue
           </h1>
-          <p className="text-xs sm:text-sm text-[#E6C280]/80 font-normal max-w-2xl leading-relaxed mt-1">
+          <p className="text-sm sm:text-base text-[#E6C280] font-normal max-w-2xl leading-relaxed mt-1">
             Scan individual GitHub repositories or ingest entire cohorts (100–500 applicants) via CSV or ATS webhooks.
           </p>
         </div>
@@ -609,63 +605,63 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             )}
 
             {/* 4 Summary Metric Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
               <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-warrior uppercase font-bold text-emerald-400">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400">
                     Verified Builders
                   </span>
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 </div>
-                <div className="text-2xl font-deviathon font-bold text-white">
+                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
                   {buildersCount}
                 </div>
-                <span className="text-[10px] text-emerald-300/80 font-mono">
+                <span className="text-xs sm:text-sm text-emerald-300 font-mono font-medium block mt-1">
                   {Math.round((buildersCount / cohort.length) * 100)}% Organic Git-DNA
                 </span>
               </div>
 
               <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-warrior uppercase font-bold text-red-400">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-red-400">
                     Tutorial Clones Flagged
                   </span>
                   <AlertTriangle className="w-4 h-4 text-red-400" />
                 </div>
-                <div className="text-2xl font-deviathon font-bold text-white">
+                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
                   {clonesCount}
                 </div>
-                <span className="text-[10px] text-red-300/80 font-mono">
+                <span className="text-xs sm:text-sm text-red-300 font-mono font-medium block mt-1">
                   {Math.round((clonesCount / cohort.length) * 100)}% MOSS Plagiarism Hit
                 </span>
               </div>
 
               <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-warrior uppercase font-bold text-amber-400">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">
                     Single-Commit Dumps
                   </span>
                   <Clock className="w-4 h-4 text-amber-400" />
                 </div>
-                <div className="text-2xl font-deviathon font-bold text-white">
+                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
                   {dumpsCount}
                 </div>
-                <span className="text-[10px] text-amber-300/80 font-mono">
+                <span className="text-xs sm:text-sm text-amber-300 font-mono font-medium block mt-1">
                   {Math.round((dumpsCount / cohort.length) * 100)}% 0 Refactor Deletions
                 </span>
               </div>
 
               <div className="p-4 rounded-xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 shadow-inner">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-warrior uppercase font-bold text-[#FFD166]">
+                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166]">
                     Recruiter Time Saved
                   </span>
                   <Award className="w-4 h-4 text-[#D4AF37]" />
                 </div>
-                <div className="text-2xl font-deviathon font-bold text-white">
+                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
                   {hoursSaved}h
                 </div>
-                <span className="text-[10px] text-[#C9B89A] font-mono">
+                <span className="text-xs sm:text-sm text-[#FFD166] font-mono font-medium block mt-1">
                   ~10m manual audit / candidate
                 </span>
               </div>
@@ -733,19 +729,19 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
             {/* Ingested Table */}
             <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
-              <table className="w-full text-left text-xs text-neutral-200">
-                <thead className="bg-[#140b08] uppercase font-warrior font-bold text-[10px] text-[#D4AF37] border-b border-[#3A2F27]">
+              <table className="w-full text-left text-sm text-neutral-200">
+                <thead className="bg-[#140b08] uppercase font-bold text-xs sm:text-sm text-[#FFD166] border-b border-[#3A2F27]">
                   <tr>
-                    <th className="py-3 px-3">#</th>
-                    <th className="py-3 px-3">Candidate & College</th>
-                    <th className="py-3 px-3">Stack / Project</th>
-                    <th className="py-3 px-3">Authenticity</th>
-                    <th className="py-3 px-3">Viva Score</th>
-                    <th className="py-3 px-3">Forensic Verdict</th>
-                    <th className="py-3 px-3 text-right">Action</th>
+                    <th className="py-3.5 px-3">#</th>
+                    <th className="py-3.5 px-3">Candidate & College</th>
+                    <th className="py-3.5 px-3">Stack / Project</th>
+                    <th className="py-3.5 px-3">Authenticity</th>
+                    <th className="py-3.5 px-3">Viva Score</th>
+                    <th className="py-3.5 px-3">Forensic Verdict</th>
+                    <th className="py-3.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#2A241B] font-mono text-[11px]">
+                <tbody className="divide-y divide-[#2A241B] font-mono text-xs sm:text-sm">
                   {filteredCohort.slice(0, 20).map((cand, idx) => {
                     const isHigh = cand.authenticity_score >= 80;
                     const isClone = cand.is_clone;
@@ -754,16 +750,16 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                         key={cand.candidate_id}
                         className="hover:bg-white/5 transition"
                       >
-                        <td className="py-3 px-3 text-neutral-400">
+                        <td className="py-3.5 px-3 text-neutral-400">
                           {idx + 1}
                         </td>
-                        <td className="py-3 px-3">
-                          <strong className="text-white block font-sans text-xs">
+                        <td className="py-3.5 px-3">
+                          <strong className="text-white block font-sans text-sm sm:text-base font-bold">
                             {cand.name}
                           </strong>
-                          <span className="text-[10px] text-[#C9B89A] flex items-center gap-1.5">
+                          <span className="text-xs text-[#E6C280] flex items-center gap-1.5 mt-0.5">
                             {cand.college}
-                            <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-bold ${
+                            <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold ${
                               cand.college_tier === 'Tier-1' 
                                 ? 'bg-purple-950 text-purple-300 border border-purple-800'
                                 : cand.college_tier === 'Tier-2'
@@ -774,11 +770,11 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                             </span>
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-neutral-300 font-sans">
+                        <td className="py-3.5 px-3 text-neutral-200 font-sans font-medium">
                           {cand.project_type}
                         </td>
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                        <td className="py-3.5 px-3">
+                          <span className={`px-2.5 py-1 rounded-full font-bold text-xs sm:text-sm ${
                             isHigh
                               ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
                               : isClone
@@ -788,31 +784,31 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                             {cand.authenticity_score}%
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-bold text-white">
+                        <td className="py-3.5 px-3 font-bold text-white text-base">
                           {cand.viva_score} / 10
                         </td>
-                        <td className="py-3 px-3 font-sans">
+                        <td className="py-3.5 px-3 font-sans">
                           {isClone ? (
-                            <span className="text-red-400 text-[11px] flex items-center gap-1 font-semibold">
-                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                            <span className="text-red-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
+                              <AlertTriangle className="w-4 h-4 shrink-0" />
                               <span>{cand.matched_tutorial ? `${Math.round(cand.matched_tutorial.similarity_score * 100)}% Copied: ${cand.matched_tutorial.name.substring(0, 26)}...` : 'Plagiarism Detected'}</span>
                             </span>
                           ) : isHigh ? (
-                            <span className="text-emerald-400 text-[11px] flex items-center gap-1 font-semibold">
-                              <CheckCircle2 className="w-3 h-3 shrink-0" />
+                            <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
+                              <CheckCircle2 className="w-4 h-4 shrink-0" />
                               Verified Organic Architecture
                             </span>
                           ) : (
-                            <span className="text-amber-400 text-[11px]">
+                            <span className="text-amber-400 text-xs sm:text-sm">
                               Single Commit / Low Churn
                             </span>
                           )}
                         </td>
 
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-3.5 px-3 text-right">
                           <button
                             onClick={() => handleSelectCohortMember(cand)}
-                            className="btn-dev-primary text-[10px] px-2.5 py-1 cursor-pointer font-warrior"
+                            className="btn-dev-primary text-xs px-3.5 py-1.5 cursor-pointer font-bold"
                           >
                             Inspect
                           </button>
@@ -1097,20 +1093,19 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             {/* Live Progress Telemetry */}
             {isScanning && (
               <div className="p-4 rounded-xl bg-[#1a0c07] border border-[#E85D04]/40 animate-pulse">
-                <div className="flex items-center justify-between text-xs text-neutral-300 font-mono mb-2">
-                  <span className="flex items-center gap-2 text-[#ff9f1c] font-bold">
-                    <span className="w-2 h-2 rounded-full bg-[#E85D04] animate-ping"></span>
+                <div className="flex items-center justify-between text-sm text-neutral-200 font-mono mb-2">
+                  <span className="text-[#ff9f1c] font-bold">
                     STEP {scanStep + 1} OF 5
                   </span>
-                  <span>{Math.round(((scanStep + 1) / 5) * 100)}%</span>
+                  <span className="font-bold text-white">{Math.round(((scanStep + 1) / 5) * 100)}%</span>
                 </div>
-                <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden mb-2">
+                <div className="w-full bg-neutral-900 h-2 rounded-full overflow-hidden mb-2">
                   <div 
                     className="bg-gradient-to-r from-[#E85D04] to-[#FFD166] h-full transition-all duration-300"
                     style={{ width: `${((scanStep + 1) / 5) * 100}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-neutral-300 font-mono">
+                <p className="text-sm text-neutral-200 font-mono">
                   {scanSteps[scanStep]}
                 </p>
               </div>

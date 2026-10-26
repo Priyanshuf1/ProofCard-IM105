@@ -86,15 +86,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl sm:text-2xl font-extrabold text-[#f7f3ee] tracking-tight font-sans">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#f7f3ee] tracking-tight font-sans">
                 ProofCard
               </span>
-              <span className="text-[10px] font-mono uppercase bg-[#8B1E1E]/50 border border-[#D4AF37]/40 px-2 py-0.5 rounded-full text-[#FFD166] font-semibold">
+              <span className="text-xs font-mono uppercase bg-[#8B1E1E]/60 border border-[#D4AF37]/50 px-2.5 py-0.5 rounded-full text-[#FFD166] font-bold">
                 IM-105
               </span>
             </div>
-            <p className="text-[11px] text-[#C9B89A]/80 font-mono tracking-wide">
+            <p className="text-xs sm:text-sm text-[#E6C280] font-mono tracking-wide mt-0.5">
               Verified Code Intelligence & Recruiter Bias Auditing
             </p>
           </div>
@@ -105,9 +105,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenImatsModal && (
             <button
               onClick={onOpenImatsModal}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#D4AF37]/30 transition text-xs font-semibold cursor-pointer shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#D4AF37]/30 transition text-sm font-bold cursor-pointer shadow-sm"
             >
-              <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <Zap className="w-4 h-4 text-[#D4AF37]" />
               <span>IMATS Enterprise Sandbox</span>
             </button>
           )}
@@ -115,8 +115,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* 6-Feature Sleek Navigation Tabs */}
-      <div className="border-t border-[#D4AF37]/20 bg-black/60 backdrop-blur-md px-4 sm:px-8 py-2 overflow-x-auto">
-        <div className="flex items-center gap-2 min-w-max">
+      <div className="border-t border-[#D4AF37]/20 bg-black/60 backdrop-blur-md px-4 sm:px-8 py-2.5 overflow-x-auto">
+        <div className="flex items-center gap-2.5 min-w-max">
           {features.map((feat) => {
             const Icon = feat.icon;
             const isActive = activeTab === feat.id;
@@ -124,18 +124,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={feat.id}
                 onClick={() => setActiveTab(feat.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer border text-xs font-semibold ${
+                className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 cursor-pointer border text-sm font-semibold ${
                   isActive
                     ? 'bg-[#8B1E1E] text-white border-[#D4AF37] shadow-[0_0_14px_rgba(212,175,55,0.4)]'
                     : 'bg-black/50 text-[#C9B89A] border-[#3A2F27] hover:border-[#D4AF37]/60 hover:text-[#F5E9C7]'
                 }`}
               >
-                <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-[#D4AF37] text-black' : 'bg-[#2A241B] text-[#D4AF37]'
-                }`}>
-                  {feat.step}
-                </span>
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#D4AF37]' : 'text-[#C9B89A]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#D4AF37]' : 'text-[#C9B89A]'}`} />
                 <span className="font-warrior tracking-wide">{feat.name}</span>
               </button>
             );

@@ -208,12 +208,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
-                Live Code Viva Defense
-              </span>
-
+            <div className="flex flex-wrap items-center justify-end gap-2 mb-1.5">
               {/* Candidate Switcher Dropdown */}
               {onSelectCandidate && (
                 <div className="ml-auto sm:ml-2">
@@ -242,9 +237,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
               )}
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-deviathon font-extrabold text-white tracking-wider flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans flex flex-wrap items-center gap-2">
               <span>Interactive Code Defense Arena</span>
-              <span className="text-xs font-warrior text-[#C9B89A] font-normal">
+              <span className="text-sm text-[#FFD166] font-semibold font-mono">
                 ({candidate.name})
               </span>
             </h1>
@@ -252,7 +247,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
           <button
             onClick={() => setShowCohortRoster(!showCohortRoster)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/50 border border-[#D4AF37]/40 text-xs font-warrior text-[#FFD166] hover:bg-[#8B1E1E]/40 transition cursor-pointer shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/50 border border-[#D4AF37]/40 text-xs sm:text-sm font-bold text-[#FFD166] hover:bg-[#8B1E1E]/40 transition cursor-pointer shrink-0"
           >
             <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>{showCohortRoster ? 'Hide Cohort Roster' : 'View Cohort Viva Roster (100)'}</span>
@@ -274,50 +269,50 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
-            <table className="w-full text-left text-xs text-neutral-200">
-              <thead className="bg-[#140b08] uppercase font-warrior font-bold text-[10px] text-[#D4AF37] border-b border-[#3A2F27]">
+            <table className="w-full text-left text-sm text-neutral-200">
+              <thead className="bg-[#140b08] uppercase font-bold text-xs sm:text-sm text-[#FFD166] border-b border-[#3A2F27]">
                 <tr>
-                  <th className="py-2.5 px-3">Candidate</th>
-                  <th className="py-2.5 px-3">College</th>
-                  <th className="py-2.5 px-3">Viva Score</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Switch</th>
+                  <th className="py-3 px-3">Candidate</th>
+                  <th className="py-3 px-3">College</th>
+                  <th className="py-3 px-3">Viva Score</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3 text-right">Switch</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#2A241B] font-mono text-[11px]">
+              <tbody className="divide-y divide-[#2A241B] font-mono text-xs sm:text-sm">
                 {cohort.slice(0, 10).map((cand) => (
                   <tr key={cand.candidate_id} className="hover:bg-white/5 transition">
-                    <td className="py-2.5 px-3 text-white font-sans font-medium">
+                    <td className="py-3 px-3 text-white font-sans font-bold">
                       {cand.name}
                     </td>
-                    <td className="py-2.5 px-3 text-[#C9B89A]">
+                    <td className="py-3 px-3 text-[#E6C280]">
                       {cand.college}
                     </td>
-                    <td className="py-2.5 px-3 font-bold">
+                    <td className="py-3 px-3 font-bold text-base">
                       <span className={cand.viva_score >= 7 ? 'text-emerald-400' : 'text-amber-400'}>
                         {cand.viva_score} / 10
                       </span>
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-3">
                       {cand.viva_score >= 7 ? (
-                        <span className="text-emerald-400 text-[10px] flex items-center gap-1 font-semibold">
-                          <CheckCircle className="w-3 h-3" />
+                        <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
+                          <CheckCircle className="w-3.5 h-3.5" />
                           Passed Architectural Defense
                         </span>
                       ) : (
-                        <span className="text-amber-400 text-[10px] flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
+                        <span className="text-amber-400 text-xs sm:text-sm flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" />
                           Borderline / Superficial
                         </span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-right">
+                    <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => {
                           if (onSelectCandidate) onSelectCandidate(cand);
                           setShowCohortRoster(false);
                         }}
-                        className="text-[10px] text-[#FFD166] hover:underline cursor-pointer"
+                        className="text-xs sm:text-sm text-[#FFD166] hover:underline cursor-pointer font-bold"
                       >
                         Select
                       </button>
@@ -373,26 +368,26 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             <span className="text-[#3A2F27]">|</span>
             <span className="text-[#D4AF37]">{currentQ.file}:{currentQ.line_number}</span>
           </div>
-          <span className="px-2.5 py-0.5 rounded-full uppercase font-warrior font-bold text-[10px] bg-black/70 text-[#FFD166] border border-[#D4AF37]/40">
+          <span className="px-3 py-1 rounded-full uppercase font-bold text-xs bg-black/70 text-[#FFD166] border border-[#D4AF37]/40">
             {currentQ.difficulty || 'medium'}
           </span>
         </div>
 
         {/* Prompt Text */}
         <div className="mb-4">
-          <h2 className="text-base sm:text-lg font-warrior font-bold text-white leading-relaxed">
+          <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
             "{currentQ.question}"
           </h2>
         </div>
 
         {/* Expected Concepts */}
         <div className="mb-4 p-3.5 rounded-xl bg-black/50 border border-[#3A2F27]">
-          <span className="text-[10px] font-warrior font-bold text-[#D4AF37] uppercase tracking-wider block mb-1.5">
+          <span className="text-xs font-bold text-[#FFD166] uppercase tracking-wider block mb-2">
             Key Grading Concepts:
           </span>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {currentQ.expected_concepts.map((c, i) => (
-              <span key={i} className="text-xs px-2.5 py-0.5 rounded-full bg-[#1A1A1A] border border-[#3A2F27] text-[#F5E9C7]">
+              <span key={i} className="text-xs sm:text-sm px-3 py-1 rounded-full bg-[#1A1A1A] border border-[#3A2F27] text-neutral-200 font-medium">
                 {c}
               </span>
             ))}
@@ -401,8 +396,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
         {/* Candidate Answer Box */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166]">
               Candidate Written Defense
             </label>
             {!isCurrentEvaluated && (
@@ -411,7 +406,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 <button
                   type="button"
                   onClick={toggleVoiceDefense}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-warrior font-bold transition cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer border ${
                     isListening
                       ? 'bg-red-950 border-red-500 text-red-300 animate-pulse'
                       : 'bg-[#8B1E1E]/30 border-[#D4AF37]/40 text-[#FFD166] hover:bg-[#8B1E1E]/60'
@@ -424,7 +419,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 <button
                   type="button"
                   onClick={() => setUserAnswer(`We mitigate timeouts by using an explicit abort controller and deadline context, ensuring sockets are immediately recycled on connection failure.`)}
-                  className="text-[11px] text-[#D4AF37] hover:underline font-mono cursor-pointer"
+                  className="text-xs text-[#FFD166] hover:underline font-mono cursor-pointer font-bold"
                 >
                   Sample Answer
                 </button>
@@ -455,9 +450,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 ) : (
                   <XCircle className="w-4 h-4 text-red-400" />
                 )}
-                <span>Score: {evaluatedAnswers[currentQuestionIndex].score} / 10</span>
+                <span className="text-sm font-bold">Score: {evaluatedAnswers[currentQuestionIndex].score} / 10</span>
               </span>
-              <span className={`text-[10px] uppercase font-warrior font-bold px-2 py-0.5 rounded-full border ${
+              <span className={`text-xs uppercase font-bold px-3 py-1 rounded-full border ${
                 evaluatedAnswers[currentQuestionIndex].passed
                   ? 'bg-emerald-900/60 border-emerald-400 text-emerald-300'
                   : 'bg-red-900/60 border-red-400 text-red-300'
@@ -465,7 +460,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 {evaluatedAnswers[currentQuestionIndex].passed ? 'PASSED' : 'FAILED (Score: 0)'}
               </span>
             </div>
-            <p className="text-neutral-200 text-xs leading-relaxed font-sans">
+            <p className="text-neutral-100 text-sm leading-relaxed font-sans font-medium">
               {evaluatedAnswers[currentQuestionIndex].feedback}
             </p>
           </div>
@@ -473,7 +468,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#3A2F27]">
-          <span className="text-xs text-[#C9B89A] font-sans">
+          <span className="text-sm text-neutral-200 font-sans">
             Progress: <strong className="text-white">{Object.keys(evaluatedAnswers).length}</strong> / <strong className="text-white">{questions.length}</strong> Evaluated
           </span>
 
@@ -482,9 +477,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
               <button
                 onClick={handleSubmitAnswer}
                 disabled={isEvaluating || !userAnswer.trim()}
-                className="btn-dev-primary text-xs flex items-center gap-2 shadow-lg cursor-pointer px-5 py-2.5"
+                className="btn-dev-primary text-sm flex items-center gap-2 shadow-lg cursor-pointer px-6 py-3 font-bold"
               >
-                {isEvaluating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+                {isEvaluating ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
                 <span>Submit & Evaluate Defense</span>
               </button>
             ) : (

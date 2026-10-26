@@ -267,14 +267,14 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-warrior font-bold tracking-widest text-[#D4AF37]">
+                <span className="text-xs uppercase font-bold tracking-widest text-[#FFD166]">
                   Problem Statement: IM-105
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-emerald-950/60 border border-emerald-500/50 text-emerald-400">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 font-bold">
                   PILOT READY
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-warrior font-bold text-white tracking-wide">
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide font-sans">
                 Integraminds IMATS Enterprise API Connector
               </h2>
             </div>
@@ -282,22 +282,21 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 flex items-center justify-center text-neutral-400 hover:text-white transition cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 flex items-center justify-center text-neutral-300 hover:text-white transition cursor-pointer"
           >
             ✕
           </button>
         </div>
 
         {/* Description Banner */}
-        <div className="mb-6 p-4 rounded-2xl bg-black/50 border border-[#3A2F27] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+        <div className="mb-6 p-4 rounded-2xl bg-black/50 border border-[#3A2F27] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm">
           <div>
-            <p className="text-neutral-300 font-sans leading-relaxed">
+            <p className="text-neutral-200 font-sans leading-relaxed">
               Integraminds ATS (IMATS) can directly ingest candidate pools from campus drives, hackathons, and ATS pipelines into ProofCard's forensic engine via secure webhooks.
             </p>
-            <div className="flex flex-wrap items-center gap-3 mt-2 font-mono text-[11px] text-[#C9B89A]">
+            <div className="flex flex-wrap items-center gap-4 mt-2 font-mono text-xs sm:text-sm text-neutral-300">
               <span>Base URL: <strong className="text-white">http://localhost:8000/api/v1/imats</strong></span>
-              <span>•</span>
-              <span>Auth: <strong className="text-[#D4AF37]">Bearer Token / HMAC SHA-256</strong></span>
+              <span>Auth: <strong className="text-[#FFD166]">Bearer Token / HMAC SHA-256</strong></span>
             </div>
           </div>
 
@@ -358,50 +357,50 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
 
         {/* Tab Contents: IM-105 Benchmark */}
         {activeTab === 'benchmark' && (
-          <div className="space-y-5 text-xs">
+          <div className="space-y-5 text-sm">
             {/* Official Brief Spec Box */}
-            <div className="p-4 rounded-2xl bg-black/60 border border-[#D4AF37]/30 space-y-3 font-sans">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-warrior font-bold uppercase tracking-wider text-[#D4AF37] flex items-center gap-2">
+            <div className="p-5 rounded-2xl bg-black/60 border border-[#D4AF37]/30 space-y-3.5 font-sans">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166] flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#FFD166]" />
                   <span>Deviathon 2.0 · IM-105 Problem Statement Verification Testbed</span>
                 </span>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-500/30 font-bold self-start sm:self-auto">
                   Integraminds Sandbox API Connected
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] font-mono">
-                <div className="p-3 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-[#8A7F6B] block uppercase text-[10px] font-warrior">Dataset 1</span>
-                  <strong className="text-white">400 Anonymised Freshers</strong>
-                  <p className="text-[10px] text-neutral-400 mt-0.5 font-sans">Consented repositories & verified assessment scores</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs sm:text-sm font-mono">
+                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
+                  <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 1</span>
+                  <strong className="text-white text-sm sm:text-base">400 Anonymised Freshers</strong>
+                  <p className="text-xs text-neutral-300 mt-1 font-sans">Consented repositories & verified assessment scores</p>
                 </div>
-                <div className="p-3 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-[#8A7F6B] block uppercase text-[10px] font-warrior">Dataset 2</span>
-                  <strong className="text-white">30 Job Descriptions</strong>
-                  <p className="text-[10px] text-neutral-400 mt-0.5 font-sans">Labelled recruiter shortlist decisions ground truth</p>
+                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
+                  <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 2</span>
+                  <strong className="text-white text-sm sm:text-base">30 Job Descriptions</strong>
+                  <p className="text-xs text-neutral-300 mt-1 font-sans">Labelled recruiter shortlist decisions ground truth</p>
                 </div>
-                <div className="p-3 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-[#8A7F6B] block uppercase text-[10px] font-warrior">API Endpoint</span>
-                  <strong className="text-[#FFD166]">IMATS Sandbox API</strong>
-                  <p className="text-[10px] text-neutral-400 mt-0.5 font-sans">v2.4.0-deviathon verified pipeline connector</p>
+                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
+                  <span className="text-neutral-400 block uppercase text-xs font-bold">API Endpoint</span>
+                  <strong className="text-[#FFD166] text-sm sm:text-base">IMATS Sandbox API</strong>
+                  <p className="text-xs text-neutral-300 mt-1 font-sans">v2.4.0-deviathon verified pipeline connector</p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#3A2F27]">
-                <div className="text-[11px] text-[#C9B89A] flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#3A2F27]">
+                <div className="text-xs sm:text-sm text-neutral-200 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
-                    <strong>Mandatory Guardrails:</strong> 100% Human-readable reasons for rankings • Candidate consent enforced prior to repo analysis.
+                    <strong className="text-[#FFD166]">Mandatory Guardrails:</strong> 100% Human-readable reasons for rankings • Candidate consent enforced prior to repo analysis.
                   </span>
                 </div>
                 <button
                   onClick={handleRunBenchmark}
                   disabled={isBenchmarking}
-                  className="btn-dev-primary text-xs shrink-0 flex items-center gap-2 px-4 py-2 cursor-pointer shadow-lg font-warrior font-bold"
+                  className="btn-dev-primary text-xs sm:text-sm shrink-0 flex items-center gap-2 px-5 py-2.5 cursor-pointer shadow-lg font-bold"
                 >
-                  {isBenchmarking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-[#FFD166]" />}
+                  {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
                   <span>{isBenchmarking ? 'Evaluating Held-Out Set...' : 'Run 30-JD Benchmark Evaluation'}</span>
                 </button>
               </div>
@@ -410,35 +409,35 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
             {/* Benchmark Summary Metrics */}
             {benchmarkResult && (
               <div className="space-y-4 animate-fadeIn">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-                  <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
-                    <span className="text-emerald-400 text-[10px] uppercase block font-warrior">Recruiter Agreement</span>
-                    <span className="text-xl font-bold text-emerald-300">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm font-mono">
+                  <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
+                    <span className="text-emerald-400 text-xs uppercase block font-bold">Recruiter Agreement</span>
+                    <span className="text-2xl font-bold text-emerald-300 mt-0.5 block">
                       {benchmarkResult.benchmark_summary.recruiter_shortlist_agreement_pct}%
                     </span>
-                    <span className="text-[9px] text-emerald-400/80 block mt-0.5">Top-10 Held-Out Recall</span>
+                    <span className="text-xs text-emerald-400 block mt-1">Top-10 Held-Out Recall</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/60 border border-[#3A2F27]">
-                    <span className="text-[#D4AF37] text-[10px] uppercase block font-warrior">Fairness Disparate Impact</span>
-                    <span className="text-xl font-bold text-white">
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27]">
+                    <span className="text-[#FFD166] text-xs uppercase block font-bold">Fairness Disparate Impact</span>
+                    <span className="text-2xl font-bold text-white mt-0.5 block">
                       {benchmarkResult.benchmark_summary.fairness_constraint.disparate_impact_ratio}
                     </span>
-                    <span className="text-[9px] text-emerald-400 block mt-0.5">Target ≥ 0.80 (EEOC Pass)</span>
+                    <span className="text-xs text-emerald-400 block mt-1">Target ≥ 0.80 (EEOC Pass)</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/60 border border-[#3A2F27]">
-                    <span className="text-[#C9B89A] text-[10px] uppercase block font-warrior">Profiles Evaluated</span>
-                    <span className="text-xl font-bold text-white">
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27]">
+                    <span className="text-neutral-300 text-xs uppercase block font-bold">Profiles Evaluated</span>
+                    <span className="text-2xl font-bold text-white mt-0.5 block">
                       {benchmarkResult.benchmark_summary.candidates_evaluated} Freshers
                     </span>
-                    <span className="text-[9px] text-neutral-400 block mt-0.5">Consented Repositories</span>
+                    <span className="text-xs text-neutral-300 block mt-1">Consented Repositories</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#8B1E1E]/40 border border-[#D4AF37]/50">
-                    <span className="text-[#FFD166] text-[10px] uppercase block font-warrior">Guardrails Verification</span>
-                    <span className="text-xl font-bold text-[#FFD166]">100%</span>
-                    <span className="text-[9px] text-[#FFD166]/80 block mt-0.5">Explainable Rationales</span>
+                  <div className="p-3.5 rounded-xl bg-[#8B1E1E]/40 border border-[#D4AF37]/50">
+                    <span className="text-[#FFD166] text-xs uppercase block font-bold">Guardrails Verification</span>
+                    <span className="text-2xl font-bold text-[#FFD166] mt-0.5 block">100%</span>
+                    <span className="text-xs text-[#FFD166] block mt-1">Explainable Rationales</span>
                   </div>
                 </div>
 

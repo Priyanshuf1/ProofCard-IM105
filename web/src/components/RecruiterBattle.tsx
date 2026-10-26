@@ -312,12 +312,6 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
-                Recruiter Decision Console
-              </span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
               Candidate Shortlist & Evaluation Matrix
             </h1>
@@ -354,21 +348,21 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       {/* JD & Competencies Card */}
       <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-lg mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#3A2F27] pb-3 mb-4 gap-2">
-          <div className="flex items-center gap-2 text-xs text-[#D4AF37] font-warrior font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-sm text-[#FFD166] font-bold uppercase tracking-wider">
             <FileText className="w-4 h-4 text-[#D4AF37]" />
             <span>Target Role & Skill Benchmarks</span>
           </div>
 
           {/* Presets */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-[#8A7F6B] font-warrior font-bold uppercase">Presets:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#FFD166] font-bold uppercase">Presets:</span>
             {PRESET_JOB_DESCRIPTIONS.map((preset, idx) => (
               <button
                 key={idx}
                 onClick={() => handlePresetSelect(idx)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition cursor-pointer font-warrior ${
+                className={`text-xs px-3 py-1.5 rounded-full border transition cursor-pointer font-bold ${
                   selectedPreset === idx
-                    ? 'bg-[#8B1E1E] border-[#D4AF37] text-white font-bold'
+                    ? 'bg-[#8B1E1E] border-[#D4AF37] text-white'
                     : 'bg-black/50 border-[#3A2F27] text-[#C9B89A] hover:border-[#D4AF37]/50'
                 }`}
               >
@@ -385,30 +379,30 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
               value={jobTitle}
               onChange={e => setJobTitle(e.target.value)}
               placeholder="Job Title"
-              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-neutral-200 focus:outline-none focus:border-[#D4AF37]"
+              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl px-4 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-[#D4AF37] font-medium"
             />
             <textarea
               rows={2}
               value={jdText}
               onChange={e => setJdText(e.target.value)}
-              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl p-3 text-xs text-neutral-300 focus:outline-none focus:border-[#D4AF37] font-mono"
+              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl p-3.5 text-sm text-neutral-200 focus:outline-none focus:border-[#D4AF37] font-mono"
             />
           </div>
 
           {/* Skill Tag Manager */}
-          <div className="bg-black/50 rounded-xl border border-[#3A2F27] p-3.5 flex flex-col justify-between">
+          <div className="bg-black/50 rounded-xl border border-[#3A2F27] p-4 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] text-[#D4AF37] uppercase tracking-wider block mb-2 font-warrior font-bold">
+              <span className="text-xs text-[#FFD166] uppercase tracking-wider block mb-2 font-bold">
                 Parsed Skills ({requiredSkills.length})
               </span>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+              <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
                 {requiredSkills.map((skill, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-full text-xs font-mono bg-[#8B1E1E]/30 border border-[#D4AF37]/40 text-[#F5E9C7] flex items-center gap-1">
+                  <span key={i} className="px-2.5 py-1 rounded-full text-xs font-mono bg-[#8B1E1E]/30 border border-[#D4AF37]/40 text-[#F5E9C7] flex items-center gap-1.5">
                     <span>{skill}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveSkill(skill)}
-                      className="text-[#8A7F6B] hover:text-white cursor-pointer text-[10px]"
+                      className="text-neutral-400 hover:text-white cursor-pointer text-xs"
                     >
                       ✕
                     </button>
@@ -444,7 +438,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-[#3A2F27] pb-5 mb-5">
               {/* Target Count Buttons */}
               <div>
-                <span className="text-[10px] uppercase font-warrior font-bold text-[#D4AF37] block mb-2 tracking-wider">
+                <span className="text-xs uppercase font-bold text-[#FFD166] block mb-2 tracking-wider">
                   Target Shortlist Size:
                 </span>
                 <div className="flex items-center gap-2">
@@ -452,7 +446,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                     <button
                       key={count}
                       onClick={() => setTargetCount(count)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-warrior font-bold transition cursor-pointer border ${
+                      className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
                         targetCount === count
                           ? 'bg-[#8B1E1E] text-white border-[#D4AF37] shadow-lg'
                           : 'bg-black/50 text-[#C9B89A] border-[#3A2F27] hover:border-[#D4AF37]/40'
@@ -465,8 +459,8 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
               </div>
 
               {/* Toggles & Cutoffs */}
-              <div className="flex flex-wrap items-center gap-4 text-xs font-warrior">
-                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3 py-1.5 rounded-xl border border-[#3A2F27]">
+              <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-semibold">
+                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
                   <input
                     type="checkbox"
                     checked={excludeClones}
@@ -476,7 +470,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                   <span className="text-white">Exclude Clones (0% Plagiarism)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3 py-1.5 rounded-xl border border-[#3A2F27]">
+                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
                   <input
                     type="checkbox"
                     checked={requireTests}
@@ -487,8 +481,8 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 </label>
 
                 {/* Min Authenticity slider */}
-                <div className="bg-black/50 px-3.5 py-1.5 rounded-xl border border-[#3A2F27] flex items-center gap-2">
-                  <span className="text-[#8A7F6B] text-[10px] uppercase font-bold">Min Auth:</span>
+                <div className="bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27] flex items-center gap-2">
+                  <span className="text-neutral-300 text-xs uppercase font-bold">Min Auth:</span>
                   <input
                     type="range"
                     min="40"
@@ -498,12 +492,12 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                     onChange={(e) => setMinAuthScore(Number(e.target.value))}
                     className="w-28 accent-[#D4AF37] cursor-pointer"
                   />
-                  <span className="text-[#FFD166] font-mono font-bold text-xs min-w-[32px]">{minAuthScore}%</span>
+                  <span className="text-[#FFD166] font-mono font-bold text-sm min-w-[36px]">{minAuthScore}%</span>
                 </div>
 
                 {/* Min Viva slider */}
-                <div className="bg-black/50 px-3.5 py-1.5 rounded-xl border border-[#3A2F27] flex items-center gap-2">
-                  <span className="text-[#8A7F6B] text-[10px] uppercase font-bold">Min Viva:</span>
+                <div className="bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27] flex items-center gap-2">
+                  <span className="text-neutral-300 text-xs uppercase font-bold">Min Viva:</span>
                   <input
                     type="range"
                     min="2"
@@ -513,7 +507,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                     onChange={(e) => setMinVivaScore(Number(e.target.value))}
                     className="w-24 accent-[#D4AF37] cursor-pointer"
                   />
-                  <span className="text-[#D4AF37] font-mono font-bold text-xs min-w-[28px]">{minVivaScore}/10</span>
+                  <span className="text-[#D4AF37] font-mono font-bold text-sm min-w-[32px]">{minVivaScore}/10</span>
                 </div>
               </div>
             </div>
@@ -522,24 +516,24 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
                 <div className="bg-black/60 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
-                  <span className="text-[#8A7F6B] text-[10px] block uppercase font-warrior">Cohort Ingested</span>
-                  <span className="text-white text-sm sm:text-base font-bold">{cohort.length} Applicants</span>
+                  <span className="text-neutral-300 text-xs block uppercase font-mono font-bold">Cohort Ingested</span>
+                  <span className="text-white text-base sm:text-lg font-bold">{cohort.length} Applicants</span>
                 </div>
                 <div className="bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-500/40">
-                  <span className="text-emerald-400 text-[10px] block uppercase font-warrior">Met Cutoffs</span>
-                  <span className="text-emerald-300 text-sm sm:text-base font-bold">
+                  <span className="text-emerald-300 text-xs block uppercase font-mono font-bold">Met Cutoffs</span>
+                  <span className="text-emerald-300 text-base sm:text-lg font-bold">
                     {shortlistResult?.qualifiedCount ?? 42} Qualified
                   </span>
                 </div>
                 <div className="bg-red-950/40 px-3.5 py-2 rounded-xl border border-red-500/40">
-                  <span className="text-red-400 text-[10px] block uppercase font-warrior">Filtered Out</span>
-                  <span className="text-red-300 text-sm sm:text-base font-bold">
+                  <span className="text-red-300 text-xs block uppercase font-mono font-bold">Filtered Out</span>
+                  <span className="text-red-300 text-base sm:text-lg font-bold">
                     {shortlistResult?.cutoffFailedCount ?? (cohort.length - (shortlistResult?.qualifiedCount ?? 42))} Screened
                   </span>
                 </div>
                 <div className="bg-[#8B1E1E]/40 px-3.5 py-2 rounded-xl border border-[#D4AF37]/50">
-                  <span className="text-[#FFD166] text-[10px] block uppercase font-warrior">Interview Shortlist</span>
-                  <span className="text-[#FFD166] text-sm sm:text-base font-bold">
+                  <span className="text-[#FFD166] text-xs block uppercase font-mono font-bold">Interview Shortlist</span>
+                  <span className="text-[#FFD166] text-base sm:text-lg font-bold">
                     Top {shortlistResult?.shortlisted.length || 0} of {targetCount} Target
                   </span>
                 </div>
@@ -584,15 +578,15 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 <Trophy className="w-4 h-4 text-[#D4AF37]" />
                 <span>Executive Shortlist Ledger (Ranked 1 to {shortlistResult?.shortlisted.length || targetCount})</span>
               </div>
-              <span className="text-[10px] text-[#8A7F6B] font-mono">
-                Axis 1: 40% Authenticity + 35% JD Match + 25% Viva Defense
+              <span className="text-xs text-neutral-300 font-mono">
+                Formula: 40% Authenticity + 35% JD Match + 25% Viva Defense
               </span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
+              <table className="w-full text-left text-sm font-sans">
                 <thead>
-                  <tr className="border-b border-[#3A2F27] bg-black/80 text-[10px] font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
+                  <tr className="border-b border-[#3A2F27] bg-black/80 text-xs font-mono font-bold uppercase tracking-wider text-[#FFD166]">
                     <th className="py-3 px-4 text-center">Rank</th>
                     <th className="py-3 px-4">Candidate & University</th>
                     <th className="py-3 px-4">Pedigree Tier</th>
@@ -619,18 +613,18 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <div className="font-deviathon font-bold text-white text-sm">
+                        <div className="font-bold text-white text-base">
                           {c.name}
                         </div>
-                        <div className="text-[11px] text-[#C9B89A] flex items-center gap-1.5 mt-0.5">
+                        <div className="text-xs text-neutral-300 flex items-center gap-2 mt-1">
                           <span>{c.college}</span>
                           <span className="text-[#3A2F27]">•</span>
-                          <span className="font-mono text-[#8A7F6B] text-[10px]">{c.candidate_id}</span>
+                          <span className="font-mono text-[#FFD166]">{c.candidate_id}</span>
                         </div>
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-warrior font-bold ${
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                           c.college_tier === 'Tier-1'
                             ? 'bg-amber-950/40 border border-amber-500/40 text-amber-300'
                             : 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-300'
@@ -859,36 +853,36 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                         </div>
 
                         {/* Candidate Name */}
-                        <h3 className="text-base sm:text-lg font-deviathon font-extrabold text-white">
+                        <h3 className="text-base sm:text-lg font-bold text-white font-sans">
                           {c.name}
                         </h3>
-                        <p className="text-[10px] text-[#8A7F6B] font-mono">
+                        <p className="text-xs text-neutral-300 font-mono">
                           {c.candidate_id}
                         </p>
 
                         {/* Composite Score Card */}
-                        <div className="my-3 p-3 rounded-xl bg-black/50 border border-[#3A2F27] text-center font-mono">
-                          <div className="text-[10px] text-[#8A7F6B] uppercase font-warrior font-bold">Match Score</div>
-                          <div className={`text-2xl font-black mt-0.5 ${
+                        <div className="my-3 p-3.5 rounded-xl bg-black/50 border border-[#3A2F27] text-center font-mono">
+                          <div className="text-xs text-neutral-300 uppercase font-bold">Match Score</div>
+                          <div className={`text-2xl sm:text-3xl font-black mt-0.5 ${
                             isWinner ? 'text-[#FFD166]' : 'text-white'
                           }`}>
-                            {c.composite_score} <span className="text-xs font-normal text-[#8A7F6B]">/ 100</span>
+                            {c.composite_score} <span className="text-xs font-normal text-neutral-400">/ 100</span>
                           </div>
-                          <p className="text-[10px] text-[#C9B89A] font-sans mt-0.5">
+                          <p className="text-xs text-[#FFD166] font-sans mt-1 font-medium">
                             Auth: {c.authenticity_score}% · JD: {c.jd_match_pct}% · Viva: {c.viva_score}/10
                           </p>
                         </div>
 
                         {/* Verified Skills Checklist */}
-                        <div className="space-y-2 text-xs">
+                        <div className="space-y-2.5 text-xs sm:text-sm">
                           <div>
-                            <span className="text-[10px] text-[#D4AF37] uppercase font-warrior font-bold block mb-1">
+                            <span className="text-xs text-[#FFD166] uppercase font-bold block mb-1">
                               Verified in Code:
                             </span>
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-1.5">
                               {c.verified_skills.map((s, i) => (
-                                <span key={i} className="px-2 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono flex items-center gap-1">
-                                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                                <span key={i} className="px-2.5 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                                   {s}
                                 </span>
                               ))}
@@ -897,13 +891,13 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
 
                           {c.missing_skills.length > 0 && (
                             <div>
-                              <span className="text-[10px] text-[#8A7F6B] uppercase font-warrior font-bold block mb-1">
+                              <span className="text-xs text-neutral-400 uppercase font-bold block mb-1">
                                 Missing Skills:
                               </span>
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap gap-1.5">
                                 {c.missing_skills.map((s, i) => (
-                                  <span key={i} className="px-2 py-0.5 rounded-full bg-black/40 border border-[#3A2F27] text-neutral-400 text-[11px] font-mono flex items-center gap-1">
-                                    <XCircle className="w-2.5 h-2.5 text-neutral-500 shrink-0" />
+                                  <span key={i} className="px-2.5 py-1 rounded-full bg-black/40 border border-[#3A2F27] text-neutral-300 text-xs font-mono flex items-center gap-1">
+                                    <XCircle className="w-3 h-3 text-neutral-400 shrink-0" />
                                     {s}
                                   </span>
                                 ))}
