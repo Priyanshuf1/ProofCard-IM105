@@ -16,6 +16,9 @@ router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
 IGNORED_DIRS = {"node_modules", "venv", ".env", "env", "__pycache__", ".git", "dist", "build", ".next", ".cache"}
 CODE_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".py", ".java", ".cpp", ".go", ".rs", ".html", ".css"}
+MAX_ARCHIVE_BYTES = 50 * 1024 * 1024
+MAX_UNCOMPRESSED_BYTES = 250 * 1024 * 1024
+MAX_ARCHIVE_MEMBERS = 20_000
 
 def is_safe_path(base_dir: Path, target_path: Path) -> bool:
     """Security: Prevent Zip Slip path traversal attacks."""
@@ -38,18 +41,37 @@ async def upload_project_zip(
     zip_path = temp_dir / file.filename
 
     try:
+        bytes_written = 0
         with open(zip_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            while chunk := file.file.read(1024 * 1024):
+                bytes_written += len(chunk)
+                if bytes_written > MAX_ARCHIVE_BYTES:
+                    raise HTTPException(status_code=413, detail="ZIP archive exceeds the 50 MB upload limit.")
+                buffer.write(chunk)
 
         extracted_folder = temp_dir / "extracted"
         extracted_folder.mkdir()
 
         code_timestamps = []
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            for member in zip_ref.infolist():
+            members = zip_ref.infolist()
+            if len(members) > MAX_ARCHIVE_MEMBERS:
+                raise HTTPException(status_code=413, detail="ZIP archive contains too many files.")
+            total_uncompressed = sum(max(0, member.file_size) for member in members)
+            if total_uncompressed > MAX_UNCOMPRESSED_BYTES:
+                raise HTTPException(status_code=413, detail="ZIP archive expands beyond the 250 MB safety limit.")
+            for member in members:
+                if "\x00" in member.filename:
+                    raise HTTPException(status_code=400, detail="Security alert: Invalid NUL byte in archive path.")
                 member_path = extracted_folder / member.filename
                 if not is_safe_path(extracted_folder, member_path):
                     raise HTTPException(status_code=400, detail="Security alert: Malicious Zip Slip directory traversal detected.")
+
+                # ZIP symlinks can point outside the extraction root after
+                # extraction even when their archive name is safe.
+                unix_mode = (member.external_attr >> 16) & 0o170000
+                if unix_mode == 0o120000:
+                    raise HTTPException(status_code=400, detail="Security alert: Symbolic links are not allowed in uploaded archives.")
                 
                 # Only collect timestamps for actual source code files, ignoring vendors/configs/locks
                 member_ext = Path(member.filename).suffix.lower()
@@ -184,11 +206,12 @@ async def upload_project_zip(
             except Exception:
                 pass
 
-        max_comp = complex_functions[0]["complexity"] if complex_functions else 4
+        max_comp = max((item["complexity"] for item in complex_functions), default=0)
 
         if real_commits:
             git_dna = CommitForensics.analyze_commits(real_commits, test_files_count=test_files_count)
-            auth_score = git_dna.get("authenticity_score", 85)
+            auth_score = git_dna.get("authenticity_score", 0)
+            engineering_signal_score = auth_score
         else:
             # Measure actual source code modification span from ZIP archive metadata
             if code_timestamps:
@@ -206,24 +229,31 @@ async def upload_project_zip(
                 days_span = 1
             
             # For direct ZIP uploads without .git, it is a single-snapshot submission
-            base_auth = 82
-            if test_files_count >= 1: base_auth += 6
-            if test_files_count >= 3: base_auth += 4
-            if max_comp >= 5: base_auth += 4
-            if total_loc >= 200: base_auth += 2
-            auth_score = min(98, base_auth)
+            # A ZIP snapshot cannot prove development history. Score only the
+            # observable engineering evidence and expose the missing-history
+            # limitation instead of calling a one-day archive organic.
+            engineering_signal_score = 72
+            if test_files_count >= 1: engineering_signal_score += 6
+            if test_files_count >= 3: engineering_signal_score += 4
+            if max_comp >= 5: engineering_signal_score += 4
+            if total_loc >= 200: engineering_signal_score += 2
+            engineering_signal_score = min(98, engineering_signal_score)
+            auth_score = 0
 
             git_dna = {
                 "total_commits": 0,
                 "time_span_days": days_span,
                 "burst_ratio": 0.0,
                 "deletion_ratio": 0.0,
-                "organic_growth": True if (test_files_count > 0 or max_comp >= 4 or days_span >= 1) else False,
-                "message_maturity_score": 85,
+                "organic_growth": False,
+                "history_verified": False,
+                "confidence": 0.0,
+                "message_maturity_score": 0,
                 "test_files_detected": test_files_count,
                 "authenticity_score": auth_score,
+                "engineering_signal_score": engineering_signal_score,
                 "is_offline_zip": True,
-                "summary": f"Offline Direct Code Submission: Evaluated {len(code_files)} source files ({total_loc} LOC) across {days_span} day(s) active code modification with {test_files_count} test suites (Max AST Cyclomatic Complexity: {max_comp})."
+                "summary": f"Offline Direct Code Submission: Evaluated {len(code_files)} source files ({total_loc} LOC) across {days_span} day(s) of archive timestamps with {test_files_count} test suites (Max AST Cyclomatic Complexity: {max_comp}). Git history was not supplied, so development rhythm is unverified."
             }
 
         # 4-Stage Forensic Global Plagiarism & Origin Detection
@@ -239,11 +269,10 @@ async def upload_project_zip(
 
         # Authenticity scoring calculation
         if is_clone and matched_tutorial:
-            auth_score = max(10, min(auth_score, int((1.0 - matched_tutorial.get("similarity_score", 0.8)) * 100)))
+            auth_score = max(0, min(auth_score, int((1.0 - matched_tutorial.get("similarity_score", 0.0)) * 100)))
             git_dna["authenticity_score"] = auth_score
-            git_dna["burst_ratio"] = 0.94
             git_dna["organic_growth"] = False
-        elif matched_tutorial and not is_clone:
+        elif matched_tutorial and not is_clone and matched_tutorial.get("similarity_score", 0) > 0:
             penalty = int(matched_tutorial.get("similarity_score", 0.4) * 40)
             auth_score = max(45, auth_score - penalty)
             git_dna["authenticity_score"] = auth_score
@@ -252,8 +281,7 @@ async def upload_project_zip(
             structural_baseline = min(96, 80 + (8 if test_files_count >= 1 else 0) + (4 if max_comp >= 5 else 0))
             auth_score = max(auth_score, structural_baseline)
             git_dna["authenticity_score"] = auth_score
-            if test_files_count > 0 or max_comp >= 5:
-                git_dna["organic_growth"] = True
+            git_dna["organic_growth"] = bool(git_dna.get("history_verified"))
 
         # Generate Viva Questions
         viva_engine = VivaEngine()
@@ -266,14 +294,14 @@ async def upload_project_zip(
         # Generate Explainable ProofCard
         if is_clone:
             card_status = "FLAGGED_CLONE"
-            card_headline = f"High probability tutorial clone detected ({int((matched_tutorial or {}).get('similarity_score', 0.8)*100)}% structural match)."
+            card_headline = f"High probability tutorial clone detected ({int((matched_tutorial or {}).get('similarity_score', 0.0)*100)}% structural match)."
             card_strengths = [
                 f"Parsed {len(code_files)} files ({total_loc} LOC) successfully",
                 f"Extracted syntax tokens verified against template fingerprints"
             ]
             card_growth = "Scaffold an original architecture instead of mirroring public YouTube course repositories."
             card_action = "Implement a custom Redis caching layer or write 5 automated integration tests to demonstrate authentic engineering."
-        elif matched_tutorial:
+        elif matched_tutorial and matched_tutorial.get("similarity_score", 0) > 0:
             card_status = "PARTIAL_ADAPTATION"
             card_headline = f"Partial tutorial adaptation detected with custom extensions."
             card_strengths = [
@@ -282,12 +310,32 @@ async def upload_project_zip(
             ]
             card_growth = "Replace remaining boilerplate tutorial components with original domain logic."
             card_action = "Refactor tutorial data layer to custom relational or cache-backed data schemas."
+        elif matched_tutorial:
+            card_status = "DECLARED_SOURCE_CITATION"
+            card_headline = matched_tutorial.get("verdict", "An upstream source was declared, but code copying was not established.")
+            card_strengths = [
+                f"{total_loc} lines of source observed across {len(code_files)} files",
+                "Declared provenance was recorded separately from verified code overlap",
+                "No plagiarism verdict was produced from the citation alone",
+            ]
+            card_growth = "Verify the upstream relationship with source comparison and complete Git history."
+            card_action = "Provide the cited source and repository history for attribution review."
+        elif not real_commits:
+            card_status = "VERIFICATION_INCOMPLETE"
+            card_headline = "Source snapshot analyzed; Git development history was not supplied, so authenticity is unverified."
+            card_strengths = [
+                f"{total_loc} lines of source observed across {len(code_files)} files",
+                f"Engineering signal score: {engineering_signal_score}/100",
+                f"{test_files_count} automated test files detected" if test_files_count else "No automated test files detected",
+            ]
+            card_growth = "Provide repository history or a verified Git export for development-rhythm analysis."
+            card_action = "Submit the repository with its .git history to verify authorship and progression."
         else:
             card_status = "VERIFIED_COMPETENT" if auth_score < 90 else "VERIFIED_EXEMPLARY"
             card_headline = "Verified authentic engineering work with clean AST control flow."
             card_strengths = [
                 f"{total_loc} lines of verified source code across {len(code_files)} files",
-                f"{test_files_count} automated test files detected with strong engineering discipline" if test_files_count > 0 else f"Clean modular architecture with CC {complex_functions[0]['complexity'] if complex_functions else 4}",
+                f"{test_files_count} automated test files detected with strong engineering discipline" if test_files_count > 0 else f"Clean modular architecture with maximum observed CC {max_comp}",
                 "Institutional pedigree 100% excluded from skill evaluation"
             ]
             card_growth = "Deepen asynchronous boundary testing and error recovery fixtures."
@@ -302,7 +350,7 @@ async def upload_project_zip(
             "tamper_proof_hash": tamper_proof_hash
         }
 
-        first_seq = list(structural_tokens.values())[0] if structural_tokens else "Program>BlockStatement"
+        first_seq = list(structural_tokens.values())[0] if structural_tokens else ""
 
         return {
             "status": "success",
@@ -315,6 +363,7 @@ async def upload_project_zip(
             "detected_stack": project_type,
             "total_loc": total_loc,
             "authenticity_score": auth_score,
+            "engineering_signal_score": engineering_signal_score,
             "is_clone": is_clone,
             "matched_tutorial": matched_tutorial,
             "git_dna": git_dna,
@@ -329,7 +378,8 @@ async def upload_project_zip(
             "complex_functions": complex_functions,
             "complex_functions_for_viva": complex_functions,
             "viva_questions": viva_questions,
-            "viva_score": 8 if not is_clone else 3,
+            "viva_score": 0,
+            "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
             "proof_card": proof_card,
             "tamper_proof_hash": tamper_proof_hash,
             "consent_recorded": True

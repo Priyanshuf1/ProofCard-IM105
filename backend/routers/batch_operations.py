@@ -2,13 +2,26 @@ import os
 import json
 import csv
 import io
+import hashlib
 from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/batch", tags=["Enterprise Batch Operations"])
 
 COHORT_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "cohort_100.json"))
+
+
+def _normalize_github_repo_url(value: str) -> str:
+    """Validate a repository URL without claiming that the repository was analyzed."""
+    parsed = urlparse((value or "").strip())
+    if parsed.scheme != "https" or parsed.netloc.lower() not in {"github.com", "www.github.com"}:
+        raise HTTPException(status_code=422, detail="Each applicant must provide an HTTPS GitHub repository URL.")
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) != 2 or parts[0].lower() in {"api", "search"} or parts[1] in {".", ".."}:
+        raise HTTPException(status_code=422, detail="Each applicant must provide a GitHub repository URL in the form https://github.com/owner/repository.")
+    return f"https://github.com/{parts[0]}/{parts[1].removesuffix('.git')}"
 
 class BatchApplicantItem(BaseModel):
     name: str
@@ -46,26 +59,11 @@ def ingest_batch_candidates(req: BatchIngestRequest):
         reader = csv.DictReader(f)
         for row in reader:
             normalized_row = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k is not None and v is not None}
-            name = (
-                normalized_row.get("name") or 
-                normalized_row.get("candidate name") or 
-                normalized_row.get("candidate") or 
-                "Applicant"
-            )
-            college = (
-                normalized_row.get("college") or 
-                normalized_row.get("university") or 
-                normalized_row.get("institution") or 
-                "State Engineering College"
-            )
-            github_url = (
-                normalized_row.get("github_url") or 
-                normalized_row.get("github repo") or 
-                normalized_row.get("repo_url") or 
-                normalized_row.get("github") or 
-                normalized_row.get("url") or 
-                "https://github.com/applicant/repo"
-            )
+            name = normalized_row.get("name") or normalized_row.get("candidate name") or normalized_row.get("candidate")
+            college = normalized_row.get("college") or normalized_row.get("university") or normalized_row.get("institution")
+            github_url = normalized_row.get("github_url") or normalized_row.get("github repo") or normalized_row.get("repo_url") or normalized_row.get("github") or normalized_row.get("url")
+            if not name or not college or not github_url:
+                raise HTTPException(status_code=422, detail="CSV rows must include candidate name, college, and GitHub repository URL.")
             role = (
                 normalized_row.get("role") or 
                 normalized_row.get("project_type") or 
@@ -80,12 +78,14 @@ def ingest_batch_candidates(req: BatchIngestRequest):
             applicants.append({
                 "name": name,
                 "college": college,
-                "github_url": github_url,
+                "github_url": _normalize_github_repo_url(github_url),
                 "role": role,
                 "college_tier": tier
             })
     elif req.applicants:
         applicants = [a.model_dump() for a in req.applicants]
+        for applicant in applicants:
+            applicant["github_url"] = _normalize_github_repo_url(applicant["github_url"])
     else:
         # Fallback to load default cohort
         if os.path.exists(COHORT_FILE):
@@ -148,179 +148,63 @@ def ingest_batch_candidates(req: BatchIngestRequest):
                 }
         raise HTTPException(status_code=400, detail="No applicants or CSV provided")
 
-    # Analyze custom uploaded applicants against global tutorial patterns
+    # Batch ingestion only validates and queues repository identities. It does
+    # not fetch GitHub source, commit history, or external provenance, so it
+    # must not infer plagiarism or authenticity from URL text.
     total = len(applicants)
     authentic_count = 0
     clone_count = 0
     dump_count = 0
-    cluster_map = {}
 
     analyzed_candidates = []
     for i, a in enumerate(applicants):
-        url = a["github_url"].lower()
-        is_clone = False
-        matched_tut = None
-        
-        # Check global patterns across modern web, fullstack, backend, and peer collusions
-        if "mern" in url or "goal" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "Traversy Media MERN Stack Tutorial",
-                "source_url": "https://github.com/bradtraversy/mern-tutorial",
-                "author": "Brad Traversy",
-                "origin_type": "YOUTUBE_TUTORIAL_CLONE",
-                "similarity_score": 0.89
-            }
-            auth_score = 18
-            viva = 3
-        elif "netflix" in url or "clone" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "Clever Programmer Netflix Clone",
-                "source_url": "https://github.com/CleverProgrammer/netflix-clone",
-                "author": "Clever Programmer",
-                "origin_type": "YOUTUBE_TUTORIAL_CLONE",
-                "similarity_score": 0.94
-            }
-            auth_score = 22
-            viva = 2
-        elif "django" in url or "blog" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "CodeWithHarry Django Blog",
-                "source_url": "https://github.com/CodeWithHarry/Django-Blog",
-                "author": "CodeWithHarry",
-                "origin_type": "YOUTUBE_TUTORIAL_CLONE",
-                "similarity_score": 0.86
-            }
-            auth_score = 25
-            viva = 4
-        elif "ecommerce" in url or "stripe" in url or "store" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "freeCodeCamp Fullstack eCommerce Boilerplate",
-                "source_url": "https://github.com/freeCodeCamp/ecommerce-boilerplate",
-                "author": "freeCodeCamp",
-                "origin_type": "OPEN_SOURCE_SCAFFOLD",
-                "similarity_score": 0.91
-            }
-            auth_score = 20
-            viva = 3
-        elif "keeper" in url or "appbrewery" in url or "angela" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "Angela Yu 100 Days of Code React Keeper App",
-                "source_url": "https://github.com/appbrewery/keeper-app",
-                "author": "Angela Yu",
-                "origin_type": "UDEMY_BOOTCAMP_ASSIGNMENT",
-                "similarity_score": 0.92
-            }
-            auth_score = 19
-            viva = 3
-        elif "shadcn" in url or "taxonomy" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "shadcn/ui Taxonomy & Next.js Dashboard Template",
-                "source_url": "https://github.com/shadcn-ui/taxonomy",
-                "author": "shadcn",
-                "origin_type": "OPEN_SOURCE_TEMPLATE",
-                "similarity_score": 0.93
-            }
-            auth_score = 24
-            viva = 4
-        elif "mlops" in url or "krish" in url:
-            is_clone = True
-            matched_tut = {
-                "name": "Krish Naik End-to-End MLOps Pipeline Template",
-                "source_url": "https://github.com/krishnaik06/End-to-End-Machine-Learning-Project",
-                "author": "Krish Naik",
-                "origin_type": "YOUTUBE_TUTORIAL_CLONE",
-                "similarity_score": 0.90
-            }
-            auth_score = 21
-            viva = 3
-        elif i % 5 == 0:
-            dump_count += 1
-            auth_score = 15
-            viva = 2
-        else:
-            authentic_count += 1
-            auth_score = 80 + (i % 16)
-            viva = 8
-
-        if is_clone and matched_tut:
-            clone_count += 1
-            t_name = matched_tut["name"]
-            if t_name not in cluster_map:
-                cluster_map[t_name] = {
-                    "tutorial_name": t_name,
-                    "source_url": matched_tut["source_url"],
-                    "author": matched_tut["author"],
-                    "origin_type": matched_tut["origin_type"],
-                    "count": 0,
-                    "similarity_sum": 0,
-                    "sample_candidates": []
-                }
-            cluster_map[t_name]["count"] += 1
-            cluster_map[t_name]["similarity_sum"] += matched_tut["similarity_score"]
-            if len(cluster_map[t_name]["sample_candidates"]) < 3:
-                cluster_map[t_name]["sample_candidates"].append(a["name"])
-
+        repo_url = _normalize_github_repo_url(a["github_url"])
+        candidate_id = f"cand_batch_{i:03d}"
+        candidate_hash = hashlib.sha256(f"{candidate_id}:{repo_url}".encode()).hexdigest()
         analyzed_candidates.append({
-            "candidate_id": f"cand_batch_{i:03d}",
+            "candidate_id": candidate_id,
             "name": a["name"],
             "college": a["college"],
             "college_tier": a.get("college_tier", "Tier-3"),
-            "repo_url": a["github_url"],
+            "repo_url": repo_url,
             "project_type": a.get("role", "Backend Engineer"),
-            "total_loc": 3200 if is_clone else (18400 if auth_score > 60 else 1100),
-            "authenticity_score": auth_score,
-            "is_clone": is_clone,
-            "matched_tutorial": matched_tut,
-            "viva_score": viva,
-            "detected_files": ["core/main.py", "api/routes.py", "tests/test_api.py", "Dockerfile"],
+            "analysis_status": "PENDING_FORENSIC_ANALYSIS",
+            "verification_reason": "Repository URL accepted; source, commit history, and provenance have not been fetched.",
+            "total_loc": 0,
+            "authenticity_score": 0,
+            "is_clone": False,
+            "matched_tutorial": None,
+            "viva_score": 0,
+            "detected_files": [],
             "git_dna": {
-                "total_commits": 3 if is_clone else (45 if auth_score > 60 else 1),
-                "time_span_days": 2 if is_clone else (30 if auth_score > 60 else 0),
-                "burst_ratio": 0.95 if is_clone else (0.35 if auth_score > 60 else 1.0),
-                "deletion_ratio": 0.02 if is_clone else (0.30 if auth_score > 60 else 0.0),
-                "organic_growth": not is_clone and auth_score > 60,
-                "message_maturity_score": 25 if is_clone else (85 if auth_score > 60 else 10),
-                "test_files_detected": 0 if is_clone else (3 if auth_score > 60 else 0),
-                "authenticity_score": auth_score,
-                "summary": f"Ingested profile: {a['name']}"
+                "total_commits": 0,
+                "time_span_days": 0,
+                "burst_ratio": 0.0,
+                "deletion_ratio": 0.0,
+                "organic_growth": False,
+                "history_verified": False,
+                "confidence": 0.0,
+                "authenticity_score": 0,
+                "summary": "No forensic analysis has been run."
             },
             "proof_card": {
-                "status": "REJECTED_PLAGIARISM" if is_clone else ("VERIFIED_EXEMPLARY" if auth_score > 80 else "VERIFIED_COMPETENT"),
-                "headline": f"{'Flagged clone' if is_clone else 'Verified authentic engineer'} ({auth_score}% authenticity).",
-                "strengths": ["Ingested via Enterprise Batch Pipeline"],
-                "growth_area": "Expand integration test coverage",
-                "specific_action": "Conduct live code defense viva.",
-                "tamper_proof_hash": f"SHA256:{os.urandom(16).hex()}"
+                "status": "PENDING_FORENSIC_ANALYSIS",
+                "headline": "Repository queued for source and Git-history verification.",
+                "strengths": [],
+                "growth_area": "Await forensic analysis.",
+                "specific_action": "Run the GitHub analysis endpoint with candidate consent.",
+                "tamper_proof_hash": f"SHA256:{candidate_hash}"
             }
         })
 
     cluster_list = []
-    for k, v in cluster_map.items():
-        avg_sim = round((v["similarity_sum"] / max(v["count"], 1)) * 100)
-        cluster_list.append({
-            "tutorial_name": v["tutorial_name"],
-            "source_url": v["source_url"],
-            "author": v["author"],
-            "origin_type": v["origin_type"],
-            "count": v["count"],
-            "similarity": f"{avg_sim}% AST Match",
-            "similarity_pct": avg_sim,
-            "sample_candidates": v["sample_candidates"]
-        })
-    cluster_list.sort(key=lambda x: x["count"], reverse=True)
 
     return {
         "total_candidates": total,
         "authentic_builders_count": authentic_count,
         "clones_flagged_count": clone_count,
         "dead_dumps_count": dump_count,
-        "hours_saved": round(total * 0.83, 1),
+        "hours_saved": 0,
         "clone_clusters": cluster_list,
         "cohort": analyzed_candidates
     }
@@ -335,9 +219,14 @@ def auto_shortlist_candidates(req: AutoShortlistRequest):
 
     filtered = []
     for c in candidates:
+        if c.get("analysis_status") and c.get("analysis_status") != "COMPLETED":
+            continue
         auth = c.get("authenticity_score", 0)
         viva = c.get("viva_score", 0)
         is_clone = c.get("is_clone", False)
+
+        if not isinstance(auth, (int, float)) or not isinstance(viva, (int, float)):
+            continue
 
         if auth < req.min_authenticity:
             continue
@@ -374,7 +263,7 @@ def auto_shortlist_candidates(req: AutoShortlistRequest):
         "cutoff_failed_count": len(candidates) - len(filtered),
         "rejected_count": len(candidates) - len(shortlisted),
         "shortlisted": shortlisted,
-        "rationale": f"Auto-shortlisted Top {len(shortlisted)} candidates strictly on meritocratic Git-DNA (>={req.min_authenticity}%), dynamic viva defense (>={req.min_viva}/10), and 0% tutorial plagiarism."
+        "rationale": f"Auto-shortlisted Top {len(shortlisted)} candidates from completed forensic analyses using authenticity (≥{req.min_authenticity}%), viva defense (≥{req.min_viva}/10), and clone exclusion."
     }
 
 # Integraminds IMATS Enterprise Integration Router

@@ -1,4 +1,5 @@
 import io
+import os
 import zipfile
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,10 @@ from backend.services.jd_matcher import JDMatcher
 from backend.services.bias_engine import BiasEngine
 
 client = TestClient(app)
+NETWORK_SKIP = pytest.mark.skipif(
+    os.getenv("PROOFCARD_RUN_NETWORK_TESTS") != "1",
+    reason="Requires live GitHub access; set PROOFCARD_RUN_NETWORK_TESTS=1 to run",
+)
 
 def test_root_and_health():
     res = client.get("/")
@@ -164,7 +169,9 @@ def test_zip_upload_endpoint():
     data = res.json()
     assert data["status"] == "success"
     assert data["candidate_name"] == "Harshvardhan"
-    assert data["authenticity_score"] > 60
+    assert data["authenticity_score"] == 0
+    assert data["engineering_signal_score"] > 60
+    assert data["git_dna"]["history_verified"] is False
     assert len(data["viva_questions"]) == 3
     assert data["consent_recorded"] is True
 
@@ -375,7 +382,8 @@ def test_zip_upload_full_profile_schema():
     assert len(data["complex_functions"]) >= 1
     assert "structural_token_sequence" in data
     assert "proof_card" in data
-    assert data["proof_card"]["status"] in {"VERIFIED_COMPETENT", "VERIFIED_EXEMPLARY"}
+    assert data["proof_card"]["status"] == "VERIFICATION_INCOMPLETE"
+    assert data["authenticity_score"] == 0
 
 def test_viva_http_endpoints():
     """Test HTTP evaluation of viva question answer submission."""
@@ -430,6 +438,7 @@ def test_viva_generate_more_questions():
     data = res.json()
     assert len(data["questions"]) == 5
 
+@NETWORK_SKIP
 def test_github_analysis_full_response():
     """Test GitHub analyze endpoint returns complete profile fields."""
     req_body = {
@@ -448,6 +457,7 @@ def test_github_analysis_full_response():
     assert len(data["complex_functions"]) >= 1
     assert "proof_card" in data
 
+@NETWORK_SKIP
 def test_github_profile_url_ingestion_priyanshu():
     """Verify that a user profile URL (https://github.com/Priyanshuf1) is parsed and returns authentic code & viva."""
     req_body = {
@@ -472,6 +482,7 @@ def test_github_profile_url_ingestion_priyanshu():
     q_functions = [q["function_name"] for q in data["viva_questions"]]
     assert any(q_fn in fn_names for q_fn in q_functions)
 
+@NETWORK_SKIP
 def test_viva_question_accuracy_cross_verification():
     """Cross-verify that generated viva questions accurately reflect the candidate's actual codebase."""
     res = client.post("/api/github/analyze", json={
@@ -488,6 +499,7 @@ def test_viva_question_accuracy_cross_verification():
         assert "expected_concepts" in q and len(q["expected_concepts"]) >= 2
         assert q["function_name"] in [f["function_name"] for f in data["complex_functions"]]
 
+@NETWORK_SKIP
 def test_github_invisiguard_repo_ingestion():
     """Test direct ingestion of Priyanshu's InvisiGuard radar/AI repository."""
     res = client.post("/api/github/analyze", json={
@@ -504,6 +516,7 @@ def test_github_invisiguard_repo_ingestion():
     assert any(fn in fn_names for fn in ["main", "compute_pipeline_hash", "audit_codebase", "fit"])
     assert len(data["viva_questions"]) >= 3
 
+@NETWORK_SKIP
 def test_github_instagram_lookup_repo_ingestion():
     """Test direct ingestion of Priyanshu's instagram-id-lookup-gui repository."""
     res = client.post("/api/github/analyze", json={
@@ -519,6 +532,7 @@ def test_github_instagram_lookup_repo_ingestion():
     assert any(fn in fn_names for fn in ["handler", "handleResolve", "handleLoadTarget"])
     assert len(data["viva_questions"]) >= 3
 
+@NETWORK_SKIP
 def test_github_nonexistent_user_returns_404():
     """Test that a non-existent GitHub user returns HTTP 404."""
     res = client.post("/api/github/analyze", json={
@@ -542,7 +556,7 @@ def test_batch_cohort_100_endpoint():
 
 
 def test_batch_ingest_csv_endpoint():
-    """Verify that /api/batch/ingest-csv parses CSV applicants and flags clones."""
+    """Verify that batch ingestion validates URLs without guessing plagiarism."""
     csv_sample = """name,college,github_url,role,college_tier
 Rohan Sharma,IIT Delhi,https://github.com/rohan/traversy-mern-goal,Backend Engineer,Tier-1
 Ananya Patel,GEC Bilaspur,https://github.com/ananya/clean-architecture-api,Fullstack Builder,Tier-3
@@ -552,9 +566,10 @@ Vikas Gupta,State Univ,https://github.com/vikas/netflix-clone,Frontend Engineer,
     assert res.status_code == 200
     data = res.json()
     assert data["total_candidates"] == 3
-    assert data["clones_flagged_count"] >= 1
-    assert data["hours_saved"] > 0
+    assert data["clones_flagged_count"] == 0
+    assert data["hours_saved"] == 0
     assert len(data["cohort"]) == 3
+    assert all(c["analysis_status"] == "PENDING_FORENSIC_ANALYSIS" for c in data["cohort"])
 
 
 def test_batch_auto_shortlist_endpoint():
@@ -637,6 +652,7 @@ def test_sliding_burst_without_numstats():
     assert res["authenticity_score"] >= 80
 
 
+@NETWORK_SKIP
 def test_clean_repo_data_sih_authenticity_and_zero_plagiarism():
     """Verify that authentic collaborative repo (Data_SIH) scores >= 90% and is not flagged as a clone."""
     res = client.post("/api/github/analyze", json={
@@ -669,8 +685,8 @@ def test_viva_10_dynamic_questions():
     assert len(unique_q_texts) == 10
 
 
-def test_zip_upload_manifest_clone_detection():
-    """Verify that uploading a ZIP containing a package.json pointing to an upstream tutorial repo is flagged as a clone."""
+def test_zip_upload_manifest_citation_is_not_clone_proof():
+    """Verify that a package.json citation is recorded without a code-copy verdict."""
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(
@@ -686,9 +702,10 @@ def test_zip_upload_manifest_clone_detection():
     res = client.post("/api/upload/zip", files=files, data=data)
     assert res.status_code == 200
     res_data = res.json()
-    assert res_data["is_clone"] is True
-    assert res_data["proof_card"]["status"] == "FLAGGED_CLONE"
+    assert res_data["is_clone"] is False
+    assert res_data["proof_card"]["status"] == "DECLARED_SOURCE_CITATION"
     assert res_data["matched_tutorial"] is not None
+    assert res_data["matched_tutorial"]["similarity_score"] == 0
 
 
 def test_zip_upload_authentic_project():
@@ -715,8 +732,9 @@ def test_zip_upload_authentic_project():
     assert res.status_code == 200
     res_data = res.json()
     assert res_data["is_clone"] is False
-    assert res_data["proof_card"]["status"] in ["VERIFIED_COMPETENT", "VERIFIED_EXEMPLARY"]
-    assert res_data["authenticity_score"] >= 75
+    assert res_data["proof_card"]["status"] == "VERIFICATION_INCOMPLETE"
+    assert res_data["authenticity_score"] == 0
+    assert res_data["engineering_signal_score"] >= 75
 
 
 def test_viva_gibberish_strict_zero():

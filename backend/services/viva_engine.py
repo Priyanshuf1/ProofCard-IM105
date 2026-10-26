@@ -219,13 +219,11 @@ class VivaEngine:
         Defaults to 3 for standard viva, or expands to 5/10 upon interviewer request.
         """
         if not complex_functions:
-            complex_functions = [{
-                "file": "main.py",
-                "function_name": "handler",
-                "complexity": 5,
-                "line_number": 1,
-                "snippet": "async def handler(req):\n    pass"
-            }]
+            # Never manufacture a question about code that was not retrieved.
+            # A synthetic ``handler`` made unavailable scans look verified and
+            # directly undermined the ownership check this module is meant to
+            # perform.
+            return []
 
         questions = []
         target_count = max(3, min(10, max_questions))

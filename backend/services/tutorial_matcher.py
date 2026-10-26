@@ -1,6 +1,7 @@
 import json
 import re
 import zlib
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -30,6 +31,90 @@ class TutorialMatcher:
                 return []
         return []
 
+    # A small language-agnostic lexer is deliberately used here instead of a
+    # keyword counter.  The previous implementation reduced an entire file to
+    # words such as ``if`` and ``return``; unrelated programs therefore looked
+    # identical.  Normalising identifiers and literals preserves the signal
+    # used by Type-2 clone detectors while removing the easy cosmetic changes.
+    _TOKEN_RE = re.compile(
+        r'''(?:/\*.*?\*/|//[^\n]*|#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|[A-Za-z_$][A-Za-z0-9_$]*|\d+(?:\.\d+)?|===|!==|==|!=|=>|<=|>=|&&|\|\||\+\+|--|\+=|-=|\*=|/=|::|->|[{}()\[\];,.?:+*/%<>=!&|^-])''',
+        re.DOTALL,
+    )
+    _KEYWORDS = {
+        "as", "async", "await", "break", "case", "catch", "class", "const",
+        "continue", "def", "default", "delete", "do", "else", "elif", "except",
+        "export", "extends", "finally", "for", "from", "function", "if", "import",
+        "in", "interface", "let", "match", "new", "package", "pass", "private",
+        "protected", "public", "raise", "return", "static", "switch", "throw",
+        "try", "type", "var", "while", "with", "yield", "fn", "func", "go",
+        "select", "defer", "struct", "impl", "trait", "use", "mod", "mut",
+    }
+
+    @classmethod
+    def normalize_tokens(cls, code: str) -> List[str]:
+        """Return deterministic Type-2 clone tokens for source code."""
+        if not code or "\x00" in code:
+            return []
+        normalized: List[str] = []
+        for raw in cls._TOKEN_RE.findall(code):
+            if raw.startswith(("//", "/*", "#")):
+                continue
+            if raw[:1] in {'"', "'", "`"}:
+                normalized.append("LIT_STR")
+            elif re.fullmatch(r"\d+(?:\.\d+)?", raw):
+                normalized.append("LIT_NUM")
+            elif re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*", raw):
+                lower = raw.lower()
+                normalized.append(lower if lower in cls._KEYWORDS else "IDENT")
+            else:
+                normalized.append(raw)
+        return normalized
+
+    @classmethod
+    def _token_ngrams(cls, tokens: List[str], k: int = 8) -> set:
+        if not tokens:
+            return set()
+        if len(tokens) < k:
+            return {" ".join(tokens)}
+        return {" ".join(tokens[i:i + k]) for i in range(len(tokens) - k + 1)}
+
+    @classmethod
+    def compare_source_code(cls, candidate: str, source: str) -> Dict[str, Any]:
+        """Compare two source files and report coverage, not just similarity.
+
+        Coverage is directional: it answers how much of the candidate is
+        explained by the proposed source.  This prevents a small common helper
+        from being reported as an entire copied project.
+        """
+        candidate_tokens = cls.normalize_tokens(candidate)
+        source_tokens = cls.normalize_tokens(source)
+        if len(candidate_tokens) < 12 or len(source_tokens) < 12:
+            return {"similarity": 0.0, "candidate_coverage": 0.0, "source_coverage": 0.0}
+
+        candidate_grams = cls._token_ngrams(candidate_tokens)
+        source_grams = cls._token_ngrams(source_tokens)
+        intersection = candidate_grams & source_grams
+        union = candidate_grams | source_grams
+        candidate_coverage = len(intersection) / max(len(candidate_grams), 1)
+        source_coverage = len(intersection) / max(len(source_grams), 1)
+        jaccard = len(intersection) / max(len(union), 1)
+        # SequenceMatcher is used only after tokenisation and on bounded file
+        # samples. It is useful for near-miss clones where a few statements
+        # were added or removed, but is never the sole evidence.
+        sequence_ratio = SequenceMatcher(
+            None, candidate_tokens[:4000], source_tokens[:4000], autojunk=False
+        ).ratio()
+        similarity = (candidate_coverage * 0.50) + (source_coverage * 0.25) + (jaccard * 0.15) + (sequence_ratio * 0.10)
+        return {
+            "similarity": round(min(1.0, similarity), 4),
+            "candidate_coverage": round(candidate_coverage, 4),
+            "source_coverage": round(source_coverage, 4),
+            "jaccard": round(jaccard, 4),
+            "sequence_ratio": round(sequence_ratio, 4),
+            "candidate_tokens": len(candidate_tokens),
+            "source_tokens": len(source_tokens),
+        }
+
     @staticmethod
     def _winnow_hash_set(token_seq: str, k: int = 4, w: int = 3) -> set:
         """
@@ -45,10 +130,19 @@ class TutorialMatcher:
         hashes = [zlib.crc32(kg.encode("utf-8")) for kg in kgrams]
         
         selected = set()
+        last_selected = None
+        # Rightmost-minimum tie breaking is the standard winnowing rule. It
+        # avoids repeatedly selecting the same hash for a long plateau.
         for i in range(max(1, len(hashes) - w + 1)):
-            window = hashes[i:i+w]
-            if window:
-                selected.add(min(window))
+            window = hashes[i:i + w]
+            if not window:
+                continue
+            minimum = min(window)
+            relative = max(index for index, value in enumerate(window) if value == minimum)
+            selected_index = i + relative
+            if selected_index != last_selected:
+                selected.add(minimum)
+                last_selected = selected_index
         return selected
 
     def compute_jaccard(self, seq_a: str, seq_b: str) -> float:
@@ -67,6 +161,7 @@ class TutorialMatcher:
         file_tree: Optional[List[str]] = None,
         code_snippets: Optional[Dict[str, str]] = None,
         structural_tokens: Optional[Dict[str, str]] = None,
+        source_candidates: Optional[List[Dict[str, Any]]] = None,
         candidate_name: Optional[str] = None,
         target_subpath: Optional[str] = None
     ) -> Tuple[bool, Optional[Dict[str, Any]]]:
@@ -79,6 +174,68 @@ class TutorialMatcher:
         file_tree = file_tree or []
         code_snippets = code_snippets or {}
         structural_tokens = structural_tokens or {}
+        source_candidates = source_candidates or []
+
+        # -------------------------------------------------------------
+        # VETTING STAGE 0: direct source evidence supplied by the resolver
+        # (fork ancestry, cited repositories, or authenticated code search).
+        # This is stronger than filename heuristics because it measures the
+        # candidate's actual normalised token coverage against source files.
+        # -------------------------------------------------------------
+        best_external = None
+        best_external_rank = (-1.0, -1.0)
+        declared_source_evidence = None
+        for source in source_candidates:
+            source_files = source.get("files") or {}
+            best_pair = None
+            for candidate_path, candidate_code in code_snippets.items():
+                if Path(candidate_path).suffix.lower() not in {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h", ".html", ".css"}:
+                    continue
+                for source_path, source_code in source_files.items():
+                    metrics = self.compare_source_code(candidate_code, source_code)
+                    if not best_pair or metrics["similarity"] > best_pair["metrics"]["similarity"]:
+                        best_pair = {
+                            "candidate_path": candidate_path,
+                            "source_path": source_path,
+                            "metrics": metrics,
+                        }
+            if best_pair and best_pair["metrics"]["candidate_coverage"] >= 0.65 and best_pair["metrics"]["similarity"] >= 0.58:
+                candidate_loc = sum(
+                    len(v.splitlines())
+                    for path, v in code_snippets.items()
+                    if Path(path).suffix.lower() in {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h", ".html", ".css"}
+                ) or 1
+                covered_loc = len(code_snippets.get(best_pair["candidate_path"], "").splitlines())
+                coverage = min(1.0, covered_loc / candidate_loc)
+                score = min(0.99, best_pair["metrics"]["similarity"] * 0.75 + coverage * 0.25)
+                evidence = source.get("evidence", "EXACT_SOURCE_MATCH")
+                external_rank = (score, best_pair["metrics"]["candidate_coverage"])
+                if external_rank <= best_external_rank:
+                    continue
+                best_external_rank = external_rank
+                best_external = {
+                    "id": source.get("id") or "external_source_match",
+                    "name": source.get("name") or source.get("source_url", "External source"),
+                    "source_url": source.get("source_url", ""),
+                    "author": source.get("author", "Unknown source author"),
+                    "origin_type": source.get("origin_type", "EXTERNAL_SOURCE_MATCH"),
+                    "similarity_score": round(score, 2),
+                    "copy_coverage": round(coverage, 2),
+                    "matched_files": [best_pair["candidate_path"]],
+                    "source_files": [best_pair["source_path"]],
+                    "evidence": [evidence, "NORMALIZED_TOKEN_OVERLAP", "NEAR_MISS_SEQUENCE_MATCH"],
+                    "comparison": best_pair["metrics"],
+                }
+
+        if best_external:
+            pct = int(best_external["similarity_score"] * 100)
+            best_external["verdict"] = (
+                f"SOURCE CODE MATCH ({pct}% similarity): {best_external['matched_files'][0]} overlaps "
+                f"{best_external['source_files'][0]} from {best_external['name']} ({best_external['source_url']}). "
+                f"Candidate coverage is {int(best_external['copy_coverage'] * 100)}%; evidence: "
+                f"{', '.join(best_external['evidence'])}."
+            )
+            return True, best_external
 
         # -------------------------------------------------------------
         # VETTING STAGE 1: Direct Upstream GitHub Fork Detection
@@ -107,6 +264,9 @@ class TutorialMatcher:
                 "author": parent_author,
                 "origin_type": "UPSTREAM_GITHUB_FORK",
                 "similarity_score": round(copied_pct / 100, 2),
+                "copy_coverage": round(copied_pct / 100, 2),
+                "confidence": 0.99,
+                "evidence": ["GITHUB_FORK_METADATA", "UPSTREAM_PARENT_REPOSITORY"],
                 "matched_files": file_tree[:8],
                 "verdict": (
                     f"UPSTREAM GITHUB FORK DETECTED ({copied_pct}% copied): Repository is forked directly from "
@@ -134,7 +294,7 @@ class TutorialMatcher:
                     elif isinstance(repo_field, str):
                         orig_repo_url = repo_field
 
-                    clean_url = orig_repo_url.replace("git+", "").replace(".git", "").strip()
+                    clean_url = orig_repo_url.replace("git+", "").replace(".git", "").strip().rstrip("/")
                     if clean_url and "github.com" in clean_url and current_repo_name:
                         # Extract author and repo from clean_url
                         author_match = re.search(r"github\.com/([^/]+)/([^/]+)", clean_url)
@@ -145,17 +305,20 @@ class TutorialMatcher:
                             # Check if the URL points to someone completely different
                             if orig_name != current_repo_name and orig_author != owner_name and orig_author not in cand_clean:
                                 extracted_source = clean_url
-                                return True, {
+                                declared_source_evidence = {
                                     "id": f"manifest_{orig_author}_{orig_name}",
-                                    "name": f"Original Open Source Scaffold: {orig_author}/{orig_name}",
+                                    "name": f"Declared upstream: {orig_author}/{orig_name}",
                                     "source_url": extracted_source,
                                     "author": orig_author,
-                                    "origin_type": "PACKAGE_MANIFEST_DISCREPANCY",
-                                    "similarity_score": 0.92,
-                                    "matched_files": ["package.json", *file_tree[:5]],
+                                    "origin_type": "DECLARED_SOURCE_CITATION",
+                                    "similarity_score": 0.0,
+                                    "copy_coverage": 0.0,
+                                    "confidence": 0.70,
+                                    "evidence": ["DECLARED_PACKAGE_REPOSITORY"],
+                                    "matched_files": ["package.json"],
                                     "verdict": (
-                                        f"ORIGINAL REPOSITORY ATTRIBUTION DETECTED (92% copied): package.json manifest points "
-                                        f"to upstream source '{orig_author}/{orig_name}' ({extracted_source})."
+                                        f"DECLARED UPSTREAM SOURCE: package.json references '{extracted_source}'. "
+                                        "The citation is recorded, but code-copying was not established from the manifest alone."
                                     )
                                 }
                 except Exception:
@@ -167,17 +330,20 @@ class TutorialMatcher:
                 if tutorial_match:
                     src_title = tutorial_match.group(1).strip()
                     src_url = tutorial_match.group(2).strip()
-                    return True, {
+                    declared_source_evidence = {
                         "id": "readme_citation_source",
                         "name": f"Scaffold Origin: {src_title}",
                         "source_url": src_url,
                         "author": src_title,
                         "origin_type": "README_ORIGIN_CITATION",
-                        "similarity_score": 0.88,
+                        "similarity_score": 0.0,
+                        "copy_coverage": 0.0,
+                        "confidence": 0.78,
+                        "evidence": ["DECLARED_README_ORIGIN_CITATION"],
                         "matched_files": ["README.md", *file_tree[:5]],
                         "verdict": (
-                            f"ORIGIN SCATTER DETECTED (88% copied): README.md cites source '{src_title}' ({src_url}). "
-                            "Baseline architecture and core components are pre-authored."
+                            f"DECLARED UPSTREAM SOURCE: README.md cites '{src_title}' ({src_url}). "
+                            "A citation is not treated as proof of uncredited copying."
                         )
                     }
 
@@ -191,18 +357,20 @@ class TutorialMatcher:
             cand_commit_count = 0
             cand_lower = (candidate_name or "").lower()
             owner_name = (repo_meta.get("owner", {}).get("login") or "").lower()
-            cand_tokens = set(re.findall(r"[a-z0-9]+", cand_lower))
-            if owner_name:
-                cand_tokens.add(owner_name)
+            identities = {
+                re.sub(r"[^a-z0-9]", "", value.lower())
+                for value in (candidate_name or "", owner_name)
+                if value
+            }
 
             for c in commits_data:
                 author_name = (c.get("author") or "").strip()
                 email = (c.get("email") or "").strip().lower()
                 if author_name:
                     authors_count[author_name] = authors_count.get(author_name, 0) + 1
-                    a_lower = author_name.lower()
-                    if (any(t in a_lower for t in cand_tokens if len(t) >= 4) or 
-                        any(t in email for t in cand_tokens if len(t) >= 4)):
+                    a_identity = re.sub(r"[^a-z0-9]", "", author_name.lower())
+                    email_identity = re.sub(r"[^a-z0-9]", "", email.split("@")[0])
+                    if any(identity and (a_identity == identity or email_identity == identity) for identity in identities):
                         cand_commit_count += 1
 
             # If candidate or repo owner is an active contributor (>= 2 commits or >= 10% of commits),
@@ -214,8 +382,8 @@ class TutorialMatcher:
                     dom_lower = dominant_author.lower()
 
                     is_same_author = (
-                        any(t in dom_lower for t in cand_tokens if len(t) >= 4) or
-                        any(t in cand_lower for t in re.findall(r"[a-z0-9]+", dom_lower) if len(t) >= 4) or
+                        re.sub(r"[^a-z0-9]", "", dom_lower) in identities or
+                        re.sub(r"[^a-z0-9]", "", dom_lower) == re.sub(r"[^a-z0-9]", "", cand_lower) or
                         (owner_name and (owner_name in dom_lower or dom_lower in owner_name))
                     )
 
@@ -223,13 +391,26 @@ class TutorialMatcher:
                     if ratio >= 0.75 and not is_same_author:
                         if not any(bot in dom_lower for bot in ["github-actions", "dependabot", "renovate", "bot"]):
                             copied_pct = int(ratio * 100)
+                            dominant_login = next(
+                                (
+                                    str(commit.get("author_login", "")).strip()
+                                    for commit in commits_data
+                                    if (commit.get("author") or "").strip() == dominant_author
+                                    and commit.get("author_login")
+                                ),
+                                "",
+                            )
+                            source_identity = dominant_login or re.sub(r"[^a-zA-Z0-9_-]", "", dominant_author.replace(" ", "-"))
                             return True, {
                                 "id": f"author_{dom_lower.replace(' ', '_')}",
                                 "name": f"Third-Party Git Origin: {dominant_author}",
-                                "source_url": f"https://github.com/{dominant_author.replace(' ', '')}",
+                                "source_url": f"https://github.com/{source_identity}",
                                 "author": dominant_author,
                                 "origin_type": "COMMIT_AUTHOR_DISCREPANCY",
                                 "similarity_score": round(ratio, 2),
+                                "copy_coverage": round(ratio, 2),
+                                "confidence": 0.72,
+                                "evidence": ["DOMINANT_EXTERNAL_COMMIT_AUTHOR", "CANDIDATE_AUTHOR_ABSENT"],
                                 "matched_files": file_tree[:6],
                                 "verdict": (
                                     f"THIRD-PARTY COMMIT ORIGIN DETECTED ({copied_pct}% copied): {count} of {len(commits_data)} commits "
@@ -300,7 +481,8 @@ class TutorialMatcher:
             if len(matching_files) == 0 and pattern_matches == 0 and not (repo_matches_tut or folder_matches_tut):
                 continue
 
-            # AST Similarity
+            # AST/structural similarity. The legacy catalog stores compact
+            # signatures, so this remains a supporting signal only.
             tut_sig = tut.get("ast_signature", "")
             ast_scores = []
             for f_path, seq in structural_tokens.items():
@@ -308,7 +490,9 @@ class TutorialMatcher:
                 ast_scores.append(score)
             avg_ast_score = sum(ast_scores) / max(len(ast_scores), 1) if ast_scores else 0.0
 
-            # Composite similarity calculation
+            # Composite similarity calculation. Filename overlap alone never
+            # crosses the clone threshold; it must be supported by code
+            # patterns or structural evidence.
             pattern_score = min(0.98, 0.70 + (0.07 * pattern_matches)) if pattern_matches > 0 else 0.0
             
             # Subpath target priority bonus (e.g. user provided URL pointing directly to spotify_clone)
@@ -326,10 +510,10 @@ class TutorialMatcher:
                 composite_similarity = max(0.94, (pattern_score * 0.5) + (file_match_ratio * 0.3) + 0.2 + subpath_boost)
             elif (repo_matches_tut or folder_matches_tut) and len(matching_files) >= 2:
                 composite_similarity = max(0.92, (file_match_ratio * 0.6) + 0.35 + subpath_boost)
-            elif len(matching_files) >= 2:
+            elif len(matching_files) >= 2 and avg_ast_score >= 0.25:
                 composite_similarity = (file_match_ratio * 0.65) + (avg_ast_score * 0.35) + subpath_boost
             else:
-                composite_similarity = (file_match_ratio * 0.5) + (pattern_score * 0.5) + subpath_boost
+                composite_similarity = (file_match_ratio * 0.25) + (pattern_score * 0.50) + (avg_ast_score * 0.25) + subpath_boost
 
             composite_similarity = min(0.99, composite_similarity)
 
@@ -347,6 +531,12 @@ class TutorialMatcher:
                     "target_files_count": len(target_tut_files),
                     "pattern_matches": pattern_matches,
                     "repo_matches": repo_matches_tut or folder_matches_tut,
+                    "evidence": [
+                        *(["KEY_FILE_OVERLAP"] if matching_files else []),
+                        *(["DISTINCTIVE_CODE_PATTERN"] if pattern_matches else []),
+                        *(["STRUCTURAL_TOKEN_OVERLAP"] if avg_ast_score >= 0.25 else []),
+                    ],
+                    "confidence": round(min(0.99, composite_similarity + (0.10 if pattern_matches >= 2 else 0.0)), 2),
                     "verdict": ""
                 }
 
@@ -355,7 +545,7 @@ class TutorialMatcher:
         if best_match and (
             highest_score >= 0.58 or 
             (best_match.get("pattern_matches", 0) >= 1 and len(best_match.get("matched_files", [])) >= 1) or
-            (best_match.get("repo_matches") and len(best_match.get("matched_files", [])) >= 1)
+            (best_match.get("repo_matches") and len(best_match.get("matched_files", [])) >= 2 and best_match.get("pattern_matches", 0) >= 1)
         ):
             pct = int(best_match["similarity_score"] * 100)
             best_match["verdict"] = (
@@ -372,8 +562,8 @@ class TutorialMatcher:
             )
             return False, best_match
 
-        return False, None
-
+        if declared_source_evidence:
+            return False, declared_source_evidence
         return False, None
 
     def match_project(

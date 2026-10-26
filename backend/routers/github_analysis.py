@@ -19,6 +19,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 import os
 import subprocess
 import tempfile
+from urllib.parse import quote
 
 def get_scratch_cache_dir() -> Path:
     """Returns a cross-platform, environment-configurable cache directory."""
@@ -72,9 +73,26 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
         candidate_dirs.insert(1, scratch_dir / "test_bare_rabto")
         candidate_dirs.insert(2, scratch_dir / "test_blobless_rabto")
 
+    def local_repo_matches(path: Path) -> bool:
+        # Never reuse an unscoped ``scratch/repo`` directory merely because
+        # the repository name matches. That can analyze a different owner's
+        # project and produce a completely wrong attribution.
+        if path == target_cache or path.name.lower() == f"{owner_clean}_{repo_clean}":
+            return True
+        try:
+            remote = subprocess.check_output(
+                ["git", "-C", str(path), "remote", "get-url", "origin"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+            remote_pair = _github_repo_from_url(remote)
+            return bool(remote_pair and remote_pair[0].lower() == owner_clean and remote_pair[1].lower() == repo_clean)
+        except Exception:
+            return False
+
     found_dir = None
     for d in candidate_dirs:
-        if d.exists() and ((d / ".git").exists() or (d / "HEAD").exists()):
+        if d.exists() and ((d / ".git").exists() or (d / "HEAD").exists()) and local_repo_matches(d):
             found_dir = d
             break
 
@@ -238,6 +256,189 @@ def get_github_auth_token(user_provided_token: Optional[str] = None) -> Optional
         pass
     return None
 
+
+CODE_SOURCE_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
+SOURCE_DISCOVERY_DEADLINE_SECONDS = 12
+
+
+def _github_repo_from_url(value: str) -> Optional[tuple[str, str]]:
+    """Extract an owner/repository pair from a GitHub URL or git remote."""
+    if not value:
+        return None
+    if re.fullmatch(r"[^/\s]+/[^/\s]+", value.strip()):
+        owner, repo = value.strip().split("/", 1)
+        return owner, re.sub(r"\.git$", "", repo)
+    match = re.search(r"github\.com[/:]([^/\s]+)/([^/#\s]+)", value, re.IGNORECASE)
+    if not match:
+        return None
+    owner = match.group(1).strip()
+    repo = re.sub(r"\.git$", "", match.group(2).strip())
+    if owner and repo and owner not in {"api", "search"}:
+        return owner, repo
+    return None
+
+
+def _extract_declared_sources(code_snippets: Dict[str, str], current_owner: str, current_repo: str) -> List[tuple[str, str]]:
+    """Find repository URLs declared in manifests, READMEs, and comments."""
+    found: List[tuple[str, str]] = []
+    current = (current_owner.lower(), (current_repo or "").lower())
+    for content in code_snippets.values():
+        for raw_url in re.findall(r"https?://(?:www\.)?github\.com/[^\s\"'<>`)]+", content, re.IGNORECASE):
+            parsed = _github_repo_from_url(raw_url.rstrip(".,;"))
+            if parsed and (parsed[0].lower(), parsed[1].lower()) != current and parsed not in found:
+                found.append(parsed)
+    return found[:3]
+
+
+def _distinctive_code_queries(code_snippets: Dict[str, str]) -> List[str]:
+    """Select a few searchable non-generic source lines for GitHub Code Search."""
+    candidates: List[str] = []
+    for path, content in code_snippets.items():
+        if Path(path).suffix.lower() not in CODE_SOURCE_EXTENSIONS:
+            continue
+        for line in content.splitlines():
+            stripped = line.strip()
+            if len(stripped) < 32 or len(stripped) > 180:
+                continue
+            if stripped.startswith(("//", "#", "/*", "*", "import ", "from ", "using ", "package ")):
+                continue
+            if not re.search(r"[(){}\[\].=<>]", stripped):
+                continue
+            if stripped not in candidates:
+                candidates.append(stripped)
+            if len(candidates) >= 3:
+                return candidates
+    return candidates
+
+
+async def discover_external_sources(
+    client: httpx.AsyncClient,
+    code_snippets: Dict[str, str],
+    current_owner: str,
+    current_repo: str,
+    headers: Dict[str, str],
+    github_token: Optional[str] = None,
+) -> tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """Resolve declared and authenticated GitHub code-search origins.
+
+    GitHub's code-search endpoint requires authentication and is rate limited.
+    The resolver therefore treats it as an optional evidence source, caps the
+    request count, and returns coverage metadata when it is unavailable. A
+    search hit is only promoted after fetching the actual source file and
+    comparing normalized tokens in TutorialMatcher.
+    """
+    sources: Dict[str, Dict[str, Any]] = {}
+    scheduled_repositories: set[str] = set()
+    repository_semaphore = asyncio.Semaphore(3)
+    evidence = {
+        "declared_sources_checked": 0,
+        "code_search_enabled": bool(github_token),
+        "code_search_queries": 0,
+        "code_search_hits": 0,
+        "coverage": "local_and_catalog_only",
+    }
+
+    async def add_repo_source(owner: str, repo: str, evidence_name: str, preferred_path: Optional[str] = None):
+        key = f"{owner.lower()}/{repo.lower()}"
+        if key in scheduled_repositories:
+            return
+        scheduled_repositories.add(key)
+        try:
+            meta_res = await client.get(f"https://api.github.com/repos/{owner}/{repo}", headers=headers)
+            if meta_res.status_code != 200:
+                return
+            meta = meta_res.json()
+            branch = meta.get("default_branch") or "main"
+            tree_res = await client.get(
+                f"https://api.github.com/repos/{owner}/{repo}/git/trees/{quote(branch, safe='')}?recursive=1",
+                headers=headers,
+            )
+            if tree_res.status_code != 200:
+                return
+            tree = tree_res.json().get("tree", [])
+            paths = [
+                item.get("path", "") for item in tree
+                if item.get("type") == "blob" and Path(item.get("path", "")).suffix.lower() in CODE_SOURCE_EXTENSIONS
+                and not any(part in {"node_modules", "dist", "build", "vendor", "target"} for part in item.get("path", "").split("/"))
+            ]
+            paths.sort(key=lambda p: (0 if preferred_path and p.lower().endswith(preferred_path.lower()) else 1, len(p)))
+            files: Dict[str, str] = {}
+            async def fetch_source(path: str) -> tuple[str, str] | None:
+                try:
+                    raw_res = await client.get(
+                        f"https://raw.githubusercontent.com/{owner}/{repo}/{quote(branch, safe='')}/{quote(path, safe='/')}",
+                        headers=headers,
+                    )
+                    if raw_res.status_code == 200 and len(raw_res.text) <= 400_000:
+                        return path, raw_res.text
+                except Exception:
+                    pass
+                return None
+
+            fetched = await asyncio.gather(*(fetch_source(path) for path in paths[:5]))
+            files.update({path: content for item in fetched if item for path, content in [item]})
+            if files:
+                sources[key] = {
+                    "id": f"github_{owner}_{repo}",
+                    "name": meta.get("full_name") or f"{owner}/{repo}",
+                    "source_url": meta.get("html_url") or f"https://github.com/{owner}/{repo}",
+                    "author": (meta.get("owner") or {}).get("login") or owner,
+                    "origin_type": evidence_name,
+                    "evidence": evidence_name,
+                    "files": files,
+                }
+        except Exception:
+            return
+
+    async def bounded_add_repo_source(owner: str, repo: str, evidence_name: str, preferred_path: Optional[str] = None):
+        async with repository_semaphore:
+            await add_repo_source(owner, repo, evidence_name, preferred_path)
+
+    declared = _extract_declared_sources(code_snippets, current_owner, current_repo)
+    evidence["declared_sources_checked"] = len(declared)
+    await asyncio.gather(*(
+        bounded_add_repo_source(owner, repo, "DECLARED_REPOSITORY_ORIGIN", repo)
+        for owner, repo in declared
+    ))
+
+    if github_token:
+        # Search is intentionally limited to two queries per scan to avoid
+        # exhausting the 10 requests/minute GitHub code-search quota.
+        search_headers = {**headers, "Accept": "application/vnd.github.text-match+json"}
+        for query_line in _distinctive_code_queries(code_snippets)[:2]:
+            evidence["code_search_queries"] += 1
+            try:
+                search_res = await client.get(
+                    "https://api.github.com/search/code",
+                    params={"q": f'"{query_line}"'},
+                    headers=search_headers,
+                )
+                if search_res.status_code != 200:
+                    continue
+                for item in search_res.json().get("items", [])[:5]:
+                    repository = item.get("repository") or {}
+                    full_name = repository.get("full_name", "")
+                    pair = _github_repo_from_url(full_name)
+                    if not pair or pair[0].lower() == current_owner.lower() and pair[1].lower() == current_repo.lower():
+                        continue
+                    evidence["code_search_hits"] += 1
+                    await bounded_add_repo_source(pair[0], pair[1], "AUTHENTICATED_GITHUB_CODE_SEARCH", item.get("path"))
+            except Exception:
+                continue
+
+    if sources:
+        has_declared = any(item.get("evidence") == "DECLARED_REPOSITORY_ORIGIN" for item in sources.values())
+        has_authenticated = any(item.get("evidence") == "AUTHENTICATED_GITHUB_CODE_SEARCH" for item in sources.values())
+        if has_declared and has_authenticated:
+            evidence["coverage"] = "declared_and_authenticated_external_sources"
+        elif has_authenticated:
+            evidence["coverage"] = "authenticated_external_source"
+        else:
+            evidence["coverage"] = "declared_external_source"
+    elif github_token:
+        evidence["coverage"] = "authenticated_search_no_verified_source_match"
+    return list(sources.values()), evidence
+
 def get_cached_profile_for_user_or_repo(target_owner: str, target_repo: Optional[str]):
     demo_path = DATA_DIR / "demo_profiles.json"
     if not demo_path.exists():
@@ -314,7 +515,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
     detected_files: List[str] = []
     complex_functions: List[Dict[str, Any]] = []
     project_type = "Fullstack Application"
-    auth_score = 92
+    # Scores remain unknown until Git telemetry and source evidence have been
+    # collected. The previous 92 default made network failures look like
+    # verified candidates.
+    auth_score = 0
     is_clone = False
     matched_tut = None
     default_branch = "main"
@@ -494,6 +698,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
                         "message": commit_obj.get("message", ""),
                         "date": d_str,
                         "author": commit_obj.get("author", {}).get("name", ""),
+                        "author_login": (item.get("author") or {}).get("login", ""),
                         "additions": 0,
                         "deletions": 0
                     })
@@ -620,24 +825,30 @@ async def analyze_github_repo(req: IngestionURLRequest):
                 detail=f"Unable to resolve active public code for '{owner}'. Please check the URL or try again."
             )
 
+        if not commits_data and not raw_files and not code_snippets:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"GitHub repository '{owner}/{resolved_repo or ''}' could not be retrieved. "
+                    "No verifiable source files or commit telemetry were available; no synthetic profile was created."
+                ),
+            )
+
     # When live analysis succeeds, synthesize verified profile from live GitHub AST data
     resolved_repo_name = resolved_repo or "primary-repository"
     cid = f"cand_gh_{hashlib.md5(f'{owner}/{resolved_repo_name}'.encode()).hexdigest()[:8]}"
-    tamper_proof_hash = "SHA256:" + hashlib.sha256(f"{cid}:{owner}:{resolved_repo_name}:{auth_score}".encode()).hexdigest()
-
-    if not complex_functions:
-        complex_functions = [
-            {
-                "file": "src/core/handler.ts",
-                "function_name": "processPipeline",
-                "complexity": 7,
-                "line_number": 14,
-                "snippet": "export async function processPipeline(data: unknown) {\n  // AST analyzed block\n}"
-            }
-        ]
-
-    test_files_detected = sum(1 for f in detected_files if "test" in f.lower() or "spec" in f.lower())
-    git_dna = CommitForensics.analyze_commits(commits_data, test_files_count=test_files_detected or 3)
+    test_files_detected = sum(
+        1 for f in (raw_files or detected_files)
+        if "test" in f.lower() or "spec" in f.lower()
+    )
+    git_dna = CommitForensics.analyze_commits(commits_data, test_files_count=test_files_detected)
+    if not commits_data:
+        git_dna.update({
+            "authenticity_score": 0,
+            "organic_growth": False,
+            "confidence": 0.0,
+            "summary": "No verifiable Git commit telemetry was retrieved; authenticity is unscored.",
+        })
 
     # Ensure repo_meta has owner and name populated for forensic checks
     if "owner" not in repo_meta:
@@ -645,7 +856,44 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if "name" not in repo_meta:
         repo_meta["name"] = resolved_repo_name
 
-    # 5. FORENSIC GLOBAL PLAGIARISM & ORIGIN INSPECTION (Detect copying from anywhere worldwide)
+    # 5. Resolve declared repositories and authenticated code-search candidates.
+    # A search result is never treated as proof until its source bytes are
+    # fetched and compared by TutorialMatcher.
+    source_candidates: List[Dict[str, Any]] = []
+    provenance_evidence: Dict[str, Any] = {
+        "declared_sources_checked": 0,
+        "code_search_enabled": False,
+        "code_search_queries": 0,
+        "code_search_hits": 0,
+        "coverage": "local_and_catalog_only",
+    }
+    if code_snippets and resolved_repo:
+        try:
+            gh_token = get_github_auth_token(req.github_token)
+            source_headers = {
+                "User-Agent": "WhereUElevate-ProofCard-Verification/2.0",
+                "Accept": "application/vnd.github+json",
+            }
+            if gh_token:
+                source_headers["Authorization"] = f"Bearer {gh_token}"
+            async with httpx.AsyncClient(timeout=6.0) as source_client:
+                source_candidates, provenance_evidence = await asyncio.wait_for(
+                    discover_external_sources(
+                        source_client,
+                        code_snippets,
+                        owner,
+                        resolved_repo,
+                        source_headers,
+                        gh_token,
+                    ),
+                    timeout=SOURCE_DISCOVERY_DEADLINE_SECONDS,
+                )
+        except asyncio.TimeoutError:
+            provenance_evidence["coverage"] = "source_discovery_deadline_exceeded"
+        except Exception:
+            pass
+
+    # 6. FORENSIC GLOBAL PLAGIARISM & ORIGIN INSPECTION (Detect copying from anywhere worldwide)
     tut_matcher = TutorialMatcher()
     is_clone, matched_tut = tut_matcher.detect_global_plagiarism(
         repo_meta=repo_meta,
@@ -653,16 +901,17 @@ async def analyze_github_repo(req: IngestionURLRequest):
         file_tree=raw_files if 'raw_files' in locals() and raw_files else detected_files,
         code_snippets=code_snippets,
         structural_tokens=structural_tokens,
+        source_candidates=source_candidates,
         candidate_name=candidate_name or owner,
         target_subpath=target_subpath
     )
 
     # Real 5-factor authenticity score directly from git DNA
-    auth_score = git_dna.get("authenticity_score", 65)
+    auth_score = git_dna.get("authenticity_score", 0)
 
     # If repository is copied from anywhere worldwide, adjust score to reflect exact plagiarism %
     if is_clone and matched_tut:
-        sim = matched_tut.get("similarity_score", 0.85)
+        sim = matched_tut.get("similarity_score", 0.0)
         # Authenticity drops inversely with copy percentage
         auth_score = max(10, min(auth_score, int((1.0 - sim) * 100) + 5))
     elif git_dna.get("total_commits", 0) == 1:
@@ -671,11 +920,20 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
     git_dna["authenticity_score"] = auth_score
 
+    tamper_proof_hash = "SHA256:" + hashlib.sha256(f"{cid}:{owner}:{resolved_repo_name}:{auth_score}".encode()).hexdigest()
+    analysis_confidence = 0.0
+    if commits_data:
+        analysis_confidence += 0.55
+    if code_snippets:
+        analysis_confidence += 0.35
+    if provenance_evidence.get("coverage") != "local_and_catalog_only":
+        analysis_confidence += 0.10
+
     viva_engine = VivaEngine()
     viva_questions = viva_engine.generate_questions_for_functions(complex_functions, max_questions=5)
 
     if is_clone and matched_tut:
-        sim_pct = int(matched_tut.get("similarity_score", 0.85) * 100)
+        sim_pct = int(matched_tut.get("similarity_score", 0.0) * 100)
         source_link = matched_tut.get("source_url") or "external online repository"
         proof_card = {
             "status": "FLAGGED_CLONE",
@@ -690,14 +948,32 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "tamper_proof_hash": tamper_proof_hash
         }
     else:
-        proof_card = {
-            "status": "VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT",
-            "headline": f"Verified engineering signals with clean AST modularity and organic Git progression across {resolved_repo_name}.",
-            "strengths": [
-                f"{git_dna.get('total_commits', len(commits_data) or 20)} authentic commits over {git_dna.get('time_span_days', 25)} days",
+        history_available = bool(commits_data)
+        source_available = any(Path(path).suffix.lower() in CODE_SOURCE_EXTENSIONS for path in code_snippets)
+        if history_available and source_available:
+            verification_status = "VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT"
+            verification_headline = (
+                f"Verified engineering signals with clean AST modularity and Git progression across {resolved_repo_name}."
+            )
+            verification_strengths = [
+                f"{git_dna.get('total_commits', 0)} verified commits over {git_dna.get('time_span_days', 0)} days",
                 f"Extracted {len(complex_functions)} non-trivial AST control blocks directly from {resolved_repo_name}",
-                f"Iterative refactoring ratio of {int(git_dna.get('deletion_ratio', 0.24) * 100)}%"
-            ],
+                f"Iterative refactoring ratio of {int(git_dna.get('deletion_ratio', 0) * 100)}%",
+            ]
+        else:
+            verification_status = "VERIFICATION_INCOMPLETE"
+            verification_headline = (
+                f"Source was retrieved from {resolved_repo_name}, but {'Git history' if not history_available else 'source files'} was unavailable; authenticity is unscored."
+            )
+            verification_strengths = [
+                f"Retrieved {len(detected_files)} repository files",
+                f"Extracted {len(complex_functions)} AST control blocks from available source",
+                "Git development rhythm requires a complete repository history",
+            ]
+        proof_card = {
+            "status": verification_status,
+            "headline": verification_headline,
+            "strengths": verification_strengths,
             "growth_area": "Expand automated boundary mocking for external third-party dependencies.",
             "specific_action": "Add integration test fixtures verifying failure isolation under network latency.",
             "tamper_proof_hash": tamper_proof_hash
@@ -716,17 +992,26 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "project_name": resolved_repo_name,
         "project_type": project_type,
         "detected_stack": project_type,
-        "total_loc": max(1500, len(detected_files) * 180),
+        "total_loc": sum(
+            1
+            for path, content in code_snippets.items()
+            if Path(path).suffix.lower() in CODE_SOURCE_EXTENSIONS
+            for line in content.splitlines()
+            if line.strip() and not line.strip().startswith(("//", "#", "/*", "*"))
+        ),
         "authenticity_score": auth_score,
+        "analysis_confidence": round(min(1.0, analysis_confidence), 2),
         "is_clone": is_clone,
         "matched_tutorial": matched_tut,
+        "provenance_evidence": provenance_evidence,
         "git_dna": git_dna,
-        "detected_files": detected_files or ["src/main.ts", "package.json"],
-        "structural_token_sequence": "Program>ImportDeclaration>ExportDeclaration>FunctionDeclaration>TryStatement>AwaitExpression>ReturnStatement",
+        "detected_files": detected_files,
+        "structural_token_sequence": next(iter(structural_tokens.values()), ""),
         "complex_functions": complex_functions[:5],
         "complex_functions_for_viva": complex_functions[:3],
         "viva_questions": viva_questions,
-        "viva_score": 9 if auth_score >= 90 else 8,
+        "viva_score": 0,
+        "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
         "proof_card": proof_card,
         "tamper_proof_hash": tamper_proof_hash,
         "available_repos": available_repos or ([resolved_repo] if resolved_repo else []),

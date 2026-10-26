@@ -53,17 +53,18 @@ class CommitForensics:
         [{"sha": "...", "message": "...", "date": "2024-03-01T12:00:00Z", "additions": 100, "deletions": 20}]
         """
         if not commits:
-            auth = 85 if test_files_count > 0 else 75
             return {
                 "total_commits": 0,
-                "time_span_days": 1,
-                "burst_ratio": 0.15,
-                "deletion_ratio": 0.22,
-                "organic_growth": True if test_files_count > 0 else False,
-                "message_maturity_score": 75,
+                "time_span_days": 0,
+                "burst_ratio": 0.0,
+                "deletion_ratio": 0.0,
+                "organic_growth": False,
+                "message_maturity_score": 0,
                 "test_files_detected": test_files_count,
-                "authenticity_score": auth,
-                "summary": f"Source snapshot archive: {test_files_count} test files detected. Clean structural modularity."
+                "authenticity_score": 0,
+                "history_verified": False,
+                "confidence": 0.0,
+                "summary": f"No Git commit telemetry was supplied. {test_files_count} test files were detected, but development history is unverified."
             }
 
         total_commits = len(commits)
@@ -82,20 +83,37 @@ class CommitForensics:
                 dt = d_val
 
             if dt:
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                else:
+                    dt = dt.astimezone(timezone.utc)
+                # GitHub occasionally returns numeric strings for stats when
+                # data came through a CSV or webhook. Keep the calculations
+                # deterministic instead of failing the entire scan.
+                try:
+                    c["additions"] = max(0, int(c.get("additions", 0) or 0))
+                except (TypeError, ValueError):
+                    c["additions"] = 0
+                try:
+                    c["deletions"] = max(0, int(c.get("deletions", 0) or 0))
+                except (TypeError, ValueError):
+                    c["deletions"] = 0
                 valid_commits.append({**c, "_dt": dt})
 
         # Fallback if no valid dates
         if not valid_commits:
             return {
                 "total_commits": total_commits,
-                "time_span_days": 1,
-                "burst_ratio": 0.35,
-                "deletion_ratio": 0.20,
-                "organic_growth": True,
-                "message_maturity_score": 70,
+                "time_span_days": 0,
+                "burst_ratio": 0.0,
+                "deletion_ratio": 0.0,
+                "organic_growth": False,
+                "message_maturity_score": 0,
                 "test_files_detected": test_files_count,
-                "authenticity_score": 75,
-                "summary": f"Git-DNA: {total_commits} commits recorded."
+                "authenticity_score": 0,
+                "history_verified": False,
+                "confidence": 0.0,
+                "summary": f"{total_commits} commit records were supplied, but none contained a valid timestamp; development history is unverified."
             }
 
         valid_commits.sort(key=lambda x: x["_dt"])
@@ -223,5 +241,7 @@ class CommitForensics:
             "message_maturity_score": avg_msg_maturity,
             "test_files_detected": test_files_count,
             "authenticity_score": authenticity_score,
+            "history_verified": True,
+            "confidence": round(min(1.0, 0.55 + (0.25 if len(valid_commits) >= 4 else 0.0) + (0.20 if total_add > 0 else 0.0)), 2),
             "summary": summary
         }

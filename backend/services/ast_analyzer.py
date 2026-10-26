@@ -41,7 +41,7 @@ class ASTAnalyzer:
         found_first_brace = False
         end_idx = start_idx
 
-        for i in range(start_idx, min(len(lines), start_idx + 150)):
+        for i in range(start_idx, len(lines)):
             line = lines[i]
             stripped = ASTAnalyzer._strip_comments_and_strings(line)
             for ch in stripped:
@@ -68,7 +68,8 @@ class ASTAnalyzer:
                 for b in blocks:
                     lines = code.splitlines()
                     start = max(0, b.lineno - 1)
-                    end = min(len(lines), b.lineno + 25)
+                    end_line = getattr(b, "endline", None)
+                    end = min(len(lines), end_line or (b.lineno + 25))
                     snippet = "\n".join(lines[start:end])
                     results.append({
                         "file": file_path,
@@ -96,7 +97,7 @@ class ASTAnalyzer:
                         
                         lines = code.splitlines()
                         start = max(0, node.lineno - 1)
-                        end = min(len(lines), node.lineno + 25)
+                        end = min(len(lines), getattr(node, "end_lineno", node.lineno + 25))
                         snippet = "\n".join(lines[start:end])
                         results.append({
                             "file": file_path,
@@ -233,4 +234,4 @@ class ASTAnalyzer:
             matches = re.findall(r"\b(import|from|class|interface|package|public|private|static|void|func|fn|def|function|return|if|else|elif|for|while|try|catch|except|finally|async|await|const|let|var|switch|case|throw|raise|match)\b", line_str)
             for m in matches:
                 tokens.append(m.capitalize())
-        return ">".join(tokens[:150]) if tokens else "Program>BlockStatement"
+        return ">".join(tokens[:150]) if tokens else ""
