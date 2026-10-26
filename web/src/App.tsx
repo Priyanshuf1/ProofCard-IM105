@@ -136,30 +136,17 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer - Official Deviathon GLA University Warrior Theme */}
-      <footer className="border-t border-[#E6C280]/20 bg-[#0e0704] py-7 px-4 text-xs text-[#E6C280]/70">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#E85D04] shadow-[0_0_8px_#E85D04]"></span>
-            <span className="text-white font-deviathon font-bold tracking-wider">DEVIATHON 2026</span>
-            <span className="text-[#E6C280]/30">·</span>
-            <span className="text-[#E6C280] font-warrior font-semibold">GLA UNIVERSITY MATHURA</span>
-            <span className="text-[#E6C280]/30">·</span>
-            <span className="text-neutral-400 font-mono">Integraminds IM-105</span>
+      {/* Clean Production Footer */}
+      <footer className="border-t border-[#D4AF37]/15 bg-black/60 py-5 px-6 text-xs text-[#E6C280]/60">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="text-white font-medium">ProofCard Talent Intelligence</span>
+            <span className="text-neutral-500">·</span>
+            <span className="text-neutral-400 font-mono text-[11px]">IM-105 Engine</span>
           </div>
-
-          <div className="flex items-center gap-4 text-xs font-warrior text-[#E6C280]/80">
-            <span className="hover:text-white transition">INNOVATE</span>
-            <span>·</span>
-            <span className="hover:text-white transition">CODE</span>
-            <span>·</span>
-            <span className="hover:text-white transition">CONQUER</span>
-            <span>·</span>
-            <span className="text-[#ff9f1c]">29-31 OCT 2026</span>
-          </div>
-
-          <div className="text-[#E6C280]/60 text-xs font-warrior">
-            In Association with Office of Students' Welfare
+          <div className="text-neutral-400 text-[11px] font-mono">
+            Autonomous Skill Verification & Recruiter Bias Audit
           </div>
         </div>
       </footer>

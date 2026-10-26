@@ -76,71 +76,45 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-black/60 backdrop-blur-md border-b border-[#D4AF37]/25 shadow-2xl">
+    <header className="sticky top-0 z-50 bg-black/75 backdrop-blur-md border-b border-[#D4AF37]/25 shadow-2xl">
       {/* Main Branding Bar */}
-      <div className="px-4 sm:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {/* Deviathon Omega & Flaming Sword Emblem */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B1E1E] to-black border border-[#D4AF37]/50 flex items-center justify-center shadow-[0_0_16px_rgba(212,175,55,0.35)] shrink-0 relative overflow-hidden group">
-            <span className="text-xl font-black text-[#D4AF37]">Ω</span>
-            <span className="absolute inset-0 flex items-center justify-center text-xs text-[#FFD166] opacity-90 font-mono font-bold">🗡️</span>
+      <div className="px-4 sm:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3.5">
+          {/* ProofCard Emblem */}
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B1E1E] to-black border border-[#D4AF37]/50 flex items-center justify-center shadow-[0_0_14px_rgba(212,175,55,0.3)] shrink-0">
+            <span className="text-lg font-black text-[#D4AF37]">Ω</span>
           </div>
 
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="font-deviathon text-2xl sm:text-3xl font-extrabold text-[#f7f3ee] tracking-widest drop-shadow-[0_2px_12px_rgba(212,175,55,0.4)]">
-                DEVIATHON
+            <div className="flex items-center gap-2">
+              <span className="text-xl sm:text-2xl font-extrabold text-[#f7f3ee] tracking-tight font-sans">
+                ProofCard
               </span>
-              <span className="parchment-pill">
-                2026
-              </span>
-              <span className="text-[11px] text-[#D4AF37] font-warrior hidden sm:inline font-bold">
-                29 - 31 OCT 2026
+              <span className="text-[10px] font-mono uppercase bg-[#8B1E1E]/50 border border-[#D4AF37]/40 px-2 py-0.5 rounded-full text-[#FFD166] font-semibold">
+                IM-105
               </span>
             </div>
-            <p className="text-xs text-[#E6C280]/70 font-warrior font-medium mt-0.5 tracking-wider">
-              नवोन्मेषः | सङ्केतलेखनम् | विजयः &nbsp;·&nbsp; <span className="text-white font-sans font-semibold">ProofCard Talent Intelligence</span>
+            <p className="text-[11px] text-[#C9B89A]/80 font-mono tracking-wide">
+              Verified Code Intelligence & Recruiter Bias Auditing
             </p>
           </div>
         </div>
 
-        {/* Quick Candidate Presets & Enterprise API Modal Trigger */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] text-[#D4AF37] font-warrior font-bold uppercase tracking-wider hidden lg:inline">Test Candidates:</span>
-          <button 
-            onClick={() => onSelectDemoProfile(0)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8B1E1E]/40 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#8B1E1E]/70 transition text-xs font-semibold cursor-pointer shadow-sm"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>⚡ Data_SIH (157 Commits)</span>
-          </button>
-          <button 
-            onClick={() => onSelectDemoProfile(1)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 border border-[#3A2F27] text-[#C9B89A] hover:border-[#D4AF37] hover:text-[#F5E9C7] transition text-xs font-medium cursor-pointer hidden sm:flex"
-          >
-            <span>Priyanshu (Insta GUI)</span>
-          </button>
-          <button 
-            onClick={() => onSelectDemoProfile(2)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-950/40 border border-red-700/50 text-red-300 hover:bg-red-900/40 transition text-xs font-medium cursor-pointer"
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-            <span>Tutorial Clone (Flagged)</span>
-          </button>
-
+        {/* Enterprise API Modal Trigger */}
+        <div className="flex items-center gap-2">
           {onOpenImatsModal && (
             <button
               onClick={onOpenImatsModal}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] text-[#FFD166] hover:bg-[#D4AF37]/40 transition text-xs font-warrior font-bold cursor-pointer shadow-[0_0_10px_rgba(212,175,55,0.3)] ml-1"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#D4AF37]/30 transition text-xs font-semibold cursor-pointer shadow-sm"
             >
               <Zap className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>⚡ IMATS API</span>
+              <span>IMATS Enterprise Sandbox</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 6-Feature Sleek Navigation Tabs without Bloated Text */}
+      {/* 6-Feature Sleek Navigation Tabs */}
       <div className="border-t border-[#D4AF37]/20 bg-black/60 backdrop-blur-md px-4 sm:px-8 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 min-w-max">
           {features.map((feat) => {

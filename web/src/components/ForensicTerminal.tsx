@@ -232,9 +232,9 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8B1E1E] shadow-[0_0_8px_#D4AF37]"></span>
-              <span className="text-[11px] font-warrior font-bold uppercase tracking-widest text-[#D4AF37]">
-                Step 02 · Authenticity & Code Forensics
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
+                Authenticity & Code Forensics
               </span>
               
               {/* Candidate Switcher Dropdown */}

@@ -209,9 +209,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8B1E1E] shadow-[0_0_8px_#D4AF37]"></span>
-              <span className="text-[11px] font-warrior font-bold uppercase tracking-widest text-[#D4AF37]">
-                Step 03 · Live Code Viva Defense
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
+                Live Code Viva Defense
               </span>
 
               {/* Candidate Switcher Dropdown */}

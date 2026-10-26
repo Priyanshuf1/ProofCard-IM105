@@ -69,17 +69,14 @@ export const BiasMirror: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8B1E1E] shadow-[0_0_8px_#D4AF37]"></span>
-              <span className="text-[11px] font-warrior font-bold uppercase tracking-widest text-[#D4AF37]">
-                Step 06 · Equal Opportunity & Fairness Guarantee
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
+                Equal Opportunity Audit
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-deviathon font-extrabold text-white tracking-wider">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
               Recruiter Bias Mirror & Pedigree Parity
             </h1>
-            <p className="text-xs text-[#C9B89A] mt-1 font-sans">
-              Proves mathematically that institutional background receives 0.00% weighting. True builders conquer purely on git-proven engineering.
-            </p>
           </div>
 
           <button
@@ -101,8 +98,8 @@ export const BiasMirror: React.FC = () => {
               ⚖️
             </div>
             <div>
-              <span className="text-[10px] font-warrior font-bold text-[#D4AF37] uppercase tracking-wider block">
-                Axis 2 Fairness Proof · Side-by-Side Evaluation
+              <span className="text-[10px] font-mono font-bold text-[#D4AF37] uppercase tracking-wider block">
+                A/B Benchmark Comparison
               </span>
               <h2 className="text-lg sm:text-xl font-deviathon font-extrabold text-white">
                 The Pedigree Twin Dilemma: IIT Clone vs Tier-3 Builder
@@ -156,7 +153,7 @@ export const BiasMirror: React.FC = () => {
               Arjun Singhania
             </h3>
             <p className="text-xs text-[#C9B89A] mb-4 font-sans">
-              Single-day git dump of Traversy MERN tutorial. 0 unit tests. Failed async socket teardown in viva.
+              Unverified submission with high tutorial similarity and low defense score.
             </p>
 
             <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-black/60 border border-[#3A2F27] text-center font-mono text-xs mb-4">
@@ -262,7 +259,7 @@ export const BiasMirror: React.FC = () => {
                     <span>100% Meritocratic</span>
                   </div>
                   <p className="leading-snug text-[11px]">
-                    Proves multi-week organic growth, clean AST modularity, and deep conceptual understanding in live viva defense.
+                    Verified technical ownership, modular code structure, and validated viva defense.
                   </p>
                 </div>
               )}
@@ -289,7 +286,7 @@ export const BiasMirror: React.FC = () => {
               <p className="text-[11px] text-neutral-300 mt-0.5 font-sans">
                 {activeEngine === 'traditional_ats'
                   ? 'Cost of bad hire: ~$15,000 + 4 months wasted onboarding a tutorial copy-paster. EEOC Disparate Impact violation triggered.'
-                  : 'Avoided $15,000 bad-hire cost. Zero demographic disparity (1.00 parity ratio). 100% compliant with EEOC 4/5ths standard.'}
+                  : 'Verified skill alignment with 0.93 Disparate Impact ratio, meeting EEOC Four-Fifths compliance.'}
               </p>
             </div>
           </div>

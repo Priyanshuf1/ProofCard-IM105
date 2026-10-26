@@ -80,13 +80,13 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8B1E1E] shadow-[0_0_8px_#D4AF37]"></span>
-              <span className="text-[11px] font-warrior font-bold uppercase tracking-widest text-[#D4AF37]">
-                Step 04 · Verified Holographic ProofCard
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
+                Tamper-Evident Credential
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-deviathon font-extrabold text-white tracking-wider">
-              Talent Credential & Proof Ledger
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
+              ProofCard Verification Ledger
             </h1>
           </div>
 
