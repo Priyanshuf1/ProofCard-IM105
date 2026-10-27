@@ -83,9 +83,10 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
             return True
         try:
             remote = subprocess.check_output(
-                ["git", "-C", str(path), "remote", "get-url", "origin"],
+                ["git", "-c", "gc.auto=0", "-C", str(path), "remote", "get-url", "origin"],
                 text=True,
                 stderr=subprocess.DEVNULL,
+                timeout=5
             ).strip()
             remote_pair = _github_repo_from_url(remote)
             return bool(remote_pair and remote_pair[0].lower() == owner_clean and remote_pair[1].lower() == repo_clean)
@@ -121,8 +122,8 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
     # If found_dir exists, extract log and ls-tree
     if found_dir:
         try:
-            cmd = ["git", "-C", str(found_dir), "log", "--reverse", "--format=COMMIT:%H|%an|%ae|%aI|%s", "--numstat"]
-            out = subprocess.check_output(cmd, encoding="utf-8", errors="ignore")
+            cmd = ["git", "-c", "gc.auto=0", "-C", str(found_dir), "log", "--reverse", "--format=COMMIT:%H|%an|%ae|%aI|%s", "--numstat"]
+            out = subprocess.check_output(cmd, encoding="utf-8", errors="ignore", timeout=15)
             parsed = []
             curr = None
             for line in out.splitlines():
@@ -152,14 +153,19 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
                             pass
 
             # Extract file tree
-            tree_cmd = ["git", "-C", str(found_dir), "ls-tree", "-r", "--name-only", "HEAD"]
-            tree_out = subprocess.check_output(tree_cmd, encoding="utf-8", errors="ignore")
+            tree_cmd = ["git", "-c", "gc.auto=0", "-C", str(found_dir), "ls-tree", "-r", "--name-only", "HEAD"]
+            tree_out = subprocess.check_output(tree_cmd, encoding="utf-8", errors="ignore", timeout=15)
             raw_files = [f.strip() for f in tree_out.splitlines() if f.strip()]
 
             # Read sample code files for AST analysis
             code_snippets = {}
             valid_exts = (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java", ".cpp", ".html", ".css")
-            code_files = [f for f in raw_files if f.endswith(valid_exts) and not f.endswith(".d.ts") and not any(ign in f for ign in ["node_modules", "dist", "build", ".next", ".git"])]
+            code_files = [
+                f for f in raw_files
+                if f.endswith(valid_exts)
+                and not f.endswith(".d.ts")
+                and not any(ign in f.lower() for ign in ["node_modules", "dist", "build", ".next", ".git", "playwright-report", "coverage", "htmlcov", ".cache", "package-lock", "yarn.lock"])
+            ]
 
             # Prioritize files based on target_subpath or tutorial keywords
             def file_rank(fpath: str) -> tuple:
@@ -173,7 +179,7 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
 
             for cf in code_files[:30]:
                 try:
-                    content = subprocess.check_output(["git", "-C", str(found_dir), "show", f"HEAD:{cf}"], encoding="utf-8", errors="ignore")
+                    content = subprocess.check_output(["git", "-c", "gc.auto=0", "-C", str(found_dir), "show", f"HEAD:{cf}"], encoding="utf-8", errors="ignore", timeout=5)
                     code_snippets[cf] = content
                 except Exception:
                     pass
@@ -185,7 +191,7 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
                     if rf == mf or rf.lower() == mf.lower() or rf.lower().endswith("/" + mf.lower()):
                         if rf not in code_snippets:
                             try:
-                                content = subprocess.check_output(["git", "-C", str(found_dir), "show", f"HEAD:{rf}"], encoding="utf-8", errors="ignore")
+                                content = subprocess.check_output(["git", "-c", "gc.auto=0", "-C", str(found_dir), "show", f"HEAD:{rf}"], encoding="utf-8", errors="ignore", timeout=5)
                                 code_snippets[rf] = content
                                 break
                             except Exception:
@@ -212,8 +218,8 @@ def parse_local_git_commits(resolved_repo: str) -> List[Dict[str, Any]]:
     for d in possible_dirs:
         if d.exists() and (d / ".git").exists():
             try:
-                cmd = ["git", "-C", str(d), "log", "--reverse", "--format=COMMIT:%H|%an|%ae|%aI|%s", "--numstat"]
-                out = subprocess.check_output(cmd, encoding="utf-8", errors="ignore")
+                cmd = ["git", "-c", "gc.auto=0", "-C", str(d), "log", "--reverse", "--format=COMMIT:%H|%an|%ae|%aI|%s", "--numstat"]
+                out = subprocess.check_output(cmd, encoding="utf-8", errors="ignore", timeout=15)
                 parsed = []
                 curr = None
                 for line in out.splitlines():
@@ -260,22 +266,25 @@ def get_github_auth_token(user_provided_token: Optional[str] = None) -> Optional
 
 
 CODE_SOURCE_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
-SOURCE_DISCOVERY_DEADLINE_SECONDS = 12
+SOURCE_DISCOVERY_DEADLINE_SECONDS = 5
 
 
 def _github_repo_from_url(value: str) -> Optional[tuple[str, str]]:
     """Extract an owner/repository pair from a GitHub URL or git remote."""
     if not value:
         return None
-    if re.fullmatch(r"[^/\s]+/[^/\s]+", value.strip()):
-        owner, repo = value.strip().split("/", 1)
-        return owner, re.sub(r"\.git$", "", repo)
-    match = re.search(r"github\.com[/:]([^/\s]+)/([^/#\s]+)", value, re.IGNORECASE)
+    val_clean = value.strip().rstrip(".,;)>'\"")
+    if re.fullmatch(r"[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-\.]+", val_clean):
+        owner, repo = val_clean.split("/", 1)
+        repo = re.sub(r"\.git$", "", repo)
+        if owner.lower() not in {"api", "search"} and repo.lower() not in {"tree", "blob", "issues", "pulls", "actions", "wiki"}:
+            return owner, repo
+    match = re.search(r"github\.com[/:]([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-\.]+)", val_clean, re.IGNORECASE)
     if not match:
         return None
     owner = match.group(1).strip()
     repo = re.sub(r"\.git$", "", match.group(2).strip())
-    if owner and repo and owner not in {"api", "search"}:
+    if owner and repo and owner.lower() not in {"api", "search", "features", "topics", "collections"} and repo.lower() not in {"tree", "blob", "issues", "pulls", "actions", "wiki"}:
         return owner, repo
     return None
 
@@ -633,7 +642,9 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if resolved_repo:
         try:
             gh_token = get_github_auth_token(req.github_token)
-            real_commits, real_files, real_snippets = fetch_real_git_telemetry(owner, resolved_repo, gh_token, target_subpath=target_subpath)
+            real_commits, real_files, real_snippets = await asyncio.to_thread(
+                fetch_real_git_telemetry, owner, resolved_repo, gh_token, target_subpath=target_subpath
+            )
             if target_subpath:
                 sub_folder = target_subpath.split("/")[0] if "/" in target_subpath else target_subpath
                 project_type = f"{sub_folder.replace('_', ' ').replace('-', ' ').title()} Web Application"
