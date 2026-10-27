@@ -11,6 +11,8 @@ from backend.services.ast_analyzer import ASTAnalyzer
 from backend.services.tutorial_matcher import TutorialMatcher
 from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
+from backend.services.jd_matcher import JDMatcher
+from backend.services.readiness_engine import ReadinessEngine
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -364,6 +366,17 @@ async def upload_project_zip(
             "total_loc": total_loc,
             "authenticity_score": auth_score,
             "engineering_signal_score": engineering_signal_score,
+            "analysis_status": "COMPLETED" if git_dna.get("history_verified") else "VERIFICATION_INCOMPLETE",
+            "analysis_confidence": git_dna.get("confidence", 0.0),
+            "skill_evidence": JDMatcher.extract_skill_evidence(code_snippets, file_tree),
+            "readiness_plan": ReadinessEngine.build_plan(
+                skill_evidence=JDMatcher.extract_skill_evidence(code_snippets, file_tree),
+                complex_functions=complex_functions,
+                git_dna=git_dna,
+                viva_questions=viva_questions,
+                matched_tutorial=matched_tutorial,
+                analysis_status="COMPLETED" if git_dna.get("history_verified") else "VERIFICATION_INCOMPLETE",
+            ),
             "is_clone": is_clone,
             "matched_tutorial": matched_tutorial,
             "git_dna": git_dna,

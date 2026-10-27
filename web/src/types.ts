@@ -28,6 +28,7 @@ export interface GitDnaMetrics {
   organic_growth: boolean;
   message_maturity_score: number;
   test_files_detected: number;
+  history_verified?: boolean;
   authenticity_score?: number;
   summary?: string;
 }
@@ -92,8 +93,63 @@ export interface CandidateProfile {
   detected_stack?: string;
   available_repos?: string[];
   live_analyzed?: boolean;
+  analysis_status?: string;
+  analysis_confidence?: number;
+  skill_evidence?: Record<string, string[]>;
+  readiness_plan?: {
+    status: string;
+    decision_use?: string;
+    message?: string;
+    gaps: Array<{ id: string; priority: string; skill: string; reason: string; task: string; artifact: string; acceptance: string }>;
+    next_reassessment?: string;
+  };
   verified_skills?: string[];
   assessment_results?: AssessmentResults;
+  deployment_contract?: DeploymentContract;
+}
+
+export interface DeploymentCompetency {
+  id: string;
+  name: string;
+  state: 'OBSERVED_IN_SOURCE' | 'NOT_OBSERVED';
+  source_files: string[];
+  next_proof: string;
+}
+
+export interface DeploymentContract {
+  version: string;
+  contract_id: string;
+  contract_hash: string;
+  candidate_id?: string;
+  role_title: string;
+  status: 'READY_FOR_WORK_SAMPLE' | 'EVIDENCE_INCOMPLETE';
+  decision_use: string;
+  summary: string;
+  competencies: DeploymentCompetency[];
+  work_sample: {
+    status: 'NOT_STARTED';
+    brief: string;
+    required_evidence: string[];
+    acceptance: string;
+  };
+  outcome_checkpoints: Array<{
+    checkpoint: string;
+    status: 'NOT_RECORDED';
+    required_evidence: string;
+  }>;
+  calibration: {
+    status: 'AWAITING_WORKPLACE_OUTCOMES';
+    assessment_prediction: 'NOT_COMPARED';
+    time_to_productivity: 'NOT_RECORDED';
+    message: string;
+  };
+  evidence_basis: {
+    source_files: string[];
+    history_verified: boolean;
+    complex_functions: number;
+    viva_questions: number;
+    analysis_status: string;
+  };
 }
 
 export interface BattleCandidateResult {

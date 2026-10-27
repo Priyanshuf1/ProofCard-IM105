@@ -22,6 +22,20 @@ TECH_DICTIONARY = {
 
 class JDMatcher:
     @staticmethod
+    def extract_skill_evidence(code_snippets: Dict[str, str], file_paths: List[str]) -> Dict[str, List[str]]:
+        """Return the exact files that support each detected technology signal."""
+        evidence: Dict[str, List[str]] = {}
+        for skill, patterns in TECH_DICTIONARY.items():
+            matches = []
+            for path in file_paths:
+                text = f"{path}\n{code_snippets.get(path, '')}".lower()
+                if any(re.search(pattern, text) for pattern in patterns):
+                    matches.append(path)
+            if matches:
+                evidence[skill] = matches[:12]
+        return evidence
+
+    @staticmethod
     def extract_requirements(jd_text: str) -> List[str]:
         text_lower = jd_text.lower()
         matched = []
@@ -33,14 +47,16 @@ class JDMatcher:
     @staticmethod
     def verify_candidate_skills(
         detected_files: List[str],
-        required_skills: List[str]
+        required_skills: List[str],
+        skill_evidence: Dict[str, List[str]] | None = None,
     ) -> Tuple[List[str], List[str]]:
         files_str = " ".join(detected_files).lower()
         verified = []
         missing = []
         for skill in required_skills:
             patterns = TECH_DICTIONARY.get(skill, [rf"\b{skill}\b"])
-            if any(re.search(p, files_str) for p in patterns):
+            evidence_paths = (skill_evidence or {}).get(skill, [])
+            if evidence_paths or any(re.search(p, files_str) for p in patterns):
                 verified.append(skill)
             else:
                 missing.append(skill)
@@ -55,10 +71,22 @@ class JDMatcher:
         results = []
         for c in candidates:
             detected_files = c.get("detected_files", [])
-            verified, missing = cls.verify_candidate_skills(detected_files, required_skills)
+            verified, missing = cls.verify_candidate_skills(
+                detected_files,
+                required_skills,
+                c.get("skill_evidence") or {},
+            )
             jd_pct = round((len(verified) / max(len(required_skills), 1)) * 100)
-            auth_score = c.get("authenticity_score", 50)
-            viva_score = c.get("viva_score", 5)
+            auth_score = c.get("authenticity_score", 0)
+            viva_score = c.get("viva_score", 0)
+            analysis_status = c.get("analysis_status", "COMPLETED")
+            confidence = float(c.get("analysis_confidence", 0.0) or 0.0)
+
+            # A pending or incomplete profile is not eligible for a hiring
+            # decision. It may be displayed for follow-up, but must not be
+            # converted into a ranked recommendation.
+            if analysis_status != "COMPLETED" or (c.get("analysis_confidence") is not None and confidence < 0.50):
+                continue
 
             # Composite Score: 40% Authenticity + 35% JD Match + 25% Viva (scaled to 100)
             composite = round((auth_score * 0.40) + (jd_pct * 0.35) + (viva_score * 10 * 0.25))
@@ -79,6 +107,8 @@ class JDMatcher:
             })
 
         sorted_results = sorted(results, key=lambda x: x["composite_score"], reverse=True)
+        if not sorted_results:
+            raise ValueError("No candidates have sufficient completed evidence for ranking.")
         winner = sorted_results[0]
         runner_up = sorted_results[1] if len(sorted_results) > 1 else winner
         diff_pts = winner["composite_score"] - runner_up["composite_score"]

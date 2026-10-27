@@ -1,9 +1,115 @@
-import { CandidateProfile, BattleResponse, BiasMirrorResponse, RecruiterDecision, VivaQuestion } from '../types';
+import { CandidateProfile, BattleResponse, BiasMirrorResponse, RecruiterDecision, VivaQuestion, DeploymentContract } from '../types';
 import { OFFLINE_DEMO_PROFILES, SAMPLE_RECRUITER_DECISIONS } from '../data/offlineDemoData';
 
 const BASE_URL = typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
   ? `http://${window.location.hostname}:8000`
   : 'http://127.0.0.1:8000';
+
+function slug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'competency';
+}
+
+export function buildLocalDeploymentContract(
+  candidate: CandidateProfile,
+  roleTitle?: string,
+  roleRequirements: string[] = [],
+): DeploymentContract {
+  const evidence = candidate.skill_evidence || {};
+  const observedSkills = Object.keys(evidence);
+  const names = Array.from(new Set([
+    ...roleRequirements.filter(Boolean),
+    ...observedSkills,
+  ])).slice(0, 10);
+  const competencyNames = names.length > 0
+    ? names
+    : ['source ownership', 'testing and failure handling', 'technical explanation', 'delivery reliability'];
+  const competencies = competencyNames.map((name) => {
+    const sourceFiles = evidence[name] || evidence[Object.keys(evidence).find(key => key.toLowerCase() === name.toLowerCase()) || ''] || [];
+    return {
+      id: slug(name),
+      name,
+      state: sourceFiles.length > 0 ? 'OBSERVED_IN_SOURCE' as const : 'NOT_OBSERVED' as const,
+      source_files: sourceFiles.slice(0, 8),
+      next_proof: sourceFiles.length > 0
+        ? 'Confirm this capability in the role work sample.'
+        : `Provide a role-specific work sample demonstrating ${name}.`,
+    };
+  });
+  const historyVerified = Boolean(candidate.git_dna?.history_verified);
+  const sourceAvailable = Boolean((candidate.detected_files || []).length || Object.values(evidence).flat().length);
+  const complete = candidate.analysis_status === 'COMPLETED' && historyVerified && sourceAvailable;
+  const role = roleTitle || candidate.project_type || 'Software Engineer';
+
+  return {
+    version: 'deployment-contract-v1',
+    contract_id: `DPC-LOCAL-${candidate.candidate_id}`,
+    contract_hash: 'LOCAL_CONTRACT_DERIVED_FROM_CURRENT_EVIDENCE',
+    candidate_id: candidate.candidate_id,
+    role_title: role,
+    status: complete ? 'READY_FOR_WORK_SAMPLE' : 'EVIDENCE_INCOMPLETE',
+    decision_use: 'Do not use this contract as a standalone hiring score.',
+    summary: 'Connects verified assessment evidence to a role work sample and later workplace verification.',
+    competencies,
+    work_sample: {
+      status: 'NOT_STARTED',
+      brief: `Complete a bounded ${role} task using your own approach, then explain the trade-offs.`,
+      required_evidence: ['submitted work or patch', 'passing test or validation output', 'short explanation of one trade-off'],
+      acceptance: 'A reviewer can reproduce the result and link each claimed competency to an artifact.',
+    },
+    outcome_checkpoints: ['30_DAY', '60_DAY', '90_DAY'].map(checkpoint => ({
+      checkpoint,
+      status: 'NOT_RECORDED' as const,
+      required_evidence: checkpoint === '30_DAY'
+        ? 'Mentor-verified first independent contribution.'
+        : checkpoint === '60_DAY'
+          ? 'A shipped contribution and one reviewed collaboration artifact.'
+          : 'Manager-verified role outcome and remaining skill gaps.',
+    })),
+    calibration: {
+      status: 'AWAITING_WORKPLACE_OUTCOMES',
+      assessment_prediction: 'NOT_COMPARED',
+      time_to_productivity: 'NOT_RECORDED',
+      message: 'Workplace outcomes must be supplied by an authorised mentor or employer before calibration is calculated.',
+    },
+    evidence_basis: {
+      source_files: Array.from(new Set(Object.values(evidence).flat())).slice(0, 20),
+      history_verified: historyVerified,
+      complex_functions: candidate.complex_functions?.length || 0,
+      viva_questions: candidate.viva_questions?.length || 0,
+      analysis_status: candidate.analysis_status || 'VERIFICATION_INCOMPLETE',
+    },
+  };
+}
+
+export async function createDeploymentContract(
+  candidate: CandidateProfile,
+  roleTitle?: string,
+  roleRequirements: string[] = [],
+): Promise<DeploymentContract> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 1800);
+  try {
+    const res = await fetch(`${BASE_URL}/api/deployment/contract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        profile: candidate,
+        role_title: roleTitle,
+        role_requirements: roleRequirements,
+      }),
+    });
+    if (!res.ok) throw new Error(`Deployment contract failed with HTTP ${res.status}`);
+    const data = await res.json();
+    return data.contract as DeploymentContract;
+  } catch {
+    // The local contract uses only the evidence already present on the card.
+    // It never fabricates workplace outcomes or a readiness score.
+    return buildLocalDeploymentContract(candidate, roleTitle, roleRequirements);
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 export async function uploadZipFile(
   file: File,
@@ -35,18 +141,18 @@ export async function uploadZipFile(
     project_type: data.project_type || data.detected_stack || 'Fullstack Application',
     detected_files: data.detected_files || data.metrics?.manifest_sample || [],
     complex_functions: data.complex_functions || data.complex_functions_for_viva || [],
-    structural_token_sequence: data.structural_token_sequence || 'Program>BlockStatement',
-    viva_score: data.viva_score || 8,
+    structural_token_sequence: data.structural_token_sequence ?? '',
+    viva_score: data.viva_score ?? 0,
     available_repos: data.available_repos || [],
     live_analyzed: Boolean(data.live_analyzed),
     proof_card: data.proof_card || {
-      status: data.is_clone ? 'FLAGGED_CLONE' : 'VERIFIED_COMPETENT',
+      status: data.is_clone ? 'FLAGGED_CLONE' : 'VERIFICATION_INCOMPLETE',
       headline: data.is_clone 
         ? 'High probability tutorial clone detected.' 
-        : 'Verified original engineering work with clean AST structure.',
+        : 'Analysis completed without a supplied proof card; verification remains incomplete.',
       strengths: [
-        `${data.total_loc} lines of code parsed across ${data.metrics?.total_code_files || 5} source files`,
-        `${data.metrics?.test_files_detected || 0} automated test suites identified`,
+        `${data.total_loc ?? 0} lines of code parsed across ${data.metrics?.total_code_files ?? 0} source files`,
+        `${data.metrics?.test_files_detected ?? 0} automated test suites identified`,
         'Zero institutional bias applied during verification'
       ],
       growth_area: 'Expand unit test assertions and error boundary fixtures.',
@@ -86,20 +192,20 @@ export async function analyzeGithubUrl(
     ...data,
     name: data.name || data.candidate_name || candidateName,
     project_type: data.project_type || data.detected_stack || 'Fullstack Application',
-    detected_files: data.detected_files || ['src/core/dispatcher.ts', 'src/middleware/auth.ts', 'tests/dispatcher.test.ts'],
+    detected_files: data.detected_files || [],
     complex_functions: data.complex_functions || data.complex_functions_for_viva || [],
-    structural_token_sequence: data.structural_token_sequence || 'Program>BlockStatement',
-    viva_score: data.viva_score || 8,
+    structural_token_sequence: data.structural_token_sequence ?? '',
+    viva_score: data.viva_score ?? 0,
     available_repos: data.available_repos || [],
     live_analyzed: Boolean(data.live_analyzed),
     proof_card: data.proof_card || {
-      status: data.is_clone ? 'FLAGGED_CLONE' : 'VERIFIED_COMPETENT',
+      status: data.is_clone ? 'FLAGGED_CLONE' : 'VERIFICATION_INCOMPLETE',
       headline: data.is_clone 
         ? 'Tutorial pattern detected in commit history.' 
-        : 'Organic engineering progression confirmed through Git-DNA.',
+        : 'Analysis completed without a supplied proof card; verification remains incomplete.',
       strengths: [
-        `${data.git_dna?.total_commits || 20} commits over ${data.git_dna?.time_span_days || 14} days`,
-        `Deletion ratio of ${Math.round((data.git_dna?.deletion_ratio || 0.15) * 100)}% demonstrating refactoring`
+        `${data.git_dna?.total_commits ?? 0} commits over ${data.git_dna?.time_span_days ?? 0} days`,
+        `Deletion ratio of ${Math.round((data.git_dna?.deletion_ratio ?? 0) * 100)}%`
       ],
       growth_area: 'Deepen asynchronous failure testing.',
       specific_action: 'Integrate mock integration tests into GitHub Actions pipeline.',
@@ -466,15 +572,8 @@ export async function generateMoreVivaQuestions(
   }
 
   // Client-side deterministic viva generation fallback (supporting 3, 5, 10 questions)
-  const funcs = (complexFunctions && complexFunctions.length > 0)
-    ? complexFunctions
-    : [
-        { file: 'src/core/dispatcher.ts', function_name: 'dispatchJob', complexity: 8, line_number: 42 },
-        { file: 'src/services/auth.ts', function_name: 'verifySessionToken', complexity: 7, line_number: 89 },
-        { file: 'src/pipeline/transform.py', function_name: 'aggregate_metrics', complexity: 9, line_number: 112 },
-        { file: 'src/db/connection_pool.py', function_name: 'acquire_lease', complexity: 11, line_number: 64 },
-        { file: 'src/network/socket_broker.ts', function_name: 'streamFrames', complexity: 10, line_number: 134 }
-      ];
+  const funcs = complexFunctions && complexFunctions.length > 0 ? complexFunctions : [];
+  if (funcs.length === 0) return [];
 
   const questionBank = [
     {
@@ -555,12 +654,12 @@ export async function runBattleCompare(
         name: c.name,
         college: c.college,
         authenticity_score: c.authenticity_score,
-        detected_files: (c.detected_files && c.detected_files.length > 0)
-          ? c.detected_files
-          : (c.matched_tutorial?.matched_files || [
-              'core/main.py', 'api/fastapi_app.py', 'tests/test_core.py', 'Dockerfile'
-            ]),
-        viva_score: c.viva_score
+        detected_files: c.detected_files || c.matched_tutorial?.matched_files || [],
+        viva_score: c.viva_score,
+        is_clone: c.is_clone,
+        analysis_status: c.analysis_status,
+        analysis_confidence: c.analysis_confidence,
+        skill_evidence: c.skill_evidence || {}
       }))
     };
 
@@ -577,37 +676,15 @@ export async function runBattleCompare(
     console.warn('Backend battle error, computing client matrix:', e);
   }
 
-  // Client fallback computation
-  const matrix = candidates.map(c => {
-    const verified = jobRequirements.filter((_, idx) => idx % 2 === 0 || c.authenticity_score > 70);
-    const missing = jobRequirements.filter(r => !verified.includes(r));
-    const jd_pct = Math.round((verified.length / Math.max(jobRequirements.length, 1)) * 100);
-    const composite = Math.round((c.authenticity_score * 0.40) + (jd_pct * 0.35) + (c.viva_score * 10 * 0.25));
-    return {
-      candidate_id: c.candidate_id,
-      name: c.name,
-      college: c.college,
-      authenticity_score: c.authenticity_score,
-      jd_match_pct: jd_pct,
-      viva_score: c.viva_score,
-      composite_score: composite,
-      verified_skills: verified,
-      missing_skills: missing,
-      has_tests: c.authenticity_score > 60
-    };
-  }).sort((a, b) => b.composite_score - a.composite_score);
-
-  const winner = matrix[0];
-  const runnerUp = matrix[1] || winner;
-  const diff = winner.composite_score - runnerUp.composite_score;
-
+  // Do not rank candidates using guessed skill overlap when the backend is
+  // unavailable. A placement decision must be based on verifiable evidence.
   return {
-    status: 'success',
-    winner_id: winner.candidate_id,
-    winner_name: winner.name,
-    diff_pts: diff,
-    rationale: `**${winner.name}** secured #1 rank with +${diff} pts advantage due to 96% verified authenticity and superior conceptual viva mastery.`,
-    battle_matrix: matrix
+    status: 'unavailable',
+    winner_id: '',
+    winner_name: '',
+    diff_pts: 0,
+    rationale: 'Ranking is unavailable because the forensic backend could not be reached. No fallback ranking was fabricated.',
+    battle_matrix: []
   };
 }
 
@@ -693,6 +770,19 @@ export async function fetchCohort100(): Promise<any> {
     console.warn('Backend cohort-100 unavailable, using local cohort:', e);
   }
   return null;
+}
+
+export async function ingestBatchCsv(csvText: string): Promise<any> {
+  const res = await fetch(`${BASE_URL}/api/batch/ingest-csv`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ csv_text: csvText }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.detail || `CSV ingestion failed with HTTP ${res.status}`);
+  }
+  return data;
 }
 
 export async function autoShortlistCohort(

@@ -14,8 +14,9 @@ import {
   ExternalLink
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import { CandidateProfile } from '../types';
+import { CandidateProfile, DeploymentContract } from '../types';
 import { CAMPUS_COHORT_100 } from '../data/cohortData';
+import { createDeploymentContract } from '../services/api';
 
 interface ProofCard3DProps {
   candidate: CandidateProfile;
@@ -46,6 +47,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   const isClone = candidate.is_clone;
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
 
   const publicVerifyUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/?verify=${candidate.candidate_id}`
@@ -64,6 +66,20 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       .then((url: string) => setQrCodeDataUrl(url))
       .catch((err: any) => console.error('QR Generation Error:', err));
   }, [candidate.candidate_id, publicVerifyUrl]);
+
+  useEffect(() => {
+    let active = true;
+    createDeploymentContract(
+      candidate,
+      candidate.project_type || 'Software Engineer',
+      Object.keys(candidate.skill_evidence || {}),
+    ).then((contract) => {
+      if (active) setDeploymentContract(contract);
+    });
+    return () => {
+      active = false;
+    };
+  }, [candidate]);
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -276,6 +292,125 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </div>
           </div>
         </div>
+
+        {deploymentContract && (
+          <div className="mb-5 p-5 rounded-xl bg-black/60 border border-[#E6C280]/30 relative z-10">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div>
+                <div className="flex items-center gap-2 text-base font-bold text-[#FFD166] uppercase tracking-wider font-mono">
+                  <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Deployment Readiness Contract</span>
+                </div>
+                <p className="feature-note mt-1">Evidence for this role, the work sample still required, and the outcomes an authorised mentor must verify later.</p>
+              </div>
+              <span className="text-sm px-2.5 py-1 rounded-full border border-[#D4AF37]/40 text-[#FFD166] font-mono font-bold">
+                {deploymentContract.status.replaceAll('_', ' ')}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
+              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
+                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Role</span>
+                <strong className="text-sm text-white block mt-1">{deploymentContract.role_title}</strong>
+              </div>
+              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
+                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Source proof</span>
+                <strong className="text-sm text-white block mt-1">{deploymentContract.evidence_basis.source_files.length} linked files</strong>
+              </div>
+              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
+                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Workplace result</span>
+                <strong className="text-sm text-amber-300 block mt-1">Not recorded</strong>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+              {deploymentContract.competencies.map((competency) => (
+                <div key={competency.id} className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <strong className="text-sm text-white">{competency.name}</strong>
+                    <span className={`text-xs uppercase font-bold ${competency.state === 'OBSERVED_IN_SOURCE' ? 'text-emerald-300' : 'text-amber-300'}`}>
+                      {competency.state === 'OBSERVED_IN_SOURCE' ? 'Observed' : 'Needs proof'}
+                    </span>
+                  </div>
+                  {competency.source_files.length > 0 ? (
+                    <p className="feature-note">Source: {competency.source_files.join(', ')}</p>
+                  ) : (
+                    <p className="feature-note">{competency.next_proof}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 rounded-lg bg-[#8B1E1E]/20 border border-[#D4AF37]/35 mb-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <strong className="text-sm uppercase tracking-wider text-[#FFD166]">Required work sample</strong>
+                <span className="text-xs uppercase text-amber-300 font-bold">Not started</span>
+              </div>
+              <p className="text-sm text-neutral-100 leading-relaxed">{deploymentContract.work_sample.brief}</p>
+              <p className="feature-note mt-2">Evidence required: {deploymentContract.work_sample.required_evidence.join(' · ')}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigateToTab('terminal')}
+                className="btn-dev-outline text-sm px-4 py-2 cursor-pointer font-bold"
+              >
+                Review source evidence
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigateToTab('viva')}
+                className="btn-dev-primary text-sm px-4 py-2 cursor-pointer font-bold"
+              >
+                Run code defense
+              </button>
+              <span className="feature-note basis-full">These actions review current evidence. They do not create a workplace result.</span>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-[#3A2F27] grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {deploymentContract.outcome_checkpoints.map((checkpoint) => (
+                <div key={checkpoint.checkpoint} className="text-sm text-neutral-300">
+                  <span className="font-bold text-[#FFD166]">{checkpoint.checkpoint.replace('_', ' ')}</span>
+                  <span className="block text-amber-300 mt-0.5">Not recorded</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {candidate.readiness_plan && (
+          <div className="mb-5 p-5 rounded-xl bg-black/60 border border-[#D4AF37]/35 relative z-10">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2 text-base font-bold text-[#FFD166] uppercase tracking-wider font-mono">
+                <Zap className="w-4 h-4 text-[#D4AF37]" />
+                <span>Proof-to-Readiness Loop</span>
+              </div>
+              <span className="text-[11px] px-2 py-1 rounded-full border border-[#D4AF37]/40 text-[#FFD166] font-mono">
+                {candidate.readiness_plan.status.replaceAll('_', ' ')}
+              </span>
+            </div>
+            <p className="feature-note mb-4">
+              {candidate.readiness_plan.message || 'Evidence gaps are converted into assessable improvement work.'}
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {candidate.readiness_plan.gaps.slice(0, 4).map((gap) => (
+                <div key={gap.id} className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <strong className="text-base text-white">{gap.skill}</strong>
+                    <span className="text-[10px] uppercase text-[#FFD166]">{gap.priority}</span>
+                  </div>
+                  <p className="feature-note mb-2">{gap.reason}</p>
+                  <p className="text-sm text-[#F5E9C7]"><strong>Next proof:</strong> {gap.task}</p>
+                  <p className="text-sm text-neutral-400 mt-1"><strong>Acceptance:</strong> {gap.acceptance}</p>
+                </div>
+              ))}
+            </div>
+            {candidate.readiness_plan.next_reassessment && (
+              <p className="mt-3 feature-note">{candidate.readiness_plan.next_reassessment}</p>
+            )}
+          </div>
+        )}
 
         {/* Human-Readable Recruiter Explanation (Guardrail 1) */}
         {card.human_readable_reason && (

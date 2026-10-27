@@ -374,17 +374,17 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                 <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
                   <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 1</span>
                   <strong className="text-white text-sm sm:text-base">400 Anonymised Freshers</strong>
-                  <p className="text-xs text-neutral-300 mt-1 font-sans">Consented repositories & verified assessment scores</p>
+                  <p className="feature-note mt-1">Consented repositories and verified assessment records.</p>
                 </div>
                 <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
                   <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 2</span>
                   <strong className="text-white text-sm sm:text-base">30 Job Descriptions</strong>
-                  <p className="text-xs text-neutral-300 mt-1 font-sans">Labelled recruiter shortlist decisions ground truth</p>
+                  <p className="feature-note mt-1">Recruiter shortlist decisions used for comparison.</p>
                 </div>
                 <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
                   <span className="text-neutral-400 block uppercase text-xs font-bold">API Endpoint</span>
                   <strong className="text-[#FFD166] text-sm sm:text-base">IMATS Sandbox API</strong>
-                  <p className="text-xs text-neutral-300 mt-1 font-sans">v2.4.0-deviathon verified pipeline connector</p>
+                  <p className="feature-note mt-1">Pipeline connector for the IMATS sandbox.</p>
                 </div>
               </div>
 

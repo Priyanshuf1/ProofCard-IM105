@@ -38,6 +38,7 @@ class GitDnaMetrics(BaseModel):
     organic_growth: bool
     message_maturity_score: int
     test_files_detected: int
+    history_verified: Optional[bool] = None
 
 class VivaQuestion(BaseModel):
     question_id: str
@@ -95,6 +96,10 @@ class CandidateBattleProfile(BaseModel):
     detected_files: List[str] = Field(default_factory=list)
     viva_score: int
     project_type: Optional[str] = "Fullstack"
+    is_clone: bool = False
+    analysis_status: Optional[str] = "COMPLETED"
+    analysis_confidence: Optional[float] = None
+    skill_evidence: Dict[str, List[str]] = Field(default_factory=dict)
 
 class BattleRequest(BaseModel):
     job_requirements: List[str]

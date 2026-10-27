@@ -12,6 +12,8 @@ from backend.services.ast_analyzer import ASTAnalyzer
 from backend.services.tutorial_matcher import TutorialMatcher
 from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
+from backend.services.jd_matcher import JDMatcher
+from backend.services.readiness_engine import ReadinessEngine
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -913,16 +915,17 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if is_clone and matched_tut:
         sim = matched_tut.get("similarity_score", 0.0)
         # Authenticity drops inversely with copy percentage
-        auth_score = max(10, min(auth_score, int((1.0 - sim) * 100) + 5))
+        auth_score = max(0, min(auth_score, int((1.0 - sim) * 100) + 5))
     elif git_dna.get("total_commits", 0) == 1:
         # Only single-commit bulk paste drops to 25
         auth_score = min(auth_score, 25)
 
     git_dna["authenticity_score"] = auth_score
+    source_available = any(Path(path).suffix.lower() in CODE_SOURCE_EXTENSIONS for path in code_snippets)
 
     tamper_proof_hash = "SHA256:" + hashlib.sha256(f"{cid}:{owner}:{resolved_repo_name}:{auth_score}".encode()).hexdigest()
     analysis_confidence = 0.0
-    if commits_data:
+    if git_dna.get("history_verified"):
         analysis_confidence += 0.55
     if code_snippets:
         analysis_confidence += 0.35
@@ -948,8 +951,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "tamper_proof_hash": tamper_proof_hash
         }
     else:
-        history_available = bool(commits_data)
-        source_available = any(Path(path).suffix.lower() in CODE_SOURCE_EXTENSIONS for path in code_snippets)
+        history_available = bool(commits_data and git_dna.get("history_verified"))
         if history_available and source_available:
             verification_status = "VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT"
             verification_headline = (
@@ -1001,6 +1003,16 @@ async def analyze_github_repo(req: IngestionURLRequest):
         ),
         "authenticity_score": auth_score,
         "analysis_confidence": round(min(1.0, analysis_confidence), 2),
+        "analysis_status": "COMPLETED" if (git_dna.get("history_verified") and source_available) else "VERIFICATION_INCOMPLETE",
+        "skill_evidence": JDMatcher.extract_skill_evidence(code_snippets, detected_files),
+        "readiness_plan": ReadinessEngine.build_plan(
+            skill_evidence=JDMatcher.extract_skill_evidence(code_snippets, detected_files),
+            complex_functions=complex_functions,
+            git_dna=git_dna,
+            viva_questions=viva_questions,
+            matched_tutorial=matched_tut,
+            analysis_status="COMPLETED" if (git_dna.get("history_verified") and source_available) else "VERIFICATION_INCOMPLETE",
+        ),
         "is_clone": is_clone,
         "matched_tutorial": matched_tut,
         "provenance_evidence": provenance_evidence,

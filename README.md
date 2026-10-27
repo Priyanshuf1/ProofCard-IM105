@@ -3,9 +3,9 @@
 
 [![CI Pipeline](https://github.com/Priyanshuf1/ProofCard-IM105/actions/workflows/ci.yml/badge.svg)](https://github.com/Priyanshuf1/ProofCard-IM105/actions/workflows/ci.yml)
 [![Deviathon 2.0](https://img.shields.io/badge/Deviathon%202.0-Hackathon%20Submission-orange?style=for-the-badge)](https://whereuelevate.com)
-[![Problem Statement](https://img.shields.io/badge/Integraminds-IM--105-red?style=for-the-badge)](https://integraminds.com)
-[![Fairness EEOC Compliant](https://img.shields.io/badge/EEOC%20Four--Fifths-1.00%20Parity-emerald?style=for-the-badge)](#-fairness-constraint--eeoc-compliance)
-[![Pytest Suite](https://img.shields.io/badge/Tests-48%2F48%20Passing-brightgreen?style=for-the-badge)](#-automated-test-suite)
+[![Problem Statement](https://img.shields.io/badge/Integraminds-IM--105-red?style=for-the-badge)](https://www.integraminds.in)
+[![Fairness Audit](https://img.shields.io/badge/Fairness-Four--Fifths%20Audit-emerald?style=for-the-badge)](#-fairness-constraint--eeoc-compliance)
+[![Pytest Suite](https://img.shields.io/badge/Tests-56%20Passed%20%7C%207%20Network%20Skipped-brightgreen?style=for-the-badge)](#-automated-test-suite)
 [![Docker Ready](https://img.shields.io/badge/Docker-Compose%20Ready-blue?style=for-the-badge)](#-docker-quickstart)
 
 > **Official Solution & Reference Implementation**  
@@ -14,6 +14,8 @@
 > **Executive PDF Report**: [Download 6-Page Engineering Report PDF (A4)](ProofCard_IM105_Comprehensive_Project_Report.pdf)
 
 ---
+
+> **Company alignment note:** The problem partner is Integraminds Industry Solutions Pvt Ltd. Public company material describes employment-readiness programs, recruitment tooling, AI interview/conversation workflows, and IMAP assessments spanning communication, aptitude, writing, speech, and coding. Where U Elevate is referenced only as the Deviathon/event platform, not as the problem partner.
 
 ## 🚀 Docker Quickstart (1-Command Launch)
 
@@ -38,6 +40,8 @@ Modern campus recruitment is flooded with **templated resumes**, **cloned tutori
 4. **Dynamic Code Viva Defense Engine** (Probes candidates on *their own* complex functions to verify conceptual ownership)
 5. **Integraminds IMATS Enterprise Sandbox Connector** (Benchmarked across **400 fresher profiles** and **30 job descriptions**)
 6. **EEOC Four-Fifths Fairness Constraint Enforcer** (Decouples college pedigree and guarantees $\ge 0.80$ disparate impact ratio)
+7. **Proof-to-Readiness Loop** (Converts missing evidence into assessable improvement tasks and a repeatable reassessment plan)
+8. **Deployment Readiness Contract** (Connects observed evidence to a role work sample and keeps post-placement outcomes explicitly unrecorded until an authorised mentor verifies them)
 
 ---
 
@@ -45,11 +49,11 @@ Modern campus recruitment is flooded with **templated resumes**, **cloned tutori
 
 | Metric | Official Target | ProofCard Performance | Verdict |
 | :--- | :---: | :---: | :---: |
-| **Recruiter Shortlist Agreement** | High Correlation | **100.0%** (Top-10 Recall across 30 JDs) | 🎯 **EXEMPLARY** |
-| **Fairness Constraint (EEOC 4/5ths)** | $\ge 0.80$ | **0.93** (Tier-3: 26.5% vs Tier-1: 28.6%) | ⚖️ **COMPLIANT** |
+| **Recruiter Shortlist Agreement** | High Correlation | **Offline fixture benchmark only** | ⚠️ **Requires external validation** |
+| **Fairness Constraint (Four-Fifths Audit)** | $\ge 0.80$ | **0.93 in the bundled fixture** | ⚖️ **Audit signal, not legal certification** |
 | **Explainability Guardrail** | 100% Rankings | **100% Human-Readable Rationales** | 🛡️ **VERIFIED** |
 | **Privacy & Consent Guardrail** | Mandatory Consent | **100% Enforced** (Returns 403 on missing consent) | 🔒 **ENFORCED** |
-| **Automated Backend Pytest Suite** | Passing | **47 / 47 Passed** (0 failures) | ✅ **GREEN** |
+| **Automated Backend Pytest Suite** | Passing | **56 passed; 7 live-network tests skipped** | ✅ **GREEN** |
 | **Frontend Production Build** | Zero Errors | **Vite + React 19 Build in 5.21s** | ⚡ **OPTIMIZED** |
 
 ---
@@ -89,7 +93,7 @@ flowchart TD
 ### 2. Structural AST Analysis & MOSS Winnowing (`backend/services/ast_analyzer.py`, `backend/services/tutorial_matcher.py`)
 - Computes McCabe cyclomatic complexity per function across **Python, JavaScript, TypeScript, Java, Go, C++, and Rust**.
 - Extracts normalized, identifier-agnostic structural token sequences (`Program > TryStatement > BlockStatement > CallExpression`).
-- Hashes token $k$-grams ($k=25$, window $w=15$) against verified fingerprint clusters of famous YouTube tutorials (CodeWithHarry, Traversy Media, Clever Programmer, FreeCodeCamp, etc.) to detect disguised tutorial clones.
+- Uses winnowing-inspired normalized token fingerprints against a maintained catalog and optional authenticated GitHub source retrieval. A catalog hit or URL citation alone is not treated as proof of copying.
 
 ### 3. Git-DNA Commit Forensics (`backend/services/commit_forensics.py`)
 - Analyzes authentic engineering rhythms:
@@ -110,6 +114,16 @@ flowchart TD
   $$\text{Composite Score} = 0.35 \times \text{Authenticity} + 0.40 \times \text{JD Skill Match} + 0.25 \times (\text{Viva Score} \times 10)$$
 - **EEOC Four-Fifths Compliance**: Calculates Disparate Impact ratio:
   $$\text{Disparate Impact} = \frac{\text{Selection Rate of Tier-3 Applicants}}{\text{Selection Rate of Tier-1 Applicants}} = \frac{26.5\%}{28.6\%} = 0.93 \ge 0.80$$
+
+### 6. Proof-to-Readiness Loop (`backend/services/readiness_engine.py`, `/api/readiness/plan`)
+- Converts missing history, test, skill, source-depth, and code-defense evidence into concrete tasks.
+- Every task includes a required artifact and an acceptance condition; no improvement score is invented.
+- Supports a repeat assessment after the student submits the requested proof, aligning the verifier with employment-readiness rather than one-time rejection.
+
+### 7. Deployment Readiness Contract (`backend/services/deployment_readiness.py`, `/api/deployment/contract`)
+- Creates a versioned, role-specific contract connecting source evidence, a bounded work sample, and 30/60/90-day workplace checkpoints.
+- Separates **observed in source**, **needs proof**, and **not recorded** states; it never invents workplace performance or a readiness percentage.
+- Provides the foundation for Integraminds to compare assessment predictions with authorised mentor or employer outcomes over time.
 
 ---
 
@@ -150,9 +164,9 @@ ProofCard features an extensive automated test suite covering all forensic compo
 python -m pytest backend/tests/ tests/ -v
 ```
 
-Output:
+Output in the current offline test environment:
 ```text
-======================= 47 passed in 46.32s =======================
+======================= 56 passed, 7 skipped =======================
 backend/tests/test_backend.py ...................................  [ 74%]
 backend/tests/test_viva_grading.py ......                          [ 87%]
 tests/test_csv_ingestion.py ..                                     [ 91%]

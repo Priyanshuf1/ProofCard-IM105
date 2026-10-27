@@ -20,7 +20,7 @@ import {
   Award,
   ExternalLink
 } from 'lucide-react';
-import { uploadZipFile, analyzeGithubUrl } from '../services/api';
+import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv } from '../services/api';
 import { CandidateProfile } from '../types';
 import { CAMPUS_COHORT_100 } from '../data/cohortData';
 import { IM105_COHORT_400 } from '../data/im105BenchmarkData';
@@ -213,103 +213,21 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
     return base;
   };
 
-  const parseCsvLine = (text: string): string[] => {
-    const result: string[] = [];
-    let cur = '';
-    let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (c === '"') {
-        inQuotes = !inQuotes;
-      } else if (c === ',' && !inQuotes) {
-        result.push(cur.trim().replace(/^["']|["']$/g, ''));
-        cur = '';
-      } else {
-        cur += c;
-      }
+  const handleCsvUpload = async (file: File) => {
+    setIsBatchProcessing(true);
+    setErrorMessage(null);
+    try {
+      const text = await file.text();
+      if (!text.trim()) throw new Error('Uploaded CSV file is empty.');
+      const data = await ingestBatchCsv(text);
+      const pendingCandidates = (data.cohort || []) as CandidateProfile[];
+      setCohort(pendingCandidates);
+      setBatchTitle(`Custom Ingested Cohort (${pendingCandidates.length} Applicants; forensic analysis pending)`);
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'CSV ingestion failed. No scores were fabricated.');
+    } finally {
+      setIsBatchProcessing(false);
     }
-    result.push(cur.trim().replace(/^["']|["']$/g, ''));
-    return result;
-  };
-
-  const handleCsvUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      if (!text) return;
-      const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-      if (lines.length <= 1) {
-        setErrorMessage('Uploaded CSV file appears to be empty or lacks candidate rows.');
-        return;
-      }
-      const headers = parseCsvLine(lines[0].toLowerCase());
-      
-      const nameIdx = headers.findIndex(h => h.includes('name'));
-      const urlIdx = headers.findIndex(h => h.includes('github') || h.includes('repo') || h.includes('url'));
-      const collegeIdx = headers.findIndex(h => h.includes('college') || h.includes('inst') || h.includes('univ'));
-      const projectIdx = headers.findIndex(h => h.includes('project') || h.includes('tech') || h.includes('branch'));
-
-      const parsedCandidates: CandidateProfile[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const row = parseCsvLine(lines[i]);
-        if (row.length === 0 || !row[0]) continue;
-        const name = (nameIdx >= 0 && row[nameIdx]) ? row[nameIdx] : `Applicant #${i}`;
-        const repoUrl = (urlIdx >= 0 && row[urlIdx]) ? row[urlIdx] : `https://github.com/applicant-${i}/project`;
-        const col = (collegeIdx >= 0 && row[collegeIdx]) ? row[collegeIdx] : 'University Applicant Pool';
-        const proj = (projectIdx >= 0 && row[projectIdx]) ? row[projectIdx] : 'Fullstack Application';
-
-        const isCloneRow = repoUrl.toLowerCase().includes('clone') || i % 4 === 0;
-        const authScore = isCloneRow ? Math.floor(Math.random() * 25) + 15 : Math.floor(Math.random() * 15) + 84;
-        const vivaScore = isCloneRow ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 3) + 7;
-
-        parsedCandidates.push({
-          candidate_id: `cand_csv_${i}`,
-          name: name,
-          college: col,
-          college_tier: col.toLowerCase().includes('iit') || col.toLowerCase().includes('nit') ? 'Tier-1' : 'Tier-2/3',
-          repo_url: repoUrl,
-          project_type: proj,
-          total_loc: Math.floor(Math.random() * 15000) + 1200,
-          authenticity_score: authScore,
-          is_clone: isCloneRow,
-          matched_tutorial: isCloneRow ? {
-            id: `tut_csv_${i}`,
-            name: 'External Tutorial / Course Repo',
-            author: 'Public Course Provider',
-            source_url: 'https://github.com',
-            origin_type: 'GLOBAL_ORIGIN',
-            similarity_score: (100 - authScore) / 100,
-            verdict: 'MOSS Winnowing flagged code structure matching public GitHub repo.',
-            matched_files: ['src/App.js', 'src/routes.js']
-          } : null,
-          viva_score: vivaScore,
-          git_dna: {
-            total_commits: isCloneRow ? 3 : 42,
-            time_span_days: isCloneRow ? 2 : 28,
-            burst_ratio: isCloneRow ? 0.95 : 0.42,
-            deletion_ratio: isCloneRow ? 0.03 : 0.32,
-            organic_growth: !isCloneRow,
-            message_maturity_score: isCloneRow ? 35 : 85,
-            test_files_detected: isCloneRow ? 0 : 3,
-            authenticity_score: authScore,
-            summary: `CSV Batch Ingested: ${name} (${proj})`
-          },
-          detected_files: ['src/index.js', 'src/App.js'],
-          proof_card: {
-            status: isCloneRow ? 'REJECT_SUSPECTED_PLAGIARISM' : 'VERIFIED_EXEMPLARY',
-            headline: isCloneRow ? 'Suspected tutorial clone.' : 'Verified authentic applicant.',
-            strengths: ['Repository ingested via Enterprise CSV Queue'],
-            growth_area: 'Expand systems testing',
-            specific_action: 'Prepare for live architectural viva defense.',
-            tamper_proof_hash: `CERT:CSV-${i}`
-          }
-        });
-      }
-
-      setCohort(parsedCandidates);
-      setBatchTitle(`Custom Ingested Cohort (${parsedCandidates.length} Applicants from CSV)`);
-    };
-    reader.readAsText(file);
   };
 
   const handleDownloadTemplate = () => {
@@ -846,8 +764,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <GitBranch className={`w-4 h-4 ${ingestMode === 'github' ? 'text-[#ff9f1c]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-warrior font-bold text-white">Public GitHub Profile or Repo</span>
               </div>
-              <p className="text-xs text-[#E6C280]/70">
-                Scans commit velocity, branch structures, and multi-file codebases in real-time.
+              <p className="feature-note">
+                Reviews commit history, branches, and source files from a public repository.
               </p>
             </button>
 
@@ -863,8 +781,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <UploadCloud className={`w-4 h-4 ${ingestMode === 'zip' ? 'text-[#ff9f1c]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-warrior font-bold text-white">Direct Local ZIP Upload</span>
               </div>
-              <p className="text-xs text-[#E6C280]/70">
-                Built for offline computer labs or students without public GitHub repositories.
+              <p className="feature-note">
+                For offline labs or students who cannot submit a public repository.
               </p>
             </button>
           </div>

@@ -42,6 +42,13 @@
   code, pre, .font-mono {
     font-family: 'Fira Code', ui-monospace, monospace;
   }
+
+  .feature-note {
+    color: #d6c8af;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
 }
 
 /* Custom battlefield scrollbars */

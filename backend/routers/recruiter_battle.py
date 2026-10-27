@@ -19,6 +19,18 @@ def battle_compare_candidates(req: BattleRequest):
     if len(req.candidates) < 2:
         raise HTTPException(status_code=400, detail="Must provide at least 2 candidates for head-to-head battle matrix.")
 
-    raw_candidates = [c.model_dump() for c in req.candidates]
+    eligible = [
+        candidate for candidate in req.candidates
+        if candidate.analysis_status == "COMPLETED"
+        and (candidate.analysis_confidence is None or candidate.analysis_confidence >= 0.50)
+        and not candidate.is_clone
+    ]
+    if len(eligible) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="At least two non-clone candidates with completed evidence and confidence >= 0.50 are required for ranking.",
+        )
+
+    raw_candidates = [c.model_dump() for c in eligible]
     result = JDMatcher.run_battle(raw_candidates, req.job_requirements)
     return result

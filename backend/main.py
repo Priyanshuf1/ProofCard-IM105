@@ -8,7 +8,9 @@ from backend.routers import (
     bias_mirror,
     proofcard,
     batch_operations,
-    imats_sandbox
+    imats_sandbox,
+    readiness,
+    deployment
 )
 
 app = FastAPI(
@@ -40,6 +42,8 @@ app.include_router(proofcard.router)
 app.include_router(batch_operations.router)
 app.include_router(batch_operations.imats_router)
 app.include_router(imats_sandbox.router)
+app.include_router(readiness.router)
+app.include_router(deployment.router)
 
 @app.get("/")
 def root():
@@ -58,6 +62,7 @@ def root():
             "Dynamic Code Viva & Conceptual Scorer",
             "Recruiter JD Battle Matrix",
             "Recruiter Bias Mirror & Equal Opportunity Audit",
+            "Deployment Readiness Contract",
             "Offline 100% Demo Survival Mode"
         ]
     }

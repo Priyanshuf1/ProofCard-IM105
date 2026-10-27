@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Zap, 
   Clock, 
@@ -30,6 +30,32 @@ interface VivaArenaProps {
   cohort?: CandidateProfile[];
 }
 
+type SpeechRecognitionResultEventLike = {
+  resultIndex: number;
+  results: ArrayLike<{
+    isFinal: boolean;
+    0: { transcript: string };
+  }>;
+};
+
+type SpeechRecognitionErrorEventLike = { error?: string };
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+}
+
+type SpeechRecognitionConstructorLike = new () => SpeechRecognitionLike;
+
 export const VivaArena: React.FC<VivaArenaProps> = ({
   candidate,
   onUpdateVivaScore,
@@ -37,21 +63,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   onSelectCandidate,
   cohort = CAMPUS_COHORT_100
 }) => {
-  const [questions, setQuestions] = useState<VivaQuestion[]>(
-    candidate.viva_questions && candidate.viva_questions.length > 0
-      ? candidate.viva_questions
-      : [
-          {
-            question_id: 'q1',
-            function_name: 'handler',
-            file: 'api/insta.ts',
-            line_number: 6,
-            question: 'In your serverless RapidAPI proxy handler (api/insta.ts:6), how do you mitigate upstream service timeouts and ensure external proxy sockets are cleanly terminated on network dropouts?',
-            expected_concepts: ['Upstream timeout mitigation', 'Socket cleanup and error handling', 'Serverless lifecycle bounds'],
-            difficulty: 'hard'
-          }
-        ]
-  );
+  const [questions, setQuestions] = useState<VivaQuestion[]>(candidate.viva_questions || []);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -64,6 +76,41 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   // Web Speech API state
   const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState<boolean | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const voiceBaseTextRef = useRef('');
+  const finalTranscriptRef = useRef('');
+  const shouldKeepListeningRef = useRef(false);
+
+  const stopVoiceDefense = (abort = false) => {
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      setIsListening(false);
+      setInterimTranscript('');
+      shouldKeepListeningRef.current = false;
+      return;
+    }
+    shouldKeepListeningRef.current = false;
+    try {
+      abort ? recognition.abort() : recognition.stop();
+    } catch {
+      // The browser may throw if recognition already ended.
+    }
+    recognitionRef.current = null;
+    setIsListening(false);
+    setInterimTranscript('');
+  };
+
+  useEffect(() => {
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructorLike;
+      webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
+    };
+    setVoiceSupported(Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition));
+    return () => stopVoiceDefense(true);
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -80,6 +127,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   // Reset when question changes
   useEffect(() => {
+    stopVoiceDefense(true);
+    setInterimTranscript('');
     setTimeLeft(60);
     setIsTimerRunning(!evaluatedAnswers[currentQuestionIndex]);
     setUserAnswer('');
@@ -87,46 +136,107 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   // Sync questions when candidate changes
   useEffect(() => {
+    stopVoiceDefense(true);
+    setVoiceError(null);
     if (candidate.viva_questions && candidate.viva_questions.length > 0) {
       setQuestions(candidate.viva_questions);
+    } else {
+      setQuestions([]);
     }
     setCurrentQuestionIndex(0);
     setEvaluatedAnswers({});
   }, [candidate.candidate_id]);
 
-  const toggleVoiceDefense = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const toggleVoiceDefense = async () => {
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructorLike;
+      webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
+    };
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setUserAnswer("We prevent socket leaks using an AbortController with a 5000ms deadline signal and explicitly handle TCP timeouts.");
+      setVoiceSupported(false);
+      setVoiceError('Voice input is not supported by this browser. Type your answer instead.');
       return;
     }
 
     if (isListening) {
-      setIsListening(false);
+      stopVoiceDefense();
       return;
     }
 
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Microphone access is unavailable in this browser or context.');
+      }
+      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      permissionStream.getTracks().forEach(track => track.stop());
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = navigator.language || 'en-US';
+      recognition.maxAlternatives = 1;
+      voiceBaseTextRef.current = userAnswer.trim();
+      finalTranscriptRef.current = '';
+      setInterimTranscript('');
+      setVoiceError(null);
+      shouldKeepListeningRef.current = true;
+      recognitionRef.current = recognition;
 
       recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => {
+        if (recognitionRef.current === recognition && shouldKeepListeningRef.current) {
+          try {
+            recognition.start();
+            return;
+          } catch {
+            // Fall through to the stopped state below.
+          }
+        }
+        if (recognitionRef.current === recognition) {
+          recognitionRef.current = null;
+          setIsListening(false);
+          setInterimTranscript('');
+        }
+      };
+      recognition.onerror = (event) => {
+        if (recognitionRef.current === recognition) {
+          recognitionRef.current = null;
+          setIsListening(false);
+          setInterimTranscript('');
+        }
+        shouldKeepListeningRef.current = false;
+        if (event.error !== 'aborted') {
+          const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
+            ? 'Microphone permission was denied. Allow microphone access and try again.'
+            : event.error === 'no-speech'
+              ? 'No speech was detected. Move closer to the microphone and try again.'
+              : 'Voice input stopped unexpectedly. You can retry or type your answer.';
+          setVoiceError(message);
+        }
+      };
 
-      recognition.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
-          .map((r: any) => r[0].transcript)
-          .join('');
-        setUserAnswer(prev => prev ? `${prev} ${transcript}` : transcript);
+      recognition.onresult = (event) => {
+        let interim = '';
+        let finalText = finalTranscriptRef.current;
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          const transcript = result[0]?.transcript || '';
+          if (result.isFinal) finalText += transcript;
+          else interim += transcript;
+        }
+        finalTranscriptRef.current = finalText;
+        setInterimTranscript(interim.trim());
+        const combined = [voiceBaseTextRef.current, finalText.trim()].filter(Boolean).join(' ');
+        setUserAnswer(combined);
       };
 
       recognition.start();
-    } catch {
+    } catch (error) {
+      recognitionRef.current = null;
       setIsListening(false);
-      setUserAnswer("We handle upstream timeouts by configuring an exponential backoff retry loop with jitter.");
+      setVoiceError(error instanceof DOMException && error.name === 'NotAllowedError'
+        ? 'Microphone permission was denied. Allow microphone access and try again.'
+        : 'Voice input could not start. You can type your answer instead.');
     }
   };
 
@@ -201,6 +311,18 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   const currentQ = questions[currentQuestionIndex] || questions[0];
   const isCurrentEvaluated = evaluatedAnswers[currentQuestionIndex] !== undefined;
+
+  if (!currentQ) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
+        <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 text-center">
+          <ShieldCheck className="w-10 h-10 mx-auto mb-3 text-[#D4AF37]" />
+          <h1 className="text-xl font-bold text-white mb-2">Live defense unavailable</h1>
+          <p className="text-sm text-neutral-300">No verified complex functions were retrieved for this candidate, so no viva question has been invented.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
@@ -413,19 +535,18 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                   }`}
                 >
                   {isListening ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5 text-[#D4AF37]" />}
-                  <span>{isListening ? 'Listening (Speak)...' : 'Voice Defense (Mic)'}</span>
+                  <span>{isListening ? 'Stop listening' : voiceSupported === false ? 'Mic unavailable' : 'Voice Defense (Mic)'}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setUserAnswer(`We mitigate timeouts by using an explicit abort controller and deadline context, ensuring sockets are immediately recycled on connection failure.`)}
-                  className="text-xs text-[#FFD166] hover:underline font-mono cursor-pointer font-bold"
-                >
-                  Sample Answer
-                </button>
               </div>
             )}
           </div>
+          {voiceError && (
+            <p className="mb-2 text-xs text-amber-300" role="status">{voiceError}</p>
+          )}
+          {isListening && interimTranscript && (
+            <p className="mb-2 text-xs text-[#C9B89A] italic" aria-live="polite">Hearing: {interimTranscript}</p>
+          )}
           <textarea
             rows={3}
             value={userAnswer}
