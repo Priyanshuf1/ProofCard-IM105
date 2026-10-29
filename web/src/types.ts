@@ -103,6 +103,12 @@ export interface CandidateProfile {
   is_prompt_injected?: boolean;
   is_synthetic_ai?: boolean;
   security_scan?: SecurityScanReport;
+  viva_blocked?: boolean;
+  viva_blocked_reason?: string;
+  viva_block_reason?: string;
+  anomaly_score?: number;
+  rebuttal_submitted?: boolean;
+  rebuttal_text?: string;
   matched_tutorial?: MatchedTutorial | null;
   git_dna: GitDnaMetrics;
   complex_functions?: ComplexFunction[];

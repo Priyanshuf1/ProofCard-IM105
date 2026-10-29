@@ -1009,6 +1009,34 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if provenance_evidence.get("coverage") != "local_and_catalog_only":
         analysis_confidence += 0.10
 
+    # Anomaly calculation and Viva Gating: Maximum allowed anomaly is 30%
+    clone_pct = int((matched_tut.get("similarity_score", 0.0) if (is_clone and matched_tut) else 0.0) * 100)
+    anomaly_pct = 100 - auth_score
+    max_anomaly = max(clone_pct, anomaly_pct, 90 if is_prompt_injected else 0)
+    is_viva_blocked = bool(max_anomaly > 30 or is_prompt_injected or is_clone)
+
+    if is_viva_blocked:
+        viva_status = "BLOCKED_HIGH_ANOMALY"
+        if is_prompt_injected:
+            viva_block_reason = (
+                "Viva Defense Access Blocked: Adversarial Prompt Injection Directives were detected attempting to "
+                "override evaluation rubrics and bypass automated checks. Pariksha Enterprise Security Policy "
+                "quarantines and disqualifies submissions with adversarial vectors."
+            )
+        elif clone_pct > 30:
+            viva_block_reason = (
+                f"Viva Defense Access Blocked: Codebase exhibits {clone_pct}% external code overlap "
+                f"(exceeds 30% maximum permitted threshold). Candidates with unoriginal tutorial clones are barred from live defense."
+            )
+        else:
+            viva_block_reason = (
+                f"Viva Defense Access Blocked: Forensic anomaly score is {max_anomaly}% (Authenticity: {auth_score}%, "
+                f"limit: 30% max anomaly). Live defense requires verified organic Git commit progression."
+            )
+    else:
+        viva_status = "PENDING_LIVE_DEFENSE"
+        viva_block_reason = None
+
     viva_engine = VivaEngine()
     viva_questions = viva_engine.generate_questions_for_functions(complex_functions, max_questions=5)
 
@@ -1092,8 +1120,25 @@ async def analyze_github_repo(req: IngestionURLRequest):
         }
 
 
+    clone_pct = int(matched_tut.get("similarity_score", 0.0) * 100) if (is_clone and matched_tut) else 0
+    anomaly_pct = max(0, 100 - auth_score)
+    viva_blocked = bool(clone_pct > 30 or anomaly_pct > 30 or is_prompt_injected)
+    
+    if is_prompt_injected:
+        viva_blocked_reason = "Adversarial prompt injection detected. Repository contains active directives attempting to manipulate automated evaluators."
+    elif clone_pct > 30:
+        viva_blocked_reason = f"Repository exhibits {clone_pct}% clone similarity with '{matched_tut.get('name')}', exceeding the 30% permissible limit."
+    elif anomaly_pct > 30:
+        viva_blocked_reason = f"Forensic Git-DNA anomaly score ({anomaly_pct}%) exceeds the 30% threshold. Development progression requires authentic commit iteration."
+    else:
+        viva_blocked_reason = None
+
     return {
         "status": "success",
+        "viva_blocked": viva_blocked,
+        "viva_blocked_reason": viva_blocked_reason,
+        "clone_pct": clone_pct,
+        "anomaly_pct": anomaly_pct,
         "live_analyzed": True,
         "is_cached_profile": False,
         "candidate_id": cid,
@@ -1140,7 +1185,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "complex_functions_for_viva": complex_functions[:3],
         "viva_questions": viva_questions,
         "viva_score": 0,
-        "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
+        "viva_status": viva_status,
+        "viva_blocked": is_viva_blocked,
+        "viva_block_reason": viva_block_reason,
+        "anomaly_score": max_anomaly,
         "proof_card": proof_card,
         "tamper_proof_hash": tamper_proof_hash,
         "available_repos": available_repos or ([resolved_repo] if resolved_repo else []),

@@ -1,3 +1,4 @@
+import { CandidateProfile } from '../types';
 import React from 'react';
 import { 
   ShieldCheck, 
@@ -10,7 +11,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Flame,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -20,13 +22,33 @@ interface NavbarProps {
   setIsDemoMode: (val: boolean) => void;
   onSelectDemoProfile: (index: number) => void;
   onOpenImatsModal?: () => void;
+  currentCandidate?: CandidateProfile | null;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   onOpenImatsModal,
+  currentCandidate
 }) => {
+  const cloneScore = currentCandidate?.is_clone 
+    ? Math.round((currentCandidate.matched_tutorial?.similarity_score || 0.7) * 100) 
+    : 0;
+  const authenticityScore = currentCandidate?.authenticity_score ?? 100;
+  const anomalyScore = Math.max(
+    cloneScore,
+    100 - authenticityScore,
+    (currentCandidate?.is_prompt_injected || currentCandidate?.security_scan?.is_prompt_injected) ? 90 : 0,
+    currentCandidate?.anomaly_score || 0
+  );
+  const isVivaBlocked = Boolean(
+    currentCandidate?.viva_blocked ?? (
+      anomalyScore > 30 || 
+      currentCandidate?.is_prompt_injected || 
+      currentCandidate?.security_scan?.is_prompt_injected || 
+      currentCandidate?.is_clone
+    )
+  );
   const features = [
     {
       id: 'ingestion',
@@ -128,7 +150,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-[#D4AF37]' : 'text-[#C9B89A]'}`} />
-                <span className="font-warrior tracking-wide">{feat.name}</span>
+                <span className="font-warrior tracking-wide">{feat.name}</span>
+                {feat.id === 'viva' && isVivaBlocked && (
+                  <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-600 text-[10px] uppercase font-bold flex items-center gap-1 ml-1">
+                    <Lock className="w-2.5 h-2.5 text-red-400" />
+                    <span>Locked</span>
+                  </span>
+                )}
               </button>
             );
           })}

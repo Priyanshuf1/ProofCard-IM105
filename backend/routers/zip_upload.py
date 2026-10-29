@@ -377,8 +377,25 @@ async def upload_project_zip(
 
         first_seq = list(structural_tokens.values())[0] if structural_tokens else ""
 
+        clone_pct = int((matched_tutorial or {}).get("similarity_score", 0.0) * 100) if (is_clone and matched_tutorial) else 0
+        anomaly_pct = max(0, 100 - auth_score)
+        viva_blocked = bool(clone_pct > 30 or anomaly_pct > 30 or is_prompt_injected)
+
+        if is_prompt_injected:
+            viva_blocked_reason = "Adversarial prompt injection detected in uploaded archive."
+        elif clone_pct > 30:
+            viva_blocked_reason = f"Uploaded code exhibits {clone_pct}% clone similarity with '{matched_tutorial.get('name')}', exceeding the 30% permissible limit."
+        elif anomaly_pct > 30:
+            viva_blocked_reason = f"Forensic anomaly score ({anomaly_pct}%) exceeds the 30% threshold."
+        else:
+            viva_blocked_reason = None
+
         return {
             "status": "success",
+            "viva_blocked": viva_blocked,
+            "viva_blocked_reason": viva_blocked_reason,
+            "clone_pct": clone_pct,
+            "anomaly_pct": anomaly_pct,
             "candidate_id": f"cand_zip_{hashlib.md5(candidate_name.encode()).hexdigest()[:8]}",
             "name": candidate_name,
             "candidate_name": candidate_name,
@@ -418,7 +435,9 @@ async def upload_project_zip(
             "complex_functions_for_viva": complex_functions,
             "viva_questions": viva_questions,
             "viva_score": 0,
-            "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
+            "viva_status": "BLOCKED_HIGH_ANOMALY" if viva_blocked else ("PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE"),
+            "viva_block_reason": viva_blocked_reason,
+            "anomaly_score": max(clone_pct, anomaly_pct, 90 if is_prompt_injected else 0),
             "proof_card": proof_card,
             "tamper_proof_hash": tamper_proof_hash,
             "consent_recorded": True

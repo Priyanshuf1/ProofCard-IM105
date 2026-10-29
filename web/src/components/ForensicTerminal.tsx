@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck,
-  ShieldAlert, 
+  ShieldAlert,
+  Lock, 
   AlertTriangle, 
   GitCommit, 
   Terminal, 
@@ -71,7 +72,27 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
     summary: 'No Git commit history recorded for this candidate.'
   };
 
-  const complexFuncs = candidate.complex_functions || [];
+  const complexFuncs = candidate.complex_functions || [];
+
+  // Enterprise Anomaly & Plagiarism Viva Gating (Threshold: 30%)
+  const cloneScore = candidate.is_clone 
+    ? Math.round((candidate.matched_tutorial?.similarity_score || 0.7) * 100) 
+    : 0;
+  const authenticityScore = candidate.authenticity_score ?? 100;
+  const anomalyScore = Math.max(
+    cloneScore,
+    100 - authenticityScore,
+    (candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected) ? 90 : 0,
+    candidate.anomaly_score || 0
+  );
+  const isVivaBlocked = Boolean(
+    candidate.viva_blocked ?? (
+      anomalyScore > 30 || 
+      candidate.is_prompt_injected || 
+      candidate.security_scan?.is_prompt_injected || 
+      candidate.is_clone
+    )
+  );
 
   // Dynamic Plagiarism Clusters computed from cohort
   const dynamicClusters = useMemo(() => {
@@ -321,83 +342,160 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
               </select>
             )}
 
-            <button
-              onClick={() => onNavigateToTab('viva')}
-              className="btn-dev-primary text-xs flex items-center gap-2 px-5 py-2.5 shadow-lg cursor-pointer shrink-0 font-bold"
-            >
-              <span>Go to Live Viva</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {isVivaBlocked ? (
+              <button
+                onClick={() => onNavigateToTab('viva')}
+                className="px-4 py-2.5 rounded-xl bg-red-950/80 border border-red-500 text-red-200 text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg hover:bg-red-900 cursor-pointer shrink-0"
+                title="Click to view why Viva is restricted"
+              >
+                <Lock className="w-3.5 h-3.5 text-red-400" />
+                <span>Viva Locked ({anomalyScore}% Anomaly)</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigateToTab('viva')}
+                className="btn-dev-primary text-xs flex items-center gap-2 px-5 py-2.5 shadow-lg cursor-pointer shrink-0 font-bold"
+              >
+                <span>Go to Live Viva</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Adversarial Prompt Injection Security Banner */}
-      {(candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected || candidate.proof_card?.status === 'FLAGGED_PROMPT_INJECTION') && (
-        <div className="mb-6 bg-red-950/70 border-2 border-red-500 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-red-900 border border-red-400 flex items-center justify-center text-red-100 shrink-0 mt-0.5 shadow-lg">
-                <ShieldAlert className="w-6 h-6 text-red-200" />
-              </div>
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full bg-red-600 border border-red-400 uppercase tracking-wider">
-                    CRITICAL SECURITY ALERT
-                  </span>
-                  <span className="text-xs font-mono font-bold text-red-200 bg-black/60 px-2.5 py-0.5 rounded-full border border-red-500/50">
-                    IM-105 Adversarial Prompt Injection Shield
-                  </span>
-                  <span className="text-xs font-mono text-[#FFD166] bg-black/60 px-2 py-0.5 rounded-full border border-[#D4AF37]/40">
-                    {candidate.security_scan?.findings_count || 1} Injection Payload(s) Intercepted
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-black text-white font-sans tracking-wide">
-                  Adversarial Prompt Injection Directives Detected
-                </h3>
-
-                <p className="text-xs text-red-200 mt-1 font-sans leading-relaxed">
-                  This repository contains active prompt injection directives embedded in code comments and documentation attempting to override AI evaluation rubrics, bypass automated checks, or force 10/10 scores. Pariksha's AST and security isolation shield neutralized and quarantined these vectors.
-                </p>
-
-                {/* Quarantined Injection Findings */}
-                {candidate.security_scan?.findings && candidate.security_scan.findings.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    <span className="text-[11px] font-bold uppercase text-[#FFD166] tracking-wider block">
-                      Quarantined Injection Payloads:
-                    </span>
-                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
-                      {candidate.security_scan.findings.slice(0, 5).map((f, i) => (
-                        <div key={i} className="p-2.5 rounded-lg bg-black/75 border border-red-500/40 font-mono text-xs text-neutral-200 flex flex-col gap-1">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-red-400 font-bold">{f.file}:{f.line_number}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-red-950 text-red-300 border border-red-600 text-[10px] uppercase font-bold">
-                              {f.category}
-                            </span>
-                          </div>
-                          <div className="text-neutral-300 text-[11px] truncate" title={f.snippet}>
-                            "{f.snippet}"
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => onNavigateToTab('viva')}
-              className="btn-dev-primary text-xs px-4 py-2.5 flex items-center gap-1.5 shrink-0 self-start font-bold shadow-lg"
-            >
-              <span>Cross-Examine in Viva</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Adversarial Prompt Injection Security Banner */}
+
+      {(candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected || candidate.proof_card?.status === 'FLAGGED_PROMPT_INJECTION') && (
+
+        <div className="mb-6 bg-red-950/70 border-2 border-red-500 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-in fade-in">
+
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+
+            <div className="flex items-start gap-3.5">
+
+              <div className="w-11 h-11 rounded-xl bg-red-900 border border-red-400 flex items-center justify-center text-red-100 shrink-0 mt-0.5 shadow-lg">
+
+                <ShieldAlert className="w-6 h-6 text-red-200" />
+
+              </div>
+
+              <div className="flex-1">
+
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+
+                  <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full bg-red-600 border border-red-400 uppercase tracking-wider">
+
+                    CRITICAL SECURITY ALERT
+
+                  </span>
+
+                  <span className="text-xs font-mono font-bold text-red-200 bg-black/60 px-2.5 py-0.5 rounded-full border border-red-500/50">
+
+                    IM-105 Adversarial Prompt Injection Shield
+
+                  </span>
+
+                  <span className="text-xs font-mono text-[#FFD166] bg-black/60 px-2 py-0.5 rounded-full border border-[#D4AF37]/40">
+
+                    {candidate.security_scan?.findings_count || 1} Injection Payload(s) Intercepted
+
+                  </span>
+
+                </div>
+
+
+
+                <h3 className="text-lg font-black text-white font-sans tracking-wide">
+
+                  Adversarial Prompt Injection Directives Detected
+
+                </h3>
+
+
+
+                <p className="text-xs text-red-200 mt-1 font-sans leading-relaxed">
+
+                  This repository contains active prompt injection directives embedded in code comments and documentation attempting to override AI evaluation rubrics, bypass automated checks, or force 10/10 scores. Pariksha's AST and security isolation shield neutralized and quarantined these vectors.
+
+                </p>
+
+
+
+                {/* Quarantined Injection Findings */}
+
+                {candidate.security_scan?.findings && candidate.security_scan.findings.length > 0 && (
+
+                  <div className="mt-3 space-y-2">
+
+                    <span className="text-[11px] font-bold uppercase text-[#FFD166] tracking-wider block">
+
+                      Quarantined Injection Payloads:
+
+                    </span>
+
+                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
+
+                      {candidate.security_scan.findings.slice(0, 5).map((f, i) => (
+
+                        <div key={i} className="p-2.5 rounded-lg bg-black/75 border border-red-500/40 font-mono text-xs text-neutral-200 flex flex-col gap-1">
+
+                          <div className="flex items-center justify-between text-[11px]">
+
+                            <span className="text-red-400 font-bold">{f.file}:{f.line_number}</span>
+
+                            <span className="px-1.5 py-0.2 rounded bg-red-950 text-red-300 border border-red-600 text-[10px] uppercase font-bold">
+
+                              {f.category}
+
+                            </span>
+
+                          </div>
+
+                          <div className="text-neutral-300 text-[11px] truncate" title={f.snippet}>
+
+                            "{f.snippet}"
+
+                          </div>
+
+                        </div>
+
+                      ))}
+
+                    </div>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            </div>
+
+
+
+            <button
+
+              onClick={() => onNavigateToTab('viva')}
+
+              className="btn-dev-primary text-xs px-4 py-2.5 flex items-center gap-1.5 shrink-0 self-start font-bold shadow-lg"
+
+            >
+
+              <span>Cross-Examine in Viva</span>
+
+              <ArrowRight className="w-3.5 h-3.5" />
+
+            </button>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
       {/* Copied Code Warning Banner if Clone */}
       {candidate.is_clone && candidate.matched_tutorial && (
         <div className="mb-6 bg-red-950/50 border border-red-500/70 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-in fade-in">
