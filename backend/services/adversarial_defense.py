@@ -33,7 +33,13 @@ class AdversarialDefensePipeline:
         r"(?i)\byou\s+must\s+score\s+(?:10|100)\b",
         r"(?i)\boverride\s+(?:all\s+)?(?:grading\s+rubrics?|instructions?|system\s+directives?)\b",
         r"(?i)\bjailbreak\b",
-        r"(?i)\bdo\s+anything\s+now\b"
+        r"(?i)\bdo\s+anything\s+now\b",
+        # Expanded indirect prompt injection signatures in comments, docstrings, READMEs
+        r"(?i)\[(?:SYSTEM\s+NOTE|AI_EVALUATION_DIRECTIVE|CRITICAL\s+INSTRUCTION)[\s\S]*?\]",
+        r"(?i)\b(?:note\s+to\s+ai\s+(?:grader|agent|reviewer|model)|instruction\s+for\s+ai\s+agents?)\b",
+        r"(?i)\b(?:give|assign|award)\s+(?:this\s+candidate\s+|this\s+module\s+|this\s+repository\s+)?(?:\d+\s*(?:out\s+of|\/)\s*\d+|maximum\s+score|full\s+marks)\b",
+        r"(?i)\bbypass\s+(?:standard|verification)?\s*checks\b",
+        r"(?i)\bautomatic\s+bypass\s+applied\b"
     ]
 
     # Zero-width unicode characters used to bypass keyword filters

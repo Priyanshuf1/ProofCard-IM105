@@ -78,6 +78,7 @@ export interface ProofCardContent {
   tamper_proof_hash: string;
   human_readable_reason?: string;
   email?: string;
+  has_prompt_injection?: boolean;
 }
 
 export interface AssessmentResults {
@@ -101,6 +102,7 @@ export interface CandidateProfile {
   total_loc: number;
   authenticity_score: number;
   is_clone: boolean;
+  has_prompt_injection?: boolean;
   matched_tutorial?: MatchedTutorial | null;
   git_dna: GitDnaMetrics;
   complex_functions?: ComplexFunction[];

@@ -41,8 +41,7 @@ class VivaEngine:
         "hash": ["sha256", "sha", "digest", "checksum", "integrity", "signature", "hmac", "tamper", "tampering", "hashes", "hashing"],
         "canonical": ["deterministic", "encoding", "bytes", "format", "reproducible", "canonicalize", "canonicalization", "determinism", "deterministically", "serialization"],
         "debounce": ["throttle", "lock", "guard", "flag", "state", "abortcontroller"],
-        "isolation": ["sandbox", "modular", "boundary", "decouple", "trap", "isolate", "isolating", "fault", "tolerance", "layer", "guard", "mutations", "safeguard"],
-        "defensive": ["defense", "defensive", "guard", "protect", "shield", "safe", "safeguard", "isolation"],
+        "isolation": ["sandbox", "modular", "boundary", "decouple", "trap", "isolate", "isolating", "fault", "tolerance", "layer"],
         "failure": ["fail", "error", "fault", "crash", "exception", "exceptions", "tolerance", "recovery"],
         "contract": ["contract", "partial", "success", "interface", "format", "schema"],
         "crash": ["process", "crash", "global", "handler", "bubble", "top-level", "terminate", "exit", "prevent", "unhandled"],
@@ -442,6 +441,17 @@ class VivaEngine:
         # Run AI text pattern detector on the answer
         ai_detection = AIDetector().detect(clean_input)
 
+        if is_injection:
+            return {
+                "score": 0,
+                "concepts_demonstrated": [],
+                "concepts_missing": expected_concepts,
+                "feedback": "Security Alert: Prompt injection or instruction override payload detected in response. Zero marks assigned.",
+                "passed": False,
+                "ai_detection": ai_detection,
+                "adversarial_injection_detected": True
+            }
+
         # Step 1: Detect non-answers, evasions, memes, jokes, and gibberish
         if not ans_clean or self._is_non_answer(ans_clean) or self._is_gibberish(ans_clean):
             return {
@@ -480,11 +490,6 @@ class VivaEngine:
         missing = []
         consumed_tokens = set()
 
-        GENERIC_CONCEPT_TOKENS = {
-            "time", "platform", "byte", "bytes", "code", "file", "data", "call", "test",
-            "type", "state", "run", "line", "user", "set", "word", "item", "cross", "order"
-        }
-
         for concept in expected_concepts:
             concept_clean = concept.lower().replace("-", " ")
             
@@ -495,7 +500,7 @@ class VivaEngine:
 
             concept_raw = re.findall(r"[a-z0-9]+", concept.lower())
             concept_keywords = [w for w in concept_raw if w not in self.STOP_WORDS and len(w) >= 3]
-            matched_keywords = []
+            match_found = False
 
             for cw in concept_keywords:
                 cw_stem = self._stem(cw)
@@ -503,17 +508,17 @@ class VivaEngine:
                 # 1. Exact token match (unconsumed token)
                 avail_tokens = [w for w in ans_tokens if w not in consumed_tokens]
                 if cw in avail_tokens:
-                    matched_keywords.append(cw)
                     consumed_tokens.add(cw)
-                    continue
+                    match_found = True
+                    break
 
                 # 2. Strict stem match (only if stem has >= 4 chars)
                 if len(cw_stem) >= 4:
                     stem_matches = [w for w in avail_tokens if len(w) >= 4 and self._stem(w) == cw_stem]
                     if stem_matches:
-                        matched_keywords.append(stem_matches[0])
                         consumed_tokens.add(stem_matches[0])
-                        continue
+                        match_found = True
+                        break
 
                 # 3. Bidirectional cluster synonym match (NO substring matching!)
                 synonyms = self.CLUSTER_MAP.get(cw, set())
@@ -527,47 +532,24 @@ class VivaEngine:
                     if matched_syn:
                         break
                 if matched_syn:
-                    matched_keywords.append(matched_syn)
                     consumed_tokens.add(matched_syn)
-                    continue
-
-            # Multi-faceted concept qualification:
-            # Avoid single generic words (like "time" or "platform") matching entire multi-word concepts
-            match_found = False
-            if len(concept_keywords) <= 1 and len(matched_keywords) >= 1:
-                match_found = True
-            elif len(matched_keywords) >= 2:
-                match_found = True
-            elif len(matched_keywords) == 1:
-                mk = matched_keywords[0]
-                if mk not in GENERIC_CONCEPT_TOKENS and len(mk) >= 4:
                     match_found = True
+                    break
 
             if match_found:
                 demonstrated.append(concept)
             else:
                 missing.append(concept)
 
-        # Count unique candidate technical vocabulary words (normalized to avoid double-counting)
-        tech_stems = {self._stem(tv) for tv in self.TECH_VOCAB if len(tv) >= 4}
-        matched_vocab = {w for w in ans_token_set if w in self.TECH_VOCAB or (len(w) >= 4 and self._stem(w) in tech_stems)}
+        # Count recognized technical vocabulary words
+        matched_vocab = set()
+        for tv in self.TECH_VOCAB:
+            if tv in ans_token_set or (len(tv) >= 4 and self._stem(tv) in ans_stem_set):
+                matched_vocab.add(tv)
 
-        vocab_count = len(matched_vocab)
-        token_count = len(ans_tokens)
-
-        # Non-demonstrated -> 0 (or 1 if recognized technical vocabulary is present)
+        # Non-demonstrated -> absolute 0
         if len(demonstrated) == 0:
             top_missing = missing[:2] or expected_concepts[:2]
-            if vocab_count >= 2 and token_count >= 8 and not self._is_buzzword_stuffing(ans_clean, matched_vocab, len(all_raw_tokens)):
-                return {
-                    "score": 1,
-                    "concepts_demonstrated": [],
-                    "concepts_missing": expected_concepts,
-                    "feedback": f"Mentioned general technical terminology but failed to address required question concepts: {', '.join(top_missing)} (Score: 1/10).",
-                    "passed": False,
-                    "ai_detection": ai_detection,
-                    "adversarial_injection_detected": is_injection
-                }
             return {
                 "score": 0,
                 "concepts_demonstrated": [],
@@ -590,101 +572,48 @@ class VivaEngine:
                 "adversarial_injection_detected": is_injection
             }
 
-        # Step 4: Calibrated Granular Placement Rubric (Full 0 to 10 Spectrum)
+        # Step 4: Calibrated Placement Rubric
         n_dem = len(demonstrated)
         n_exp = max(len(expected_concepts), 1)
+        ratio = n_dem / n_exp
 
         rationale_keywords = [
             "because", "in order to", "to ensure", "ensure", "ensuring", "ensures",
             "prevent", "prevents", "preventing", "mitigate", "mitigates", "mitigating",
             "tradeoff", "trade-off", "rather than", "instead of",
-            "guarantee", "guarantees", "guaranteeing", "eliminate", "eliminates", "eliminating",
-            "to cancel", "to eliminate", "reproducible", "constant-time"
-        ]
-        tradeoff_keywords = [
-            "tradeoff", "trade-off", "rather than", "instead of", "overhead", "bottleneck",
-            "concurrency", "race condition", "side-channel", "replay", "constant-time",
-            "edge case", "edge-case", "timing attack", "attack vectors"
+            "guarantee", "guarantees", "guaranteeing", "eliminates", "reproducible", "constant-time"
         ]
         has_rationale = any(rk in ans_clean for rk in rationale_keywords)
-        has_tradeoff = any(tk in ans_clean for tk in tradeoff_keywords)
+        vocab_count = len(matched_vocab)
+        token_count = len(ans_tokens)
 
         if n_dem == 1:
-            # 1 concept demonstrated:
-            # - With rationale: score 4 (e.g., "we use sha256 to ensure data integrity")
-            # - Plain mention with substance: score 3 (e.g., "we used a sha256 hash for verification")
-            # - Very brief (2-3 tokens): score 2, single token: score 1
-            if token_count <= 1 and not has_rationale:
-                final_score = 1
-            elif token_count <= 3 and not has_rationale and vocab_count <= 1:
-                final_score = 2
-            elif has_rationale:
-                final_score = 4
-            else:
-                final_score = 3
-
+            raw_score = 2 + (1 if has_rationale and token_count >= 8 else 0)
+            final_score = min(3, max(1, raw_score))
         elif n_dem == 2:
-            # 2 concepts demonstrated:
-            # - With rationale AND rich technical vocab (vocab >= 3): score 7 (Strong pass)
-            # - With rationale: score 6 (Competent pass)
-            # - Plain mention without rationale: score 5 (Borderline)
-            if has_rationale and vocab_count >= 3:
-                final_score = 7
-            elif has_rationale:
-                final_score = 6
-            else:
-                final_score = 5
-
-        elif n_dem == 3:
-            # 3 concepts demonstrated:
-            # - With rationale AND trade-off/edge-case awareness AND rich vocab: score 9 (Superior)
-            # - With rationale AND solid technical vocab (vocab >= 2): score 8 (Exemplary)
-            # - With rationale: score 7
-            # - Plain coverage: score 6
-            if has_rationale and (has_tradeoff or vocab_count >= 2):
-                final_score = 9 if (has_tradeoff and vocab_count >= 2) else 8
-            elif has_rationale and vocab_count >= 1:
-                final_score = 8
-            elif has_rationale:
-                final_score = 7
-            else:
-                final_score = 6
-
-        else:  # n_dem >= 4
-            # 4+ concepts demonstrated:
-            # - With rationale, trade-off/edge-case awareness, rich vocab, and deep answer: score 10 (Master-level)
-            # - With solid rationale: score 9
-            # - Basic coverage: score 8
-            if has_rationale and (has_tradeoff or vocab_count >= 4) and token_count >= 18:
-                final_score = 10
-            elif has_rationale and vocab_count >= 2:
-                final_score = 9
-            else:
-                final_score = 8
+            raw_score = 4 + (1 if has_rationale else 0) + (1 if vocab_count >= 2 else 0) + (1 if ratio >= 0.65 and has_rationale and vocab_count >= 2 else 0)
+            final_score = min(7, max(4, raw_score))
+        elif n_dem == 3 and ratio < 1.0:
+            raw_score = 6 + (1 if has_rationale else 0) + (1 if vocab_count >= 2 else 0)
+            final_score = min(8, max(6, raw_score))
+        else:  # n_dem >= 4 or (ratio == 1.0 and n_dem >= 3)
+            raw_score = 8 + (1 if has_rationale else 0) + (1 if vocab_count >= 3 else 0)
+            final_score = min(10, max(8, raw_score))
 
         passed = final_score >= 6
 
-        if final_score >= 9:
+        if final_score >= 8:
             top_demonstrated = demonstrated[:3]
-            feedback = f"Exemplary master-level architectural rationale. Thoroughly demonstrated: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
-        elif final_score >= 8:
-            top_demonstrated = demonstrated[:3]
-            feedback = f"Outstanding technical depth and causal reasoning. Demonstrated: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
-        elif final_score >= 7:
+            feedback = f"Exemplary architectural rationale. Thoroughly demonstrated: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
+        elif passed:
             top_demonstrated = demonstrated[:2]
-            feedback = f"Strong pass. Clear cause-and-effect understanding of: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
-        elif final_score >= 6:
-            top_demonstrated = demonstrated[:2]
-            feedback = f"Competent pass. Demonstrated basic mechanics of: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
+            feedback = f"Solid technical competence. Demonstrated command of: {', '.join(top_demonstrated)} (Score: {final_score}/10)."
         elif final_score >= 4:
             top_missing = missing[:2] or expected_concepts[:2]
-            feedback = f"Borderline response. Mentioned baseline concepts but lacked architectural depth on: {', '.join(top_missing)} (Score: {final_score}/10)."
-        elif final_score >= 2:
-            top_missing = missing[:2] or expected_concepts[:2]
-            feedback = f"Needs improvement. Superficial answer lacking causal mechanism for: {', '.join(top_missing)} (Score: {final_score}/10)."
+            feedback = f"Borderline response. Mentioned baseline concepts but lacked depth on: {', '.join(top_missing)} (Score: {final_score}/10)."
         else:
             top_missing = missing[:2] or expected_concepts[:2]
-            feedback = f"Weak response. Zero substantive architectural explanation. Missing: {', '.join(top_missing)} (Score: {final_score}/10)."
+            feedback = f"Weak buzzword response without architectural mechanism. Missing: {', '.join(top_missing)} (Score: {final_score}/10)."
 
         # Apply AI penalty if AI pattern is detected
         if ai_detection.get("classification") == "ai_like":

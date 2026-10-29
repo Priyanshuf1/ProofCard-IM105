@@ -1,5 +1,6 @@
+import re
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class ConsentRequest(BaseModel):
     candidate_id: str
@@ -15,6 +16,16 @@ class IngestionURLRequest(BaseModel):
     github_token: Optional[str] = None
     target_subpath: Optional[str] = None
     email: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_format(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v.strip() != "":
+            EMAIL_REGEX = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+            if not re.match(EMAIL_REGEX, v.strip()):
+                raise ValueError("Invalid email format. Must be a valid email address.")
+            return v.strip()
+        return v
 
 class ComplexFunction(BaseModel):
     file: str
@@ -88,6 +99,7 @@ class ProofCardData(BaseModel):
     is_clone: bool
     matched_tutorial: Optional[MatchedTutorial] = None
     email: Optional[str] = None
+    has_prompt_injection: Optional[bool] = False
 
 class JDParsingRequest(BaseModel):
     job_title: str

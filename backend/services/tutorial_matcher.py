@@ -430,7 +430,7 @@ class TutorialMatcher:
             "package.json", "package-lock.json", "yarn.lock", "readme.md", 
             "tsconfig.json", ".gitignore", "setup.py", "requirements.txt",
             "index.html", "index.js", "main.py", "app.py", "dockerfile",
-            "docker-compose.yml", ".env.example"
+            "docker-compose.yml", ".env.example", "style.css", "styles.css", "app.css"
         }
 
         repo_name_lower = (repo_meta.get("name") or "").lower()
@@ -445,7 +445,7 @@ class TutorialMatcher:
             
             # File Path & Filename Overlap
             matching_files = []
-            for tf in target_tut_files:
+            for tf in tut_files:
                 tf_base = Path(tf).name.lower()
                 for cf in normalized_files:
                     cf_base = Path(cf).name.lower()
@@ -454,7 +454,8 @@ class TutorialMatcher:
                         break
             
             matching_files = list(set(matching_files))
-            file_match_ratio = len(matching_files) / max(len(target_tut_files), 1)
+            non_generic_matches = [f for f in matching_files if Path(f).name.lower() not in GENERIC_FILES]
+            file_match_ratio = min(1.0, len(matching_files) / max(len(tut_files), 1))
 
             # Code Pattern Matching (distinctive tutorial phrases/variables/signatures)
             pattern_matches = 0
@@ -464,13 +465,18 @@ class TutorialMatcher:
                     if pat.lower() in all_code_concat:
                         pattern_matches += 1
 
-            # Check if repository name or subfolder directly names the tutorial/creator
+            # Check if repository name, description, or subfolder directly names the tutorial/creator
+            repo_desc_lower = (repo_meta.get("description") or "").lower()
             repo_matches_tut = False
-            if any(k in repo_name_lower for k in ["code-with-harry", "codewithharry"]) and "codewithharry" in tut_id:
+            if any(k in repo_name_lower or k in repo_desc_lower for k in ["code-with-harry", "codewithharry", "code with harry"]) and "codewithharry" in tut_id:
                 repo_matches_tut = True
-            elif any(k in repo_name_lower for k in ["traversy", "bradtraversy"]) and "traversy" in tut_id:
+            elif any(k in repo_name_lower or k in repo_desc_lower for k in ["traversy", "bradtraversy", "brad traversy"]) and "traversy" in tut_id:
                 repo_matches_tut = True
-            elif any(k in repo_name_lower for k in ["cleverprogrammer", "clever-programmer"]) and "clever" in tut_id:
+            elif any(k in repo_name_lower or k in repo_desc_lower for k in ["cleverprogrammer", "clever-programmer", "clever programmer", "sonny-sangha", "sonnysangha", "sonny sangha"]) and ("clever" in tut_id or "sonny" in tut_id):
+                repo_matches_tut = True
+            elif any(k in repo_name_lower or k in repo_desc_lower for k in ["apna-college", "apnacollege", "apna college", "shraddha-khapra", "shraddhakhapra", "shraddha khapra"]) and "apna_college" in tut_id:
+                repo_matches_tut = True
+            elif any(k in repo_name_lower or k in repo_desc_lower for k in ["amazon-clone", "amazon_clone", "amazon clone"]) and "amazon" in tut_id:
                 repo_matches_tut = True
 
             folder_matches_tut = False
@@ -490,9 +496,7 @@ class TutorialMatcher:
                 ast_scores.append(score)
             avg_ast_score = sum(ast_scores) / max(len(ast_scores), 1) if ast_scores else 0.0
 
-            # Composite similarity calculation. Filename overlap alone never
-            # crosses the clone threshold; it must be supported by code
-            # patterns or structural evidence.
+            # Composite similarity calculation.
             pattern_score = min(0.98, 0.70 + (0.07 * pattern_matches)) if pattern_matches > 0 else 0.0
             
             # Subpath target priority bonus (e.g. user provided URL pointing directly to spotify_clone)
@@ -506,11 +510,13 @@ class TutorialMatcher:
 
             if pattern_matches >= 2 and len(matching_files) >= 1:
                 composite_similarity = max(0.95, (pattern_score * 0.6) + (file_match_ratio * 0.4) + subpath_boost)
+            elif file_match_ratio >= 0.8 and (pattern_matches >= 1 or len(non_generic_matches) >= 3):
+                composite_similarity = max(0.95, (file_match_ratio * 0.5) + (pattern_score * 0.5) + subpath_boost)
             elif pattern_matches >= 1 and (repo_matches_tut or folder_matches_tut):
                 composite_similarity = max(0.94, (pattern_score * 0.5) + (file_match_ratio * 0.3) + 0.2 + subpath_boost)
-            elif (repo_matches_tut or folder_matches_tut) and len(matching_files) >= 2:
+            elif (repo_matches_tut or folder_matches_tut) and len(non_generic_matches) >= 2:
                 composite_similarity = max(0.92, (file_match_ratio * 0.6) + 0.35 + subpath_boost)
-            elif len(matching_files) >= 2 and avg_ast_score >= 0.25:
+            elif len(matching_files) >= 2 and avg_ast_score >= 0.25 and (len(non_generic_matches) >= 1 or pattern_matches >= 1):
                 composite_similarity = (file_match_ratio * 0.65) + (avg_ast_score * 0.35) + subpath_boost
             else:
                 composite_similarity = (file_match_ratio * 0.25) + (pattern_score * 0.50) + (avg_ast_score * 0.25) + subpath_boost
@@ -541,9 +547,9 @@ class TutorialMatcher:
                 }
 
         # Stricter Flagging threshold:
-        # Flag if high composite similarity or confirmed pattern matches with file overlap
+        # Flag if high composite similarity (>= 0.70 with supporting files/patterns) or confirmed pattern matches
         if best_match and (
-            highest_score >= 0.58 or 
+            (highest_score >= 0.70 and (len(best_match.get("matched_files", [])) >= 2 or best_match.get("pattern_matches", 0) >= 1)) or
             (best_match.get("pattern_matches", 0) >= 1 and len(best_match.get("matched_files", [])) >= 1) or
             (best_match.get("repo_matches") and len(best_match.get("matched_files", [])) >= 2 and best_match.get("pattern_matches", 0) >= 1)
         ):

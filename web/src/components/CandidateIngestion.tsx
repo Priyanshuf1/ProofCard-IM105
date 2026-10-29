@@ -29,6 +29,8 @@ interface CandidateIngestionProps {
   onUpdateCohort?: (cohort: CandidateProfile[]) => void;
 }
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   onScanComplete,
   onNavigateToTab,
@@ -42,6 +44,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   const [candidateName, setCandidateName] = useState('');
   const [candidateEmail, setCandidateEmail] = useState('');
   const [college, setCollege] = useState('');
+  const isEmailValid = EMAIL_REGEX.test(candidateEmail.trim());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [consentGranted, setConsentGranted] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -128,6 +131,16 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   const handleScanSubmit = async () => {
     if (!consentGranted) {
       setErrorMessage('Please check the confirmation box below.');
+      return;
+    }
+
+    if (!candidateEmail.trim()) {
+      setErrorMessage('Student email is required before scanning code.');
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(candidateEmail.trim())) {
+      setErrorMessage('Please enter a valid student email address (e.g. student@example.edu).');
       return;
     }
 
@@ -311,15 +324,27 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
-                  Student Email (for feedback & credential delivery)
+                  Student Email <span className="text-red-400 font-bold ml-1">*Required</span>
                 </label>
                 <input
                   type="email"
                   value={candidateEmail}
-                  onChange={(e) => setCandidateEmail(e.target.value)}
+                  onChange={(e) => {
+                    setCandidateEmail(e.target.value);
+                    if (errorMessage) setErrorMessage(null);
+                  }}
                   placeholder="student@example.edu"
-                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
+                  className={`w-full bg-black/50 backdrop-blur-md border rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none transition font-sans ${
+                    candidateEmail.trim() && !isEmailValid
+                      ? 'border-red-500/80 focus:border-red-500'
+                      : 'border-[#E6C280]/25 focus:border-[#E85D04]'
+                  }`}
                 />
+                {candidateEmail.trim() && !isEmailValid && (
+                  <p className="text-[11px] text-red-400 mt-1 font-mono">
+                    Invalid email format (e.g. student@example.edu)
+                  </p>
+                )}
               </div>
 
               <div>
@@ -363,33 +388,72 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-[#200e07]/80 border border-[#E85D04]/40 text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer font-mono"
                   >
-                    🚀 Real Project (Priyanshuf1/rabto)
+                    🚀 Priyanshuf1/rabto
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setGithubUrl('https://github.com/DJKalathiya/code-with-harry-projects');
-                      setCandidateName('Tutorial Clone Example');
-                      setCandidateEmail('student.clone@example.edu');
-                      setCollege('Public Archive');
+                      setGithubUrl('https://github.com/Subhampreet/Amazon-Clone-ReactJS');
+                      setCandidateName('Subham Preet');
+                      setCandidateEmail('subham@example.edu');
+                      setCollege('React Developer');
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-red-950/40 border border-red-500/40 text-red-200 hover:bg-red-900/40 transition cursor-pointer font-mono"
                   >
-                    ⚠️ Tutorial Clone Test (CodeWithHarry)
+                    ⚠️ Sonny Sangha Clone (Subhampreet)
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setGithubUrl('https://github.com/Priyanshuf1/SD-garments');
-                      setCandidateName('Priyanshu Awasthi');
-                      setCandidateEmail('priyanshu@example.edu');
-                      setCollege('GLA University');
+                      setGithubUrl('https://github.com/ZeeshanZk09/Amazon-Clone');
+                      setCandidateName('Zeeshan');
+                      setCandidateEmail('zeeshan@example.edu');
+                      setCollege('Apna College Archive');
                     }}
-                    className="text-xs px-2.5 py-1 rounded bg-black/60 border border-[#E6C280]/30 text-[#E6C280] hover:border-[#E85D04] transition cursor-pointer font-mono"
+                    className="text-xs px-2.5 py-1 rounded bg-amber-950/40 border border-amber-500/40 text-amber-200 hover:bg-amber-900/40 transition cursor-pointer font-mono"
                   >
-                    📦 Priyanshuf1/SD-garments
+                    ⚠️ Apna College Clone (Zeeshan)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGithubUrl('https://github.com/satyamtrivedi07/prompt-injected-repo-1.git');
+                      setCandidateName('Adversarial Test 1');
+                      setCandidateEmail('security@example.edu');
+                      setCollege('AppSec Lab');
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-purple-950/40 border border-purple-500/40 text-purple-200 hover:bg-purple-900/40 transition cursor-pointer font-mono"
+                  >
+                    🛡️ Injected Repo 1
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGithubUrl('https://github.com/satyamtrivedi07/prompt-injected-repo-2.git');
+                      setCandidateName('Adversarial Test 2');
+                      setCandidateEmail('security@example.edu');
+                      setCollege('AppSec Lab');
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-purple-950/40 border border-purple-500/40 text-purple-200 hover:bg-purple-900/40 transition cursor-pointer font-mono"
+                  >
+                    🛡️ Injected Repo 2
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGithubUrl('https://github.com/satyamtrivedi07/prompt-injected-repo-3.git');
+                      setCandidateName('Adversarial Test 3');
+                      setCandidateEmail('security@example.edu');
+                      setCollege('AppSec Lab');
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-purple-950/40 border border-purple-500/40 text-purple-200 hover:bg-purple-900/40 transition cursor-pointer font-mono"
+                  >
+                    🛡️ Injected Repo 3
                   </button>
                 </div>
               </div>
@@ -446,8 +510,12 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               <button
                 type="button"
                 onClick={handleScanSubmit}
-                disabled={isScanning}
-                className="btn-dev-primary w-full flex items-center justify-center gap-3 py-3.5 text-sm sm:text-base cursor-pointer shadow-lg font-bold"
+                disabled={isScanning || !isEmailValid}
+                className={`btn-dev-primary w-full flex items-center justify-center gap-3 py-3.5 text-sm sm:text-base shadow-lg font-bold transition-all ${
+                  isScanning || !isEmailValid
+                    ? 'opacity-50 cursor-not-allowed filter grayscale-[30%]'
+                    : 'cursor-pointer hover:shadow-xl'
+                }`}
               >
                 {isScanning ? (
                   <>
@@ -461,6 +529,13 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   </>
                 )}
               </button>
+              {!isEmailValid && (
+                <p className="text-[11px] text-amber-400/90 text-center mt-2 font-mono">
+                  {candidateEmail.trim()
+                    ? '⚠️ Please enter a valid email address (e.g. name@domain.com) to enable scanner.'
+                    : '🔒 Valid student email is required to unlock code scanning.'}
+                </p>
+              )}
             </div>
 
             {/* Live Progress Indicator */}

@@ -1,4 +1,5 @@
 import os
+import re
 import zipfile
 import tempfile
 import shutil
@@ -15,6 +16,7 @@ from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
+from backend.services.adversarial_defense import AdversarialDefensePipeline
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -38,6 +40,11 @@ async def upload_project_zip(
 ):
     if not consent_granted:
         raise HTTPException(status_code=403, detail="Candidate consent must be granted before code analysis can proceed.")
+
+    if email and email.strip():
+        EMAIL_REGEX = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not re.match(EMAIL_REGEX, email.strip()):
+            raise HTTPException(status_code=400, detail="Invalid student email format.")
 
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only .zip archives are supported.")
@@ -292,12 +299,41 @@ async def upload_project_zip(
         viva_engine = VivaEngine()
         viva_questions = viva_engine.generate_questions_for_functions(complex_functions)
 
+        # Ingestion-Stage Prompt Injection Defense
+        has_prompt_injection = False
+        for fpath, content in code_snippets.items():
+            detected, _ = AdversarialDefensePipeline.detect_prompt_injection(content)
+            if detected:
+                has_prompt_injection = True
+                break
+        if not has_prompt_injection and real_commits:
+            for c in real_commits:
+                msg = c.get("message") or ""
+                detected, _ = AdversarialDefensePipeline.detect_prompt_injection(msg)
+                if detected:
+                    has_prompt_injection = True
+                    break
+
+        if has_prompt_injection:
+            auth_score = 0
+            git_dna["authenticity_score"] = 0
+            engineering_signal_score = 0
+
         # Tamper proof hash
         manifest_str = f"{candidate_name}:{total_loc}:{auth_score}:{len(file_tree)}"
         tamper_proof_hash = "SHA256:" + hashlib.sha256(manifest_str.encode()).hexdigest()
 
         # Generate Explainable ProofCard
-        if is_clone:
+        if has_prompt_injection:
+            card_status = "FLAGGED_ADVERSARIAL_INJECTION"
+            card_headline = "Security Alert: Indirect prompt injection payload detected in repository source/README."
+            card_strengths = [
+                "Automated AppSec pipeline detected indirect prompt injection payload",
+                "Adversarial evasion attempt neutralized"
+            ]
+            card_growth = "Remove adversarial prompt injection directives and LLM manipulation strings from repository source."
+            card_action = "Sanitize repository documentation and comments to adhere to authentic coding standards."
+        elif is_clone:
             card_status = "FLAGGED_CLONE"
             card_headline = f"High probability tutorial clone detected ({int((matched_tutorial or {}).get('similarity_score', 0.0)*100)}% structural match)."
             card_strengths = [
@@ -353,6 +389,7 @@ async def upload_project_zip(
             "growth_area": card_growth,
             "specific_action": card_action,
             "tamper_proof_hash": tamper_proof_hash,
+            "has_prompt_injection": has_prompt_injection,
             "email": email
         }
 
@@ -383,6 +420,7 @@ async def upload_project_zip(
                 analysis_status="COMPLETED" if git_dna.get("history_verified") else "VERIFICATION_INCOMPLETE",
             ),
             "is_clone": is_clone,
+            "has_prompt_injection": has_prompt_injection,
             "matched_tutorial": matched_tutorial,
             "git_dna": git_dna,
             "detected_files": file_tree,

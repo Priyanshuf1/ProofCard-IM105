@@ -15,6 +15,7 @@ from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
+from backend.services.adversarial_defense import AdversarialDefensePipeline
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -315,7 +316,7 @@ def get_github_auth_token(user_provided_token: Optional[str] = None) -> Optional
     return None
 
 
-CODE_SOURCE_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h"}
+CODE_SOURCE_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".rs", ".java", ".cpp", ".c", ".h", ".html", ".css"}
 SOURCE_DISCOVERY_DEADLINE_SECONDS = 5
 
 
@@ -813,7 +814,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
                     code_files = [f for f in raw_files if is_clean_code_file(f)]
                     detected_files = code_files[:20]
-                    valid_exts = (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java", ".cpp")
+                    valid_exts = (".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".go", ".java", ".cpp", ".c", ".h", ".html", ".css")
                     target_code_files = [
                         f for f in code_files
                         if f.endswith(valid_exts) and not f.endswith(".d.ts")
@@ -858,17 +859,17 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
                     # Also inspect package manifest or readme for origin attribution if available
                     for manifest_file in ["package.json", "README.md", "setup.py"]:
-                        if manifest_file in raw_files or any(f.lower() == manifest_file.lower() for f in raw_files):
-                            if manifest_file not in code_snippets:
-                                try:
-                                    m_res = await client.get(
-                                        f"https://raw.githubusercontent.com/{owner}/{resolved_repo}/{default_branch}/{manifest_file}",
-                                        headers=headers
-                                    )
-                                    if m_res.status_code == 200:
-                                        code_snippets[manifest_file] = m_res.text
-                                except Exception:
-                                    pass
+                        actual_file = next((f for f in raw_files if f.lower() == manifest_file.lower() or f.lower().endswith("/" + manifest_file.lower())), None)
+                        if actual_file and actual_file not in code_snippets:
+                            try:
+                                m_res = await client.get(
+                                    f"https://raw.githubusercontent.com/{owner}/{resolved_repo}/{default_branch}/{actual_file}",
+                                    headers=headers
+                                )
+                                if m_res.status_code == 200:
+                                    code_snippets[actual_file] = m_res.text
+                            except Exception:
+                                pass
         except Exception:
             pass
 
@@ -988,6 +989,26 @@ async def analyze_github_repo(req: IngestionURLRequest):
         auth_score = 0
         git_dna["authenticity_score"] = 0
 
+    # Ingestion-Stage Prompt Injection Defense
+    has_prompt_injection = False
+    for fpath, content in code_snippets.items():
+        detected, _ = AdversarialDefensePipeline.detect_prompt_injection(content)
+        if detected:
+            has_prompt_injection = True
+            break
+    if not has_prompt_injection:
+        for c in commits_data:
+            msg = c.get("message") or ""
+            detected, _ = AdversarialDefensePipeline.detect_prompt_injection(msg)
+            if detected:
+                has_prompt_injection = True
+                break
+
+    if has_prompt_injection:
+        auth_score = 0
+        git_dna["authenticity_score"] = 0
+        repository_status = "FLAGGED_ADVERSARIAL_INJECTION"
+
     tamper_proof_hash = "SHA256:" + hashlib.sha256(f"{cid}:{owner}:{resolved_repo_name}:{auth_score}".encode()).hexdigest()
     analysis_confidence = 0.0
     if git_dna.get("history_verified"):
@@ -1000,7 +1021,21 @@ async def analyze_github_repo(req: IngestionURLRequest):
     viva_engine = VivaEngine()
     viva_questions = viva_engine.generate_questions_for_functions(complex_functions, max_questions=5)
 
-    if is_clone and matched_tut:
+    if has_prompt_injection:
+        proof_card = {
+            "status": "FLAGGED_ADVERSARIAL_INJECTION",
+            "headline": "Security Alert: Indirect prompt injection payload detected in repository source/README.",
+            "strengths": [
+                "Automated AppSec pipeline detected indirect prompt injection payload",
+                "Adversarial evasion attempt neutralized"
+            ],
+            "growth_area": "Remove adversarial prompt injection directives and LLM manipulation strings from repository source.",
+            "specific_action": "Sanitize repository documentation and comments to adhere to authentic coding standards.",
+            "tamper_proof_hash": tamper_proof_hash,
+            "has_prompt_injection": True,
+            "email": req.email
+        }
+    elif is_clone and matched_tut:
         sim_pct = int(matched_tut.get("similarity_score", 0.0) * 100)
         source_link = matched_tut.get("source_url") or "external online repository"
         proof_card = {
@@ -1013,7 +1048,9 @@ async def analyze_github_repo(req: IngestionURLRequest):
             ],
             "growth_area": f"Requires authentic engineering. Codebase was scraped from {matched_tut.get('author', 'third-party source')}.",
             "specific_action": f"Re-implement the application independently. Avoid cloning from {source_link}.",
-            "tamper_proof_hash": tamper_proof_hash
+            "tamper_proof_hash": tamper_proof_hash,
+            "has_prompt_injection": False,
+            "email": req.email
         }
     else:
         history_available = bool(commits_data and git_dna.get("history_verified"))
@@ -1087,6 +1124,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
             analysis_status="COMPLETED" if (git_dna.get("history_verified") and source_available) else "VERIFICATION_INCOMPLETE",
         ),
         "is_clone": is_clone,
+        "has_prompt_injection": has_prompt_injection,
         "matched_tutorial": matched_tut,
         "provenance_evidence": provenance_evidence,
         "git_dna": git_dna,

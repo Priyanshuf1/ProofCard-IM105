@@ -143,11 +143,11 @@
     },
     {
       "id": "sonny_sangha_amazon",
-      "name": "Sonny Sangha Amazon 2.0 Clone",
-      "source": "https://github.com/sonnysangha/amazon-clone",
+      "name": "Clever Programmer / Sonny Sangha Amazon Clone",
+      "source": "https://github.com/CleverProgrammers/amazon-clone",
       "youtube_url": "https://www.youtube.com/watch?v=RDV3Z1KCBvo",
       "uploaded": "2022-09-05",
-      "author": "Sonny Sangha",
+      "author": "Clever Programmer / Sonny Sangha",
       "key_files": [
         "src/Header.js",
         "src/Home.js",
@@ -157,12 +157,53 @@
         "src/StateProvider.js",
         "src/reducer.js"
       ],
+      "code_patterns": [
+        "getBasketTotal",
+        "initialState",
+        "ADD_TO_BASKET",
+        "REMOVE_FROM_BASKET",
+        "StateProvider",
+        "useStateValue",
+        "StateContext = createContext",
+        "CheckoutProduct",
+        "basket?.reduce"
+      ],
       "ast_signature": "Program>ImportDeclaration>VariableDeclaration>ArrowFunctionExpression>ReturnStatement>JSXElement>CallExpression",
       "dependencies": {
         "react": "18.2.0",
         "@stripe/stripe-js": "1.35.0",
         "firebase": "9.9.2"
       }
+    },
+    {
+      "id": "apna_college_amazon",
+      "name": "Apna College Amazon Clone (Shraddha Khapra)",
+      "source": "https://github.com/apna-college/amazon-clone",
+      "youtube_url": "https://www.youtube.com/watch?v=1PnVor36_40",
+      "uploaded": "2023-08-15",
+      "author": "Apna College (Shraddha Khapra)",
+      "key_files": [
+        "index.html",
+        "style.css"
+      ],
+      "code_patterns": [
+        "Amazon Ember",
+        "navlogo",
+        "nav-logo",
+        "amazon-dark-logo",
+        "hero-section",
+        "hero-msg",
+        "shop-section",
+        "footer-panel1",
+        "footer-panel2",
+        "Deliver to",
+        "nav-search",
+        "search-select",
+        "search-icon",
+        "nav-signin",
+        "nav-cart"
+      ],
+      "ast_signature": "Program>ExpressionStatement>VariableDeclaration"
     },
     {
       "id": "webdevsimplified_shopping_cart",

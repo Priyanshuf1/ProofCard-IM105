@@ -57,21 +57,33 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   }
 
   const card = candidate.proof_card || {
-    status: candidate.is_clone 
-      ? 'REJECT_SUSPECTED_PLAGIARISM' 
-      : ((candidate.authenticity_score || 0) >= 80 ? 'VERIFIED_EXEMPLARY' : 'VERIFIED_SOLID'),
-    headline: candidate.is_clone
-      ? 'Repository matched online tutorial patterns.'
-      : 'Authentic software engineering profile verified via live AST and Git-DNA telemetry.',
-    strengths: candidate.is_clone
-      ? ['Basic code compilation detected']
-      : ['Organic commit progression', 'Extracted AST demonstrates modularity'],
-    growth_area: 'Expand unit and integration test fixtures.',
-    specific_action: 'Write automated unit tests covering error edge cases.',
+    status: candidate.has_prompt_injection
+      ? 'FLAGGED_ADVERSARIAL_INJECTION'
+      : (candidate.is_clone 
+        ? 'REJECT_SUSPECTED_PLAGIARISM' 
+        : ((candidate.authenticity_score || 0) >= 80 ? 'VERIFIED_EXEMPLARY' : 'VERIFIED_SOLID')),
+    has_prompt_injection: Boolean(candidate.has_prompt_injection),
+    headline: candidate.has_prompt_injection
+      ? 'Security Alert: Indirect prompt injection payload detected in repository source/README.'
+      : (candidate.is_clone
+        ? 'Repository matched online tutorial patterns.'
+        : 'Authentic software engineering profile verified via live AST and Git-DNA telemetry.'),
+    strengths: candidate.has_prompt_injection
+      ? ['Automated AppSec pipeline detected indirect prompt injection payload', 'Adversarial evasion attempt neutralized']
+      : (candidate.is_clone
+        ? ['Basic code compilation detected']
+        : ['Organic commit progression', 'Extracted AST demonstrates modularity']),
+    growth_area: candidate.has_prompt_injection
+      ? 'Remove adversarial prompt injection directives and LLM manipulation strings from repository source.'
+      : 'Expand unit and integration test fixtures.',
+    specific_action: candidate.has_prompt_injection
+      ? 'Sanitize repository documentation and comments to adhere to authentic coding standards.'
+      : 'Write automated unit tests covering error edge cases.',
     tamper_proof_hash: `SHA256:${candidate.candidate_id}`,
   };
 
   const isClone = candidate.is_clone;
+  const isAdversarial = Boolean(candidate.has_prompt_injection || card.has_prompt_injection || card.status === 'FLAGGED_ADVERSARIAL_INJECTION');
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
@@ -204,17 +216,21 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#3A2F27] pb-5 mb-5 relative z-10">
           <div className="flex items-center gap-3.5">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-inner ${
-              isClone 
+              isAdversarial
+                ? 'bg-red-950 text-red-300 border border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]'
+                : isClone 
                 ? 'bg-red-950/50 text-red-400 border border-red-500/50' 
                 : 'bg-[#2A241B] text-[#D4AF37] border border-[#D4AF37]/50 shadow-[0_0_12px_rgba(212,175,55,0.3)]'
             }`}>
-              {isClone ? '⚠️' : 'Ω'}
+              {isAdversarial ? '🚨' : isClone ? '⚠️' : 'Ω'}
             </div>
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="text-xl sm:text-2xl font-bold text-white tracking-wide font-sans">{candidate.name}</span>
                 <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full border ${
-                  isClone
+                  isAdversarial
+                    ? 'bg-red-950 text-red-200 border-red-500 font-mono font-bold'
+                    : isClone
                     ? 'bg-red-900/40 text-red-300 border-red-500/40'
                     : 'bg-[#8B1E1E]/40 text-[#FFD166] border-[#D4AF37]/50'
                 }`}>
@@ -231,7 +247,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           <div className="flex items-center gap-4 font-mono bg-black/60 px-5 py-3 rounded-xl border border-[#3A2F27]">
             <div className="text-right">
               <div className="text-xs text-neutral-300 uppercase font-bold">Authenticity</div>
-              <div className={`text-2xl font-black ${isClone ? 'text-red-400' : 'text-[#FFD166]'}`}>
+              <div className={`text-2xl font-black ${isAdversarial || isClone ? 'text-red-400' : 'text-[#FFD166]'}`}>
                 {candidate.authenticity_score} <span className="text-xs text-neutral-400 font-normal">/ 100</span>
               </div>
             </div>
@@ -247,15 +263,17 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
         {/* Mentor Assessment Headline & Plagiarism Origin Attribution */}
         <div className={`rounded-xl border p-4 sm:p-5 mb-5 relative z-10 ${
-          isClone
+          isAdversarial
+            ? 'bg-red-950/70 border-red-500'
+            : isClone
             ? 'bg-red-950/40 border-red-500/50'
             : 'bg-black/50 border-[#3A2F27]'
         }`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${
-              isClone ? 'text-red-400' : 'text-[#FFD166]'
+              isAdversarial ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
             }`}>
-              {isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:'}
+              {isAdversarial ? '🚨 Security Alert: Prompt Injection Neutralized' : (isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:')}
             </span>
             {isClone && candidate.matched_tutorial && (
               <div className="flex items-center gap-2">
