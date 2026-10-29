@@ -424,26 +424,8 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         </div>
       </div>
 
-      {/* The 3D ProofCard Container */}
-      <div 
-        onMouseMove={handleCardMouseMove}
-        onMouseLeave={handleCardMouseLeave}
-        style={{
-          transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          transition: tilt.isHovered ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
-          transformStyle: 'preserve-3d'
-        }}
-        className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/40 backdrop-blur-xl border border-[#D4AF37]/35 shadow-[0_15px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden transition-all duration-300"
-      >
-        {/* Dynamic Light Glare Reflection */}
-        {tilt.isHovered && (
-          <div 
-            className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-200"
-            style={{
-              background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(212, 175, 55, 0.22) 0%, rgba(255, 255, 255, 0.08) 25%, transparent 65%)`,
-            }}
-          />
-        )}
+      {/* The Pariksha Card Container */}
+      <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/40 backdrop-blur-xl border border-[#D4AF37]/35 shadow-[0_15px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden">
         {/* Amber Ambient Vignette */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
 
