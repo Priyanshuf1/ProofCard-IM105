@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { sendDecisionEmail, dispatchBatchVivaInvites, sendVivaInvitation } from '../services/api';
 import { CandidateProfile } from '../types';
+import { buildPublicVivaUrl } from '../utils/urlHelper';
 import { classifyCollegeTier } from '../utils/collegeClassifier';
 import { OFFLINE_DEMO_PROFILES } from '../data/offlineDemoData';
 
@@ -1127,9 +1128,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
               {/* Direct Viva Defense URL Box */}
               {(() => {
-                const vivaUrl = typeof window !== 'undefined'
-                  ? `${window.location.origin}/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`
-                  : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`;
+                const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
                 const subject = `Invitation: 3-Minute Technical Defense Viva - ${activeVivaInviteCandidate.name}`;
                 const fullBody = `Hello ${activeVivaInviteCandidate.name},\n\nThank you for submitting your project (${activeVivaInviteCandidate.project_name || 'Software Project'}). As part of our merit-based technical screening process, you are invited to complete your 3-minute Technical Defense Viva.\n\nDirect Viva Link:\n${vivaUrl}\n\nWhat to Expect:\n- 3 targeted questions derived from key functions extracted from your code.\n- 3 minutes total via microphone or text in browser.\n- Instant verified credential issued upon completion.\n\n${customVivaNote ? `Recruiter Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
 
@@ -1240,9 +1239,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               <div className="flex items-center gap-2">
                 {/* Direct mailto: Fallback Button */}
                 {(() => {
-                  const vivaUrl = typeof window !== 'undefined'
-                    ? `${window.location.origin}/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`
-                    : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`;
+                  const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
                   const subject = `Invitation to 3-Minute Technical Defense Viva: ${activeVivaInviteCandidate.name}`;
                   const body = `Hello ${activeVivaInviteCandidate.name},\n\nYou are invited to complete your 3-minute Technical Defense Viva for your project submission: ${activeVivaInviteCandidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\n${customVivaNote ? `Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
                   const mailtoLink = `mailto:${encodeURIComponent(activeVivaInviteCandidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

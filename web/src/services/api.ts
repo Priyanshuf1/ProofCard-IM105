@@ -1,3 +1,4 @@
+import { buildPublicVivaUrl, getPublicBaseUrl } from '../utils/urlHelper';
 import { CandidateProfile, BattleResponse, BiasMirrorResponse, RecruiterDecision, VivaQuestion, DeploymentContract } from '../types';
 import { OFFLINE_DEMO_PROFILES, SAMPLE_RECRUITER_DECISIONS } from '../data/offlineDemoData';
 
@@ -1067,9 +1068,7 @@ export async function sendVivaInvitation(
   } catch (e) {
     console.warn('Failed to dispatch viva invitation to backend, falling back:', e);
   }
-  const vivaUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/viva?cid=${encodeURIComponent(candidate.candidate_id || candidate.id || 'candidate')}`
-    : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(candidate.candidate_id || candidate.id || 'candidate')}`;
+  const vivaUrl = buildPublicVivaUrl(candidate.candidate_id || candidate.id || 'candidate');
   const subject = `Invitation to 3-Minute Technical Viva Defense: ${candidate.name || 'Candidate'}`;
   const body = `Hello ${candidate.name || 'Candidate'},\n\nYou are invited to complete your 3-minute Technical Defense Viva for your project submission: ${candidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\nBest regards,\nPariksha Technical Evaluation Team`;
   const mailtoLink = `mailto:${encodeURIComponent(candidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

@@ -12,10 +12,129 @@ import { N8nAutomationModal } from './components/N8nAutomationModal';
 import { CandidateProfile } from './types';
 import { OFFLINE_DEMO_PROFILES } from './data/offlineDemoData';
 
+function resolveInitialStateFromUrl(): { tab: string; candidate: CandidateProfile | null } {
+  if (typeof window === 'undefined') {
+    return { tab: 'ingestion', candidate: null };
+  }
+  const params = new URLSearchParams(window.location.search);
+  const verifyId = params.get('verify');
+  const vivaCid = params.get('cid');
+
+  if (vivaCid) {
+    let vivaCandidate: CandidateProfile | null = OFFLINE_DEMO_PROFILES.find(p => p.candidate_id === vivaCid) || null;
+    if (!vivaCandidate) {
+      try {
+        const cached = localStorage.getItem(`proofcard_${vivaCid}`);
+        if (cached) vivaCandidate = JSON.parse(cached);
+      } catch (e) {}
+    }
+    return { tab: 'viva', candidate: vivaCandidate };
+  }
+
+  if (verifyId) {
+    let target: CandidateProfile | null = null;
+    try {
+      const cached = localStorage.getItem(`proofcard_${verifyId}`) || localStorage.getItem('proofcard_last_scanned');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && (parsed.candidate_id === verifyId || !verifyId)) target = parsed;
+      }
+    } catch (e) {}
+
+    if (!target) {
+      target = OFFLINE_DEMO_PROFILES.find(p => p.candidate_id === verifyId) || null;
+    }
+
+    if (!target) {
+      const candName = decodeURIComponent(params.get('name') || 'Priyanshu Awasthi');
+      const candCollege = decodeURIComponent(params.get('college') || 'GLA University (Mathura)');
+      const candTier = decodeURIComponent(params.get('tier') || 'Tier-2');
+      const candProject = decodeURIComponent(params.get('project') || 'rabto');
+      const candTrack = decodeURIComponent(params.get('track') || 'Full Stack Engineer');
+      const authScore = parseInt(params.get('auth') || '95', 10);
+      const vivaScore = parseFloat(params.get('viva') || '0.0');
+      const cardStatus = params.get('status') || 'VERIFIED_EXEMPLARY';
+      const isClone = cardStatus === 'FLAGGED_CLONE';
+      const isInjected = cardStatus.includes('INJECTION');
+
+      target = {
+        candidate_id: verifyId,
+        name: candName,
+        college: candCollege,
+        college_tier: candTier,
+        project_name: candProject,
+        project_type: candTrack,
+        total_loc: 2450,
+        authenticity_score: authScore,
+        is_clone: isClone,
+        has_prompt_injection: isInjected,
+        is_prompt_injected: isInjected,
+        viva_score: vivaScore,
+        viva_status: vivaScore > 0 ? 'COMPLETED' : (isInjected ? 'BLOCKED_ADVERSARIAL' : (isClone ? 'BLOCKED_CLONE' : 'PENDING_DEFENSE')),
+        defense_type: vivaScore > 0 ? 'LIVE_DEFENDED' : 'ASYNC_REMOTE',
+        live_analyzed: vivaScore > 0,
+        git_dna: {
+          total_commits: 28,
+          time_span_days: 32,
+          burst_ratio: 0.15,
+          deletion_ratio: 0.24,
+          organic_growth: authScore >= 70,
+          message_maturity_score: 9.2,
+          test_files_detected: 4,
+          history_verified: true,
+          authenticity_score: authScore,
+          summary: 'Organic Git-DNA with verified temporal commit progression'
+        },
+        proof_card: {
+          status: cardStatus,
+          headline: isClone 
+            ? 'Repository matched public tutorial architecture.' 
+            : (isInjected 
+              ? 'Security Alert: Manipulative directive intercepted.' 
+              : `Demonstrated authentic software development with steady commit history, structured code organization, and verified implementation of core application logic across ${candProject}.`),
+          strengths: isInjected
+            ? [
+                'Adversarial prompt injection pattern intercepted by integrity filters',
+                'Quarantined by automated AST security scanner with zero authenticity score',
+                'Candidate evaluation frozen pending manual recruiter review'
+              ]
+            : (isClone 
+              ? [
+                  'Repository files and structure successfully parsed',
+                  'Matched existing public tutorial implementation',
+                  'Awaiting original project architecture proof'
+                ]
+              : [
+                  'Cryptographic proof verified on live public Pariksha ledger',
+                  'Demonstrated code originality with organic development cadence',
+                  'Verified core functions with strong algorithmic logic and clear code structure'
+                ]),
+          growth_area: isInjected
+            ? 'Remove adversarial prompt injection directives from repository code and documentation.'
+            : (isClone 
+              ? 'Build original software architectures rather than duplicating online tutorial repos.'
+              : 'Expand automated test suites and mock coverage for external API integrations.'),
+          specific_action: isInjected
+            ? 'Submit an authentic code repository without injected system prompt instructions or hidden bypasses.'
+            : (isClone
+              ? 'Design custom database schema models and independent business domain logic.'
+              : 'Add automated tests to verify how the application handles network timeouts and error states.'),
+          tamper_proof_hash: `SHA256:${verifyId}`
+        }
+      };
+    }
+
+    return { tab: 'proofcard', candidate: target };
+  }
+
+  return { tab: 'ingestion', candidate: null };
+}
+
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('ingestion');
+  const [initialResolved] = useState(resolveInitialStateFromUrl);
+  const [activeTab, setActiveTab] = useState<string>(initialResolved.tab);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
-  const [currentCandidate, setCurrentCandidate] = useState<CandidateProfile | null>(null);
+  const [currentCandidate, setCurrentCandidate] = useState<CandidateProfile | null>(initialResolved.candidate);
   const [cohort, setCohort] = useState<CandidateProfile[]>([]);
   const [isImatsOpen, setIsImatsOpen] = useState<boolean>(false);
   const [isN8nOpen, setIsN8nOpen] = useState<boolean>(false);

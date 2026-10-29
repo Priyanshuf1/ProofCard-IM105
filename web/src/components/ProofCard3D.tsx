@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { CandidateProfile } from '../types';
+import { buildPublicVerifyUrl } from '../utils/urlHelper';
 
 interface ProofCard3DProps {
   candidate: CandidateProfile | null;
@@ -420,9 +421,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
     return raw;
   }, [card.headline, candidate.project_name, candidate.project_type]);
 
-  const publicVerifyUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}&college=${encodeURIComponent(candidate.college || '')}&tier=${encodeURIComponent(candidate.college_tier || '')}&project=${encodeURIComponent(candidate.project_name || candidate.project_type || '')}&track=${encodeURIComponent(candidate.project_type || '')}`
-    : `https://proofcard.vercel.app/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}&college=${encodeURIComponent(candidate.college || '')}&tier=${encodeURIComponent(candidate.college_tier || '')}&project=${encodeURIComponent(candidate.project_name || candidate.project_type || '')}&track=${encodeURIComponent(candidate.project_type || '')}`;
+  const publicVerifyUrl = buildPublicVerifyUrl(candidate);
 
   useEffect(() => {
     QRCode.toDataURL(publicVerifyUrl, {
