@@ -15,9 +15,13 @@ import {
 } from 'lucide-react';
 import { SAMPLE_RECRUITER_DECISIONS } from '../data/offlineDemoData';
 import { auditRecruiterBias, runFairnessStressTest } from '../services/api';
-import { BiasMirrorResponse } from '../types';
+import { BiasMirrorResponse, CandidateProfile } from '../types';
 
-export const BiasMirror: React.FC = () => {
+interface BiasMirrorProps {
+  cohort?: CandidateProfile[];
+}
+
+export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   const [decisions, setDecisions] = useState(SAMPLE_RECRUITER_DECISIONS);
   const [auditResult, setAuditResult] = useState<BiasMirrorResponse | null>(null);
   const [isAuditing, setIsAuditing] = useState(false);

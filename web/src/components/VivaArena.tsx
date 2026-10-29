@@ -2,28 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Zap, 
   Clock, 
-  HelpCircle, 
   CheckCircle, 
   XCircle, 
   ArrowRight, 
   RefreshCw,
-  Sparkles,
   Award,
   Terminal,
-  Flame,
-  PlusCircle,
   Mic,
   MicOff,
   Users,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Code
 } from 'lucide-react';
 import { CandidateProfile, VivaQuestion } from '../types';
 import { evaluateVivaAnswer, generateMoreVivaQuestions } from '../services/api';
-import { CAMPUS_COHORT_100 } from '../data/cohortData';
 
 interface VivaArenaProps {
-  candidate: CandidateProfile;
+  candidate: CandidateProfile | null;
   onUpdateVivaScore: (newScore: number) => void;
   onNavigateToTab: (tab: string) => void;
   onSelectCandidate?: (candidate: CandidateProfile) => void;
@@ -61,10 +57,35 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   onUpdateVivaScore,
   onNavigateToTab,
   onSelectCandidate,
-  cohort = CAMPUS_COHORT_100
+  cohort = []
 }) => {
-  const [questions, setQuestions] = useState<VivaQuestion[]>(candidate.viva_questions || []);
+  // If no candidate is active, show clean high-tech empty state
+  if (!candidate) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
+        <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 flex items-center justify-center">
+            <Zap className="w-8 h-8 text-[#D4AF37]" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
+            No Active Candidate for Viva Defense
+          </h2>
+          <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
+            Scan a live repository in the Code Ingestion Scanner to extract Abstract Syntax Trees and generate candidate-specific technical defense questions.
+          </p>
+          <button
+            onClick={() => onNavigateToTab('ingestion')}
+            className="btn-dev-primary text-xs flex items-center gap-2 px-6 py-3.5 mx-auto shadow-lg cursor-pointer font-bold"
+          >
+            <span>Go to Ingestion Scanner</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  const [questions, setQuestions] = useState<VivaQuestion[]>(candidate.viva_questions || []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -240,7 +261,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     }
   };
 
-  const handleGenerateMoreQuestions = async (count: number = 5) => {
+  const handleGenerateMoreQuestions = async (count: number = 3) => {
     setIsGeneratingMore(true);
     try {
       const newQuestions = await generateMoreVivaQuestions(
@@ -312,17 +333,35 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   const currentQ = questions[currentQuestionIndex] || questions[0];
   const isCurrentEvaluated = evaluatedAnswers[currentQuestionIndex] !== undefined;
 
-  if (!currentQ) {
+  if (!currentQ || questions.length === 0) {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-        <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 text-center">
-          <ShieldCheck className="w-10 h-10 mx-auto mb-3 text-[#D4AF37]" />
-          <h1 className="text-xl font-bold text-white mb-2">Live defense unavailable</h1>
-          <p className="text-sm text-neutral-300">No verified complex functions were retrieved for this candidate, so no viva question has been invented.</p>
+        <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 text-center shadow-2xl">
+          <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-[#D4AF37]" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
+            Viva Defense Questions Pending
+          </h1>
+          <p className="text-sm text-neutral-300 max-w-lg mx-auto mb-6">
+            AST questions can be synthesized directly from this candidate's complex functions ({candidate.complex_functions?.length || 0} detected).
+          </p>
+          <button
+            onClick={() => handleGenerateMoreQuestions(3)}
+            disabled={isGeneratingMore}
+            className="btn-dev-primary text-xs flex items-center gap-2 px-6 py-3.5 mx-auto shadow-lg cursor-pointer font-bold"
+          >
+            {isGeneratingMore ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            <span>Synthesize Questions via AST Analysis</span>
+          </button>
         </div>
       </div>
     );
   }
+
+  // Real Cohort Stats if present
+  const validVivaCandidates = cohort.filter(c => c.viva_score !== undefined);
+  const avgCohortViva = validVivaCandidates.length > 0 
+    ? (validVivaCandidates.reduce((acc, c) => acc + (c.viva_score || 0), 0) / validVivaCandidates.length).toFixed(1)
+    : 'N/A';
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
@@ -330,30 +369,30 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex-1">
-            <div className="flex flex-wrap items-center justify-end gap-2 mb-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-warrior font-bold text-[#D4AF37] uppercase tracking-wider">
+                Verifiable Code Defense
+              </span>
+
               {/* Candidate Switcher Dropdown */}
-              {onSelectCandidate && (
-                <div className="ml-auto sm:ml-2">
+              {onSelectCandidate && cohort.length > 0 && (
+                <div>
                   <select
                     value={candidate.candidate_id}
                     onChange={(e) => {
                       const found = cohort.find(c => c.candidate_id === e.target.value);
                       if (found) onSelectCandidate(found);
                     }}
-                    className="bg-[#140b08] border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-[#FFD166] font-warrior font-bold focus:outline-none cursor-pointer"
+                    className="bg-[#140b08] border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-[#FFD166] font-warrior font-bold focus:outline-none cursor-pointer max-w-[200px]"
                   >
-                    <optgroup label="Active Candidates">
-                      <option value="cand_priyanshu_sih">⚡ Priyanshu Awasthi & Team (Data_SIH)</option>
-                      <option value="cand_builder_p">Ananya Patel (Govt Engg College)</option>
-                      <option value="cand_clone_yt">Rohan Sharma (Tutorial Clone)</option>
-                    </optgroup>
-                    <optgroup label="Campus Cohort 100">
-                      {cohort.slice(0, 20).map(c => (
-                        <option key={c.candidate_id} value={c.candidate_id}>
-                          {c.name} ({c.college} - Viva: {c.viva_score}/10)
-                        </option>
-                      ))}
-                    </optgroup>
+                    <option value={candidate.candidate_id}>
+                      {candidate.name} ({candidate.viva_score !== undefined ? `${candidate.viva_score}/10` : 'Pending'})
+                    </option>
+                    {cohort.filter(c => c.candidate_id !== candidate.candidate_id).map(c => (
+                      <option key={c.candidate_id} value={c.candidate_id}>
+                        {c.name} ({c.viva_score !== undefined ? `${c.viva_score}/10` : 'Pending'})
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -367,26 +406,28 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             </h1>
           </div>
 
-          <button
-            onClick={() => setShowCohortRoster(!showCohortRoster)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/50 border border-[#D4AF37]/40 text-xs sm:text-sm font-bold text-[#FFD166] hover:bg-[#8B1E1E]/40 transition cursor-pointer shrink-0"
-          >
-            <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>{showCohortRoster ? 'Hide Cohort Roster' : 'View Cohort Viva Roster (100)'}</span>
-          </button>
+          {cohort.length > 0 && (
+            <button
+              onClick={() => setShowCohortRoster(!showCohortRoster)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/50 border border-[#D4AF37]/40 text-xs sm:text-sm font-bold text-[#FFD166] hover:bg-[#8B1E1E]/40 transition cursor-pointer shrink-0"
+            >
+              <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>{showCohortRoster ? 'Hide Cohort Roster' : `View Cohort Roster (${cohort.length})`}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Cohort Viva Roster Drawer */}
-      {showCohortRoster && (
-        <div className="mb-6 p-5 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl animate-fadeIn">
+      {showCohortRoster && cohort.length > 0 && (
+        <div className="mb-6 p-5 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl animate-in fade-in">
           <div className="flex items-center justify-between mb-3 text-xs font-warrior">
             <span className="text-[#D4AF37] font-bold uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4 text-[#D4AF37]" />
-              <span>Campus Cohort Viva Completion Ledger (74% Screened)</span>
+              <span>Cohort Viva Ledger ({cohort.length} Candidates)</span>
             </span>
             <span className="font-mono text-[#C9B89A]">
-              Average Viva Score: <strong className="text-white">6.8 / 10</strong>
+              Average Viva Score: <strong className="text-white">{avgCohortViva} / 10</strong>
             </span>
           </div>
 
@@ -402,7 +443,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#2A241B] font-mono text-xs sm:text-sm">
-                {cohort.slice(0, 10).map((cand) => (
+                {cohort.slice(0, 15).map((cand) => (
                   <tr key={cand.candidate_id} className="hover:bg-white/5 transition">
                     <td className="py-3 px-3 text-white font-sans font-bold">
                       {cand.name}
@@ -411,12 +452,12 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                       {cand.college}
                     </td>
                     <td className="py-3 px-3 font-bold text-base">
-                      <span className={cand.viva_score >= 7 ? 'text-emerald-400' : 'text-amber-400'}>
-                        {cand.viva_score} / 10
+                      <span className={(cand.viva_score || 0) >= 7 ? 'text-emerald-400' : 'text-amber-400'}>
+                        {cand.viva_score !== undefined ? `${cand.viva_score} / 10` : 'Pending'}
                       </span>
                     </td>
                     <td className="py-3 px-3">
-                      {cand.viva_score >= 7 ? (
+                      {(cand.viva_score || 0) >= 7 ? (
                         <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
                           <CheckCircle className="w-3.5 h-3.5" />
                           Passed Architectural Defense
@@ -424,7 +465,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                       ) : (
                         <span className="text-amber-400 text-xs sm:text-sm flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5" />
-                          Borderline / Superficial
+                          Pending / Borderline
                         </span>
                       )}
                     </td>
@@ -448,55 +489,57 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       )}
 
       {/* Question Selector & Countdown Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        {/* Dynamic Question Count Selector */}
-        <div className="flex items-center gap-2 text-xs font-warrior">
-          <span className="text-[#D4AF37] font-bold uppercase tracking-wider text-[11px]">Questions:</span>
-          {[3, 5, 10].map((count) => (
-            <button
-              key={count}
-              onClick={() => handleGenerateMoreQuestions(count)}
-              disabled={isGeneratingMore}
-              className={`px-3 py-1 rounded-lg border transition cursor-pointer font-mono font-bold ${
-                questions.length === count
-                  ? 'bg-[#8B1E1E] text-white border-[#D4AF37] shadow-sm'
-                  : 'bg-black/40 text-neutral-400 border-[#3A2F27] hover:border-[#D4AF37]/50 hover:text-white'
-              }`}
-            >
-              {count}
-            </button>
-          ))}
-          {isGeneratingMore && <RefreshCw className="w-3.5 h-3.5 text-[#D4AF37] animate-spin" />}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-1.5">
+          {questions.map((q, idx) => {
+            const isEvaluated = evaluatedAnswers[idx] !== undefined;
+            const isCurrent = idx === currentQuestionIndex;
+            return (
+              <button
+                key={q.question_id || idx}
+                onClick={() => setCurrentQuestionIndex(idx)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition cursor-pointer border ${
+                  isCurrent
+                    ? 'bg-[#8B1E1E] border-[#D4AF37] text-white shadow-md'
+                    : isEvaluated
+                    ? 'bg-black/60 border-emerald-500/60 text-emerald-300'
+                    : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
+                }`}
+              >
+                Q{idx + 1} {isEvaluated ? '✓' : ''}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Timer */}
-        <div className="flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono font-bold ${
-            timeLeft <= 15 ? 'bg-red-950/50 border-red-500 text-red-300 animate-pulse' : 'bg-black/50 border-[#3A2F27] text-[#FFD166]'
-          }`}>
-            <Clock className="w-3.5 h-3.5" />
-            <span>{timeLeft}s</span>
-          </div>
+        {/* 60s Countdown Timer */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${
+          timeLeft <= 10
+            ? 'bg-red-950/60 border-red-500 text-red-300 animate-pulse'
+            : 'bg-black/50 border-[#D4AF37]/40 text-[#FFD166]'
+        }`}>
+          <Clock className="w-3.5 h-3.5" />
+          <span>{timeLeft}s REMAINING</span>
         </div>
       </div>
 
-      {/* Question Card */}
-      <div className="p-6 sm:p-7 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
-        {/* Function Reference Header */}
-        <div className="flex flex-wrap items-center justify-between border-b border-[#3A2F27] pb-3 mb-4 text-xs text-[#C9B89A] gap-2">
-          <div className="flex items-center gap-2 font-mono">
-            <Zap className="w-4 h-4 text-[#D4AF37]" />
-            <span>Target Function: <strong className="text-white">{currentQ.function_name}()</strong></span>
-            <span className="text-[#3A2F27]">|</span>
-            <span className="text-[#D4AF37]">{currentQ.file}:{currentQ.line_number}</span>
-          </div>
-          <span className="px-3 py-1 rounded-full uppercase font-bold text-xs bg-black/70 text-[#FFD166] border border-[#D4AF37]/40">
-            {currentQ.difficulty || 'medium'}
-          </span>
-        </div>
-
-        {/* Prompt Text */}
+      {/* Main Question Defense Card */}
+      <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="mb-4">
+          <div className="flex items-center justify-between text-xs text-[#E6C280] font-mono mb-2">
+            <span className="flex items-center gap-1.5">
+              <Code className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>Extracted Target: <strong>{currentQ.function_name}()</strong> in {currentQ.file}:{currentQ.line_number}</span>
+            </span>
+            <span className={`px-2 py-0.5 rounded uppercase font-bold text-[10px] ${
+              currentQ.difficulty === 'hard'
+                ? 'bg-red-950 border border-red-600 text-red-300'
+                : 'bg-amber-950 border border-amber-600 text-amber-300'
+            }`}>
+              {currentQ.difficulty}
+            </span>
+          </div>
+
           <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
             "{currentQ.question}"
           </h2>
@@ -537,7 +580,6 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                   {isListening ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5 text-[#D4AF37]" />}
                   <span>{isListening ? 'Stop listening' : voiceSupported === false ? 'Mic unavailable' : 'Voice Defense (Mic)'}</span>
                 </button>
-
               </div>
             )}
           </div>
@@ -606,7 +648,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             ) : (
               <button
                 onClick={handleNext}
-                className="btn-dev-primary text-xs flex items-center gap-2 shadow-lg cursor-pointer px-5 py-2.5"
+                className="btn-dev-primary text-xs flex items-center gap-2 shadow-lg cursor-pointer px-5 py-2.5 font-bold"
               >
                 <span>{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Verified ProofCard'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />

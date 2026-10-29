@@ -531,19 +531,6 @@ async def analyze_github_repo(req: IngestionURLRequest):
     raw_url = req.github_url.strip()
     url_clean = raw_url.lower()
 
-    # Direct IM-105 benchmark candidate ID lookup (e.g., cand_fresher_267)
-    if url_clean.startswith("cand_"):
-        cohort_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "cohort_400.json"))
-        if os.path.exists(cohort_path):
-            try:
-                with open(cohort_path, "r", encoding="utf-8") as f:
-                    cohort_list = json.load(f).get("cohort", [])
-                    matched_cand = next((c for c in cohort_list if c.get("candidate_id", "").lower() == url_clean), None)
-                    if matched_cand:
-                        return matched_cand
-            except Exception:
-                pass
-
     # Match repo URL (github.com/owner/repo) or user profile URL (github.com/owner)
     match_repo = re.search(r"github\.com/([^/?#]+)/([^/?#]+)", raw_url)
     match_user = re.search(r"github\.com/([^/?#]+)/?$", raw_url)
@@ -887,31 +874,20 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if commits_data:
         live_success = True
 
-    # If live analysis did not succeed or had 0 commits (e.g., private repo or network drop),
-    # check if verified cached profile exists for this owner / repo
-    if not live_success:
-        cached = get_cached_profile_for_user_or_repo(owner, resolved_repo)
-        if cached:
-            return {
-                "status": "success",
-                "is_cached_profile": True,
-                "live_analyzed": False,
-                **cached
-            }
-        elif is_user_profile and not available_repos:
+    # If live analysis did not succeed or had 0 commits (e.g., private repo or network drop)
+    if not live_success or (not commits_data and not raw_files and not code_snippets):
+        if is_user_profile and not available_repos:
             raise HTTPException(
                 status_code=404,
-                detail=f"Unable to resolve active public code for '{owner}'. Please check the URL or try again."
+                detail=f"Unable to resolve active public code for user '{owner}'. Please check the username or repository URL."
             )
-
-        if not commits_data and not raw_files and not code_snippets:
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    f"GitHub repository '{owner}/{resolved_repo or ''}' could not be retrieved. "
-                    "No verifiable source files or commit telemetry were available; no synthetic profile was created."
-                ),
-            )
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                f"GitHub repository '{owner}/{resolved_repo or ''}' could not be retrieved. "
+                "No verifiable source files or commit telemetry were available; no synthetic profile was created."
+            ),
+        )
 
     # When live analysis succeeds, synthesize verified profile from live GitHub AST data
     resolved_repo_name = resolved_repo or "primary-repository"

@@ -23,13 +23,12 @@ import {
   Award,
   ChevronRight
 } from 'lucide-react';
-import { PRESET_JOB_DESCRIPTIONS, OFFLINE_DEMO_PROFILES } from '../data/offlineDemoData';
+import { PRESET_JOB_DESCRIPTIONS } from '../data/offlineDemoData';
 import { runBattleCompare, parseJobDescription, analyzeGithubUrl, autoShortlistCohort } from '../services/api';
 import { BattleResponse, CandidateProfile } from '../types';
-import { CAMPUS_COHORT_100 } from '../data/cohortData';
 
 interface RecruiterBattleProps {
-  currentCandidate?: CandidateProfile;
+  currentCandidate?: CandidateProfile | null;
   onNavigateToTab: (tab: string) => void;
   onSelectCandidate?: (candidate: CandidateProfile) => void;
   cohort?: CandidateProfile[];
@@ -39,7 +38,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
   currentCandidate, 
   onNavigateToTab,
   onSelectCandidate,
-  cohort = CAMPUS_COHORT_100
+  cohort = []
 }) => {
   // Tabs: 'funnel' (High-throughput 100-applicant auto-shortlist) vs 'matrix' (Side-by-side 1-on-1 battle)
   const [activeMode, setActiveMode] = useState<'funnel' | 'matrix'>('funnel');
@@ -67,10 +66,34 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
 
   // Dynamic Candidate Pool for 1-on-1 Matrix
   const [candidatePool, setCandidatePool] = useState<CandidateProfile[]>(() => {
-    if (!currentCandidate) return OFFLINE_DEMO_PROFILES.slice(0, 3);
-    const others = OFFLINE_DEMO_PROFILES.filter(p => p.candidate_id !== currentCandidate.candidate_id);
-    return [currentCandidate, ...others];
+    const list: CandidateProfile[] = [];
+    if (currentCandidate) list.push(currentCandidate);
+    if (cohort && cohort.length > 0) {
+      cohort.forEach(c => {
+        if (!list.some(p => p.candidate_id === c.candidate_id)) {
+          list.push(c);
+        }
+      });
+    }
+    return list;
   });
+
+  useEffect(() => {
+    setCandidatePool(prev => {
+      const list = [...prev];
+      if (currentCandidate && !list.some(p => p.candidate_id === currentCandidate.candidate_id)) {
+        list.unshift(currentCandidate);
+      }
+      if (cohort && cohort.length > 0) {
+        cohort.forEach(c => {
+          if (!list.some(p => p.candidate_id === c.candidate_id)) {
+            list.push(c);
+          }
+        });
+      }
+      return list;
+    });
+  }, [currentCandidate, cohort]);
 
   // Add Real Candidate Form State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -85,6 +108,16 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
 
   // Auto-shortlist logic
   const handleRunAutoShortlist = async () => {
+    if (cohort.length === 0) {
+      setShortlistResult({
+        shortlisted: [],
+        qualifiedCount: 0,
+        cutoffFailedCount: 0,
+        rejectedCount: 0,
+        hoursSaved: 0
+      });
+      return;
+    }
     setIsShortlisting(true);
     try {
       // Call backend endpoint or fallback to robust client calculation

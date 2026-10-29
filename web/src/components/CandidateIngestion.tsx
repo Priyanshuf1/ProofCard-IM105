@@ -4,43 +4,43 @@ import {
   GitBranch, 
   FileCode, 
   Loader2, 
-  Lock,
   ArrowRight,
   AlertCircle,
   Sparkles,
   ShieldCheck,
   CheckCircle2,
-  Flame,
   Users,
   Search,
-  Filter,
   FileSpreadsheet,
   AlertTriangle,
   Clock,
   Award,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv } from '../services/api';
 import { CandidateProfile } from '../types';
-import { CAMPUS_COHORT_100 } from '../data/cohortData';
-import { IM105_COHORT_400 } from '../data/im105BenchmarkData';
 
 interface CandidateIngestionProps {
   onScanComplete: (profile: CandidateProfile) => void;
   onNavigateToTab: (tab: string) => void;
   onSelectCandidate?: (profile: CandidateProfile) => void;
+  cohort?: CandidateProfile[];
+  onUpdateCohort?: (cohort: CandidateProfile[]) => void;
 }
 
 export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   onScanComplete,
   onNavigateToTab,
   onSelectCandidate,
+  cohort = [],
+  onUpdateCohort,
 }) => {
-  const [scopeMode, setScopeMode] = useState<'single' | 'batch'>('batch');
+  const [scopeMode, setScopeMode] = useState<'single' | 'batch'>('single');
   const [ingestMode, setIngestMode] = useState<'github' | 'zip'>('github');
-  const [githubUrl, setGithubUrl] = useState('https://github.com/Priyanshuf1');
-  const [candidateName, setCandidateName] = useState('Priyanshu Awasthi');
-  const [college, setCollege] = useState('GLA University');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [candidateName, setCandidateName] = useState('');
+  const [college, setCollege] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [consentGranted, setConsentGranted] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,167 +50,25 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   const [scanStep, setScanStep] = useState(0);
 
   // Batch cohort state
-  const [cohort, setCohort] = useState<CandidateProfile[]>(CAMPUS_COHORT_100);
   const [batchSearch, setBatchSearch] = useState('');
   const [batchFilter, setBatchFilter] = useState<'all' | 'builders' | 'clones' | 'dumps'>('all');
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
   const [batchProgress, setBatchProgress] = useState(100);
-  const [batchTitle, setBatchTitle] = useState('Campus Drive 2026 Cohort (100 Applicants)');
+  const [batchTitle, setBatchTitle] = useState('Enterprise Batch Ingestion Queue');
 
-  // Dynamic user & repo extraction
   const extractUserAndRepo = (url: string) => {
     const clean = url.trim().replace(/^https?:\/\//, '').replace(/^github\.com\//, '').replace(/\/$/, '');
     const parts = clean.split('/').filter(Boolean);
     return { user: parts[0] || '', repo: parts[1] || '' };
   };
 
-  const parsedGitHub = extractUserAndRepo(githubUrl);
-  const activeUser = parsedGitHub.user || 'Priyanshuf1';
-
-  // Smart dynamic repositories tailored to the username entered
-  const dynamicRepos = React.useMemo(() => {
-    const u = activeUser.toLowerCase();
-    if (u === 'priyanshuf1' || u.includes('priyanshu')) {
-      return ['rabto', 'Data_SIH', 'SD-garments', 'voice-gym-coach', 'InvisiGuard', 'instagram-id-lookup-gui'];
-    }
-    if (u === 'shivendra1911') {
-      return ['Data_SIH', 'NeerNetra-AI', 'water-telemetry-pipeline', 'smart-iot-sensor'];
-    }
-    if (u.includes('ananya')) {
-      return ['microservices-orchestrator', 'distributed-cache-go', 'raft-consensus', 'grpc-service-mesh'];
-    }
-    if (u.includes('rohan')) {
-      return ['blockchain-voting-system', 'crypto-wallet-flutter', 'solidity-voting-dapp'];
-    }
-    // Universal dynamic repos for any user entered by the recruiter
-    return ['core-engine', 'api-backend', 'web-client', 'ml-pipeline', 'data-processor'];
-  }, [activeUser]);
-
   const handleGithubUrlChange = (val: string) => {
     setGithubUrl(val);
-    const trimmed = val.trim();
-
-    // Check if the input is an IM-105 candidate ID (e.g., cand_fresher_267 or cand_042)
-    if (trimmed.toLowerCase().startsWith('cand_')) {
-      const match = IM105_COHORT_400.find(c => c.candidate_id.toLowerCase() === trimmed.toLowerCase()) 
-        || CAMPUS_COHORT_100.find(c => c.candidate_id.toLowerCase() === trimmed.toLowerCase());
-      if (match) {
-        setCandidateName(match.name);
-        setCollege(match.college);
-        return;
-      }
-    }
-
     const { user } = extractUserAndRepo(val);
-    if (user && user !== 'github.com') {
+    if (user && user !== 'github.com' && !candidateName) {
       const friendlyName = user.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      if (user.toLowerCase() === 'priyanshuf1' || user.toLowerCase().includes('priyanshu')) {
-        setCandidateName('Priyanshu Awasthi');
-        setCollege('GLA University');
-      } else if (user.toLowerCase() === 'shivendra1911') {
-        setCandidateName('Priyanshu Awasthi & Team');
-        setCollege('GLA University (Mathura)');
-      } else if (user.toLowerCase().includes('ananya')) {
-        setCandidateName('Ananya Patel');
-        setCollege('Government Engineering College Bilaspur');
-      } else if (user.toLowerCase().includes('rohan')) {
-        setCandidateName('Rohan Sharma');
-        setCollege('Apex Institute of Technology');
-      } else {
-        setCandidateName(friendlyName);
-      }
+      setCandidateName(friendlyName);
     }
-  };
-
-  // Generate 500 Candidate Cohort Procedurally
-  const generate500Cohort = (): CandidateProfile[] => {
-    const base = [...CAMPUS_COHORT_100];
-    const firstNames = ['Aarav', 'Vihaan', 'Aditya', 'Rohan', 'Reyansh', 'Ishaan', 'Shaurya', 'Aayush', 'Sneha', 'Ananya', 'Diya', 'Ishita', 'Tanvi', 'Pooja', 'Riya', 'Kavya', 'Manish', 'Nikhil', 'Dev', 'Siddharth', 'Varun', 'Gaurav', 'Meera', 'Simran', 'Akash', 'Sameer', 'Priya', 'Komal', 'Alok', 'Tanya'];
-    const lastNames = ['Sharma', 'Verma', 'Gupta', 'Patel', 'Reddy', 'Singh', 'Mishra', 'Yadav', 'Nair', 'Iyer', 'Ghosh', 'Chatterjee', 'Bose', 'Chauhan', 'Thakur', 'Bhattacharya', 'Deshmukh', 'Kulkarni', 'Joshi', 'Choudhury'];
-    const colleges = [
-      { name: 'Bundelkhand Institute of Engineering & Technology (BIET)', tier: 'Tier-3' },
-      { name: 'Government Engineering College Bilaspur', tier: 'Tier-3' },
-      { name: 'Madan Mohan Malaviya University of Technology (MMMUT)', tier: 'Tier-2' },
-      { name: 'National Institute of Technology (NIT) Trichy', tier: 'Tier-1' },
-      { name: 'BITS Pilani', tier: 'Tier-1' },
-      { name: 'Vellore Institute of Technology (VIT)', tier: 'Tier-2' },
-      { name: 'Thapar Institute of Engineering and Technology', tier: 'Tier-2' },
-      { name: 'Jadavpur University', tier: 'Tier-1' },
-      { name: 'GLA University (Mathura)', tier: 'Tier-2' },
-      { name: 'Kamla Nehru Institute of Technology (KNIT)', tier: 'Tier-3' },
-      { name: 'Harcourt Butler Technical University (HBTU)', tier: 'Tier-2' },
-      { name: 'Dr. A.P.J. Abdul Kalam Technical University (AKTU)', tier: 'Tier-3' }
-    ];
-    const projects = [
-      { title: 'Distributed Raft Consensus in Go', type: 'Systems / Distributed Computing', loc: 4120, minAuth: 88, maxAuth: 97, clone: false },
-      { title: 'Water Quality Telemetry ML Pipeline', type: 'Fullstack IoT / ML Telemetry', loc: 14500, minAuth: 90, maxAuth: 98, clone: false },
-      { title: 'Rust WebAssembly Game Engine', type: 'Systems / WebAssembly Graphics', loc: 8200, minAuth: 86, maxAuth: 96, clone: false },
-      { title: 'Microservices Service Mesh & Envoy', type: 'Cloud Infrastructure / Go', loc: 5600, minAuth: 85, maxAuth: 95, clone: false },
-      { title: 'Kafka High-Throughput Stream Processor', type: 'Backend / Event Streaming', loc: 6200, minAuth: 84, maxAuth: 94, clone: false },
-      { title: 'CodeWithHarry MERN E-Commerce Clone', type: 'Fullstack Web Clone', loc: 3100, minAuth: 12, maxAuth: 24, clone: true, source: 'CodeWithHarry MERN E-Commerce Course', author: 'CodeWithHarry', url: 'https://youtube.com/watch?v=cwh_mern' },
-      { title: 'Clever Programmer Netflix Clone', type: 'React Frontend Clone', loc: 2400, minAuth: 14, maxAuth: 28, clone: true, source: 'Clever Programmer Netflix Clone 2024', author: 'Clever Programmer', url: 'https://youtube.com/watch?v=clever_netflix' },
-      { title: 'WebDevSimplified Realtime Chat Clone', type: 'Node.js Socket.io Clone', loc: 1800, minAuth: 15, maxAuth: 30, clone: true, source: 'WebDevSimplified Realtime Chat', author: 'Kyle Cook', url: 'https://youtube.com/watch?v=wds_chat' },
-      { title: 'FreeCodeCamp Blockchain Voting DApp', type: 'Web3 / Solidity Clone', loc: 2900, minAuth: 18, maxAuth: 32, clone: true, source: 'FreeCodeCamp 32-Hour Solidity Course', author: 'Patrick Collins', url: 'https://youtube.com/watch?v=fcc_solidity' }
-    ];
-
-    for (let i = base.length + 1; i <= 500; i++) {
-      const fn = firstNames[i % firstNames.length];
-      const ln = lastNames[(i * 3) % lastNames.length];
-      const candName = `${fn} ${ln}`;
-      const col = colleges[i % colleges.length];
-      const proj = projects[i % projects.length];
-      const authScore = Math.floor(Math.random() * (proj.maxAuth - proj.minAuth + 1)) + proj.minAuth;
-      const vivaScore = proj.clone ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 4) + 6;
-      const commits = proj.clone ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 80) + 20;
-      const days = proj.clone ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 45) + 10;
-
-      base.push({
-        candidate_id: `cand_mega_${String(i).padStart(3, '0')}`,
-        name: candName,
-        college: col.name,
-        college_tier: col.tier,
-        repo_url: `https://github.com/${fn.toLowerCase()}-${ln.toLowerCase()}/${proj.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        project_type: proj.type,
-        total_loc: proj.loc + Math.floor(Math.random() * 1000),
-        authenticity_score: authScore,
-        is_clone: proj.clone,
-        matched_tutorial: proj.clone ? {
-          id: proj.title.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-          name: proj.source || 'Online Tutorial Master',
-          author: proj.author || 'YouTube Educator',
-          source_url: proj.url || 'https://github.com',
-          origin_type: 'GLOBAL_ORIGIN',
-          similarity_score: (100 - authScore) / 100,
-          verdict: `MOSS Winnowing detected 89% AST token equivalence with ${proj.source || 'online repository'}.`,
-          matched_files: ['src/App.js', 'src/components/Header.js', 'server/index.js']
-        } : null,
-        viva_score: vivaScore,
-        git_dna: {
-          total_commits: commits,
-          time_span_days: days,
-          burst_ratio: proj.clone ? 0.92 : 0.45,
-          deletion_ratio: proj.clone ? 0.02 : 0.31,
-          organic_growth: !proj.clone,
-          message_maturity_score: proj.clone ? 30 : 85,
-          test_files_detected: proj.clone ? 0 : 4,
-          authenticity_score: authScore,
-          summary: proj.clone 
-            ? `Bulk upload detected. ${commits} commits across ${days} days with 0 tests.` 
-            : `${commits} commits across ${days} days with active refactoring.`
-        },
-        detected_files: ['src/main.rs', 'src/core.rs', 'tests/test_core.rs'],
-        proof_card: {
-          status: proj.clone ? 'REJECT_SUSPECTED_PLAGIARISM' : (authScore >= 90 ? 'VERIFIED_EXEMPLARY' : 'VERIFIED_SOLID'),
-          headline: proj.clone ? 'Codebase matches public tutorial repository.' : 'Verified authentic builder portfolio.',
-          strengths: proj.clone ? ['Completed basic build steps'] : ['Authentic commit velocity', 'Strong AST modularity'],
-          growth_area: 'Expand distributed test fixtures.',
-          specific_action: 'Profile concurrency bottlenecks.',
-          tamper_proof_hash: `CERT:MEGA-${i}-HASH`
-        }
-      });
-    }
-
-    return base;
   };
 
   const handleCsvUpload = async (file: File) => {
@@ -221,10 +79,12 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       if (!text.trim()) throw new Error('Uploaded CSV file is empty.');
       const data = await ingestBatchCsv(text);
       const pendingCandidates = (data.cohort || []) as CandidateProfile[];
-      setCohort(pendingCandidates);
-      setBatchTitle(`Custom Ingested Cohort (${pendingCandidates.length} Applicants; forensic analysis pending)`);
+      if (onUpdateCohort) {
+        onUpdateCohort(pendingCandidates);
+      }
+      setBatchTitle(`Ingested Batch Queue (${pendingCandidates.length} Applicants)`);
     } catch (error: any) {
-      setErrorMessage(error?.message || 'CSV ingestion failed. No scores were fabricated.');
+      setErrorMessage(error?.message || 'CSV ingestion failed. Please verify CSV column headers (name, github_url, college).');
     } finally {
       setIsBatchProcessing(false);
     }
@@ -232,31 +92,24 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
   const handleDownloadTemplate = () => {
     const csvContent = "name,github_url,college,project_type\n" +
-      "Aarav Sharma,https://github.com/aarav-sharma/distributed-raft,IIT Delhi,Distributed Consensus Engine\n" +
-      "Sneha Rao,https://github.com/sneha-rao/nlp-transformer,BITS Pilani,Transformer Speech Model\n" +
-      "Vikramaditya Verma,https://github.com/vikram-v/ecommerce-mern,Bundelkhand Institute of Engineering,Fullstack MERN Portal\n" +
-      "Ananya Patel,https://github.com/ananya-patel-dev/microservices-orchestrator,GEC Bilaspur,Microservices Orchestrator\n" +
       "Priyanshu Awasthi,https://github.com/Priyanshuf1/rabto,GLA University,Interactive WebGL 3D Platform\n" +
-      "Rohan Sharma,https://github.com/rohan-sharma-tech/blockchain-voting-system,Apex Tech,Blockchain Voting System\n" +
-      "Meera Nair,https://github.com/meera-nair/realtime-webrtc,NIT Trichy,WebRTC Video Signaling Server\n" +
-      "Kunal Ghosh,https://github.com/kunal-ghosh/rust-wasm-canvas,Jadavpur University,Rust WebAssembly Physics Engine\n" +
-      "Divya Joshi,https://github.com/divya-joshi/kafka-stream-pipeline,Thapar Institute,Kafka Event Stream Pipeline\n" +
-      "Aditya Roy,https://github.com/aditya-roy/devops-k8s-mesh,VIT Vellore,Kubernetes Service Mesh\n";
+      "Tutorial Clone Benchmark,https://github.com/DJKalathiya/code-with-harry-projects,Public GitHub Archive,Spotify Web Clone\n" +
+      "Priyanshu Awasthi,https://github.com/Priyanshuf1/SD-garments,GLA University,E-Commerce Web Portal\n";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'deviathon_applicants_template.csv');
+    link.setAttribute('download', 'proofcard_applicants_template.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const scanSteps = [
-    'Parsing Git commit histories and author timelines...',
+    'Cloning and inspecting live source code tree...',
     'Extracting Abstract Syntax Trees (AST) & cyclomatic density...',
-    'Checking MOSS Winnowing tokens against YouTube tutorial databases...',
-    'Analyzing code refactoring ratios and deletion percentages...',
+    'Running MOSS Winnowing against online tutorial databases...',
+    'Analyzing commit timeline velocity and refactor ratios...',
     'Synthesizing personalized technical viva questions from complex functions...'
   ];
 
@@ -279,34 +132,30 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       return;
     }
 
+    if (ingestMode === 'github' && !githubUrl.trim()) {
+      setErrorMessage('Please enter a valid public GitHub repository URL.');
+      return;
+    }
+
+    if (ingestMode === 'zip' && !selectedFile) {
+      setErrorMessage('Please select a project ZIP archive to upload.');
+      return;
+    }
+
     setIsScanning(true);
     setErrorMessage(null);
     setScanStep(0);
 
     const stepInterval = setInterval(() => {
       setScanStep((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 450);
+    }, 600);
 
     try {
       let profile: CandidateProfile;
       if (ingestMode === 'zip') {
-        if (!selectedFile) {
-          throw new Error('Please select a project ZIP file first.');
-        }
-        profile = await uploadZipFile(selectedFile, candidateName, college, consentGranted);
+        profile = await uploadZipFile(selectedFile!, candidateName || 'Local Project Author', college || 'Institution', consentGranted);
       } else {
-        const cleanId = githubUrl.trim().toLowerCase();
-        if (cleanId.startsWith('cand_')) {
-          const directMatch = IM105_COHORT_400.find(c => c.candidate_id.toLowerCase() === cleanId)
-            || CAMPUS_COHORT_100.find(c => c.candidate_id.toLowerCase() === cleanId);
-          if (directMatch) {
-            profile = directMatch;
-          } else {
-            profile = await analyzeGithubUrl(githubUrl, candidateName, college, consentGranted);
-          }
-        } else {
-          profile = await analyzeGithubUrl(githubUrl, candidateName, college, consentGranted);
-        }
+        profile = await analyzeGithubUrl(githubUrl.trim(), candidateName || 'GitHub Contributor', college || 'Independent Engineer', consentGranted);
       }
 
       clearInterval(stepInterval);
@@ -317,30 +166,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
     } catch (err: any) {
       clearInterval(stepInterval);
       setIsScanning(false);
-      setErrorMessage(err?.message || 'Repository ingestion failed. Please verify the URL or try an offline preset.');
+      setErrorMessage(err?.message || 'Repository ingestion failed. Please verify that the repository is public and accessible.');
     }
-  };
-
-  const handleLoadCampusCohort = (count: number = 100, title: string = 'Campus Drive 2026 Cohort (100 Applicants)') => {
-    setIsBatchProcessing(true);
-    setBatchProgress(10);
-    setBatchTitle(title);
-
-    const interval = setInterval(() => {
-      setBatchProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsBatchProcessing(false);
-          if (count > 100) {
-            setCohort(generate500Cohort());
-          } else {
-            setCohort(CAMPUS_COHORT_100.slice(0, count));
-          }
-          return 100;
-        }
-        return prev + 30;
-      });
-    }, 180);
   };
 
   const handleSelectCohortMember = (member: CandidateProfile) => {
@@ -352,48 +179,37 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   // Filtered cohort
   const filteredCohort = cohort.filter((c) => {
     const q = batchSearch.toLowerCase();
-    const matchesSearch = c.name.toLowerCase().includes(q) || 
-                          c.college.toLowerCase().includes(q) || 
-                          c.project_type.toLowerCase().includes(q);
+    const matchesSearch = (c.name || '').toLowerCase().includes(q) || 
+                          (c.college || '').toLowerCase().includes(q) || 
+                          (c.project_type || '').toLowerCase().includes(q);
     if (!matchesSearch) return false;
 
-    if (batchFilter === 'builders') return !c.is_clone && c.authenticity_score >= 60;
+    if (batchFilter === 'builders') return !c.is_clone && (c.authenticity_score || 0) >= 60;
     if (batchFilter === 'clones') return c.is_clone;
-    if (batchFilter === 'dumps') return !c.is_clone && c.authenticity_score < 40;
+    if (batchFilter === 'dumps') return !c.is_clone && (c.authenticity_score || 0) < 40;
     return true;
   });
 
-  const buildersCount = cohort.filter(c => !c.is_clone && c.authenticity_score >= 60).length;
+  const buildersCount = cohort.filter(c => !c.is_clone && (c.authenticity_score || 0) >= 60).length;
   const clonesCount = cohort.filter(c => c.is_clone).length;
-  const dumpsCount = cohort.filter(c => !c.is_clone && c.authenticity_score < 40).length;
+  const dumpsCount = cohort.filter(c => !c.is_clone && (c.authenticity_score || 0) < 40).length;
   const hoursSaved = (cohort.length * 0.83).toFixed(1);
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
-      {/* Hero Header - Deviathon Theme */}
+      {/* Header */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-deviathon tracking-wider">
             Applicant Ingestion & Forensics Queue
           </h1>
           <p className="text-sm sm:text-base text-[#E6C280] font-normal max-w-2xl leading-relaxed mt-1">
-            Scan individual GitHub repositories or ingest entire cohorts (100–500 applicants) via CSV or ATS webhooks.
+            Perform live static analysis on any public GitHub repository or batch ingest candidates via CSV roster.
           </p>
         </div>
 
         {/* Scope Mode Switcher */}
         <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/70 border border-[#D4AF37]/30 shadow-inner">
-          <button
-            onClick={() => setScopeMode('batch')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-warrior font-bold transition cursor-pointer ${
-              scopeMode === 'batch'
-                ? 'bg-[#8B1E1E] text-white border border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.4)]'
-                : 'text-[#C9B89A] hover:text-white'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Enterprise Cohort (100)</span>
-          </button>
           <button
             onClick={() => setScopeMode('single')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-warrior font-bold transition cursor-pointer ${
@@ -404,6 +220,17 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           >
             <GitBranch className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>Single Scanner</span>
+          </button>
+          <button
+            onClick={() => setScopeMode('batch')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-warrior font-bold transition cursor-pointer ${
+              scopeMode === 'batch'
+                ? 'bg-[#8B1E1E] text-white border border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.4)]'
+                : 'text-[#C9B89A] hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Batch Ingestion ({cohort.length})</span>
           </button>
         </div>
       </div>
@@ -424,330 +251,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
         </div>
       )}
 
-      {/* BATCH ENTERPRISE COHORT MODE */}
-      {scopeMode === 'batch' && (
-        <div className="space-y-6">
-          {/* Action Header Card */}
-          <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-              <div>
-                <span className="text-xs font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                  Active Ingestion Pipeline:
-                </span>
-                <h2 className="text-lg font-warrior font-bold text-white mt-0.5">
-                  {batchTitle}
-                </h2>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => {
-                    setIsBatchProcessing(true);
-                    setBatchProgress(0);
-                    setTimeout(() => {
-                      setCohort(IM105_COHORT_400);
-                      setBatchTitle('Integraminds IM-105 Official Dataset (400 Anonymised Freshers with Consented Repositories)');
-                      setIsBatchProcessing(false);
-                    }, 400);
-                  }}
-                  disabled={isBatchProcessing}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-950/70 to-[#8B1E1E]/80 border border-[#D4AF37] text-xs font-warrior font-bold text-[#FFD166] shadow-[0_0_12px_rgba(212,175,55,0.3)] hover:brightness-110 transition cursor-pointer flex items-center gap-2"
-                  title="Official IM-105 Hackathon Dataset: 400 Anonymised Fresher Profiles with Consented Repositories"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>🎯 IM-105 Dataset (400 Freshers)</span>
-                </button>
-
-                <button
-                  onClick={() => handleLoadCampusCohort(100, 'Campus Drive 2026 Cohort (100 Applicants)')}
-                  disabled={isBatchProcessing}
-                  className="btn-dev-primary text-xs flex items-center gap-2 px-3.5 py-2 shadow-lg cursor-pointer"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Cohort (100)</span>
-                </button>
-
-                <button
-                  onClick={() => handleLoadCampusCohort(500, 'Enterprise 500 Applicants Mega Batch')}
-                  disabled={isBatchProcessing}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#8B1E1E] to-[#4A0E0E] border border-[#D4AF37]/60 text-xs font-warrior font-bold text-white shadow-lg hover:border-[#D4AF37] transition cursor-pointer flex items-center gap-2"
-                >
-                  <Users className="w-3.5 h-3.5 text-[#FFD166]" />
-                  <span>🚀 500 Applicants Mega Batch</span>
-                </button>
-
-                <button
-                  onClick={handleDownloadTemplate}
-                  className="px-3 py-2 rounded-xl bg-black/60 border border-[#D4AF37]/40 text-xs font-warrior font-bold text-[#FFD166] hover:bg-[#D4AF37]/20 transition cursor-pointer flex items-center gap-1.5"
-                  title="Download CSV Template for recruiting batch"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>CSV Template</span>
-                </button>
-
-                <label className="px-3.5 py-2 rounded-xl bg-[#200e07] border border-[#E85D04]/60 text-xs font-warrior font-bold text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer flex items-center gap-1.5" title="Upload Candidate CSV Roster or Exported ATS Cohort">
-                  <UploadCloud className="w-3.5 h-3.5 text-[#ff9f1c]" />
-                  <span>Upload CV / CSV Cohort</span>
-                  <input
-                    type="file"
-                    accept=".csv,.txt"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        handleCsvUpload(e.target.files[0]);
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Batch Processing Progress Bar */}
-            {isBatchProcessing && (
-              <div className="mb-5 p-4 rounded-xl bg-[#1a0c07] border border-[#E85D04]/40 animate-pulse">
-                <div className="flex items-center justify-between text-xs text-neutral-300 font-mono mb-2">
-                  <span className="flex items-center gap-2 text-[#ff9f1c] font-bold">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
-                    PARALLEL GIT-DNA & AST WINNOWING INGESTION QUEUE...
-                  </span>
-                  <span>{batchProgress}%</span>
-                </div>
-                <div className="w-full bg-neutral-900 h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-[#E85D04] via-[#D4AF37] to-[#FFD166] h-full transition-all duration-200"
-                    style={{ width: `${batchProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* 4 Summary Metric Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400">
-                    Verified Builders
-                  </span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
-                  {buildersCount}
-                </div>
-                <span className="text-xs sm:text-sm text-emerald-300 font-mono font-medium block mt-1">
-                  {Math.round((buildersCount / cohort.length) * 100)}% Organic Git-DNA
-                </span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/40">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-red-400">
-                    Tutorial Clones Flagged
-                  </span>
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
-                  {clonesCount}
-                </div>
-                <span className="text-xs sm:text-sm text-red-300 font-mono font-medium block mt-1">
-                  {Math.round((clonesCount / cohort.length) * 100)}% MOSS Plagiarism Hit
-                </span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">
-                    Single-Commit Dumps
-                  </span>
-                  <Clock className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
-                  {dumpsCount}
-                </div>
-                <span className="text-xs sm:text-sm text-amber-300 font-mono font-medium block mt-1">
-                  {Math.round((dumpsCount / cohort.length) * 100)}% 0 Refactor Deletions
-                </span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 shadow-inner">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166]">
-                    Recruiter Time Saved
-                  </span>
-                  <Award className="w-4 h-4 text-[#D4AF37]" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
-                  {hoursSaved}h
-                </div>
-                <span className="text-xs sm:text-sm text-[#FFD166] font-mono font-medium block mt-1">
-                  ~10m manual audit / candidate
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Search, Filter & Cohort Roster Table */}
-          <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-neutral-400" />
-                <input
-                  type="text"
-                  value={batchSearch}
-                  onChange={(e) => setBatchSearch(e.target.value)}
-                  placeholder="Search by candidate name, college, or tech stack..."
-                  className="w-full bg-black/60 border border-[#3A2F27] rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37] font-mono"
-                />
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-warrior">
-                <button
-                  onClick={() => setBatchFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                    batchFilter === 'all'
-                      ? 'bg-[#8B1E1E] text-white border border-[#D4AF37]'
-                      : 'bg-black/40 text-neutral-400 hover:text-white border border-transparent'
-                  }`}
-                >
-                  All ({cohort.length})
-                </button>
-                <button
-                  onClick={() => setBatchFilter('builders')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                    batchFilter === 'builders'
-                      ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-500'
-                      : 'bg-black/40 text-neutral-400 hover:text-emerald-300 border border-transparent'
-                  }`}
-                >
-                  Builders ({buildersCount})
-                </button>
-                <button
-                  onClick={() => setBatchFilter('clones')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                    batchFilter === 'clones'
-                      ? 'bg-red-900/60 text-red-200 border border-red-500'
-                      : 'bg-black/40 text-neutral-400 hover:text-red-300 border border-transparent'
-                  }`}
-                >
-                  Clones ({clonesCount})
-                </button>
-                <button
-                  onClick={() => setBatchFilter('dumps')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                    batchFilter === 'dumps'
-                      ? 'bg-amber-900/60 text-amber-200 border border-amber-500'
-                      : 'bg-black/40 text-neutral-400 hover:text-amber-300 border border-transparent'
-                  }`}
-                >
-                  Dumps ({dumpsCount})
-                </button>
-              </div>
-            </div>
-
-            {/* Ingested Table */}
-            <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
-              <table className="w-full text-left text-sm text-neutral-200">
-                <thead className="bg-[#140b08] uppercase font-bold text-xs sm:text-sm text-[#FFD166] border-b border-[#3A2F27]">
-                  <tr>
-                    <th className="py-3.5 px-3">#</th>
-                    <th className="py-3.5 px-3">Candidate & College</th>
-                    <th className="py-3.5 px-3">Stack / Project</th>
-                    <th className="py-3.5 px-3">Authenticity</th>
-                    <th className="py-3.5 px-3">Viva Score</th>
-                    <th className="py-3.5 px-3">Forensic Verdict</th>
-                    <th className="py-3.5 px-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#2A241B] font-mono text-xs sm:text-sm">
-                  {filteredCohort.slice(0, 20).map((cand, idx) => {
-                    const isHigh = cand.authenticity_score >= 80;
-                    const isClone = cand.is_clone;
-                    return (
-                      <tr 
-                        key={cand.candidate_id}
-                        className="hover:bg-white/5 transition"
-                      >
-                        <td className="py-3.5 px-3 text-neutral-400">
-                          {idx + 1}
-                        </td>
-                        <td className="py-3.5 px-3">
-                          <strong className="text-white block font-sans text-sm sm:text-base font-bold">
-                            {cand.name}
-                          </strong>
-                          <span className="text-xs text-[#E6C280] flex items-center gap-1.5 mt-0.5">
-                            {cand.college}
-                            <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold ${
-                              cand.college_tier === 'Tier-1' 
-                                ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                                : cand.college_tier === 'Tier-2'
-                                ? 'bg-blue-950 text-blue-300 border border-blue-800'
-                                : 'bg-neutral-800 text-neutral-300'
-                            }`}>
-                              {cand.college_tier || 'Tier-3'}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 text-neutral-200 font-sans font-medium">
-                          {cand.project_type}
-                        </td>
-                        <td className="py-3.5 px-3">
-                          <span className={`px-2.5 py-1 rounded-full font-bold text-xs sm:text-sm ${
-                            isHigh
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
-                              : isClone
-                              ? 'bg-red-950 text-red-300 border border-red-600'
-                              : 'bg-amber-950 text-amber-300 border border-amber-600'
-                          }`}>
-                            {cand.authenticity_score}%
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-3 font-bold text-white text-base">
-                          {cand.viva_score} / 10
-                        </td>
-                        <td className="py-3.5 px-3 font-sans">
-                          {isClone ? (
-                            <span className="text-red-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
-                              <AlertTriangle className="w-4 h-4 shrink-0" />
-                              <span>{cand.matched_tutorial ? `${Math.round(cand.matched_tutorial.similarity_score * 100)}% Copied: ${cand.matched_tutorial.name.substring(0, 26)}...` : 'Plagiarism Detected'}</span>
-                            </span>
-                          ) : isHigh ? (
-                            <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
-                              <CheckCircle2 className="w-4 h-4 shrink-0" />
-                              Verified Organic Architecture
-                            </span>
-                          ) : (
-                            <span className="text-amber-400 text-xs sm:text-sm">
-                              Single Commit / Low Churn
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="py-3.5 px-3 text-right">
-                          <button
-                            onClick={() => handleSelectCohortMember(cand)}
-                            className="btn-dev-primary text-xs px-3.5 py-1.5 cursor-pointer font-bold"
-                          >
-                            Inspect
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {filteredCohort.length > 20 && (
-              <div className="mt-3 text-center text-xs text-[#C9B89A] font-sans">
-                Showing top 20 of {filteredCohort.length} applicants in active cohort view.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SINGLE SCANNER MODE (HIGH-CLARITY GLASSMORPHIC SCANNER) */}
+      {/* SINGLE SCANNER MODE */}
       {scopeMode === 'single' && (
         <div className="p-6 sm:p-8 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
           {/* Ingestion Mode Toggle Tabs */}
@@ -762,10 +266,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             >
               <div className="flex items-center gap-2.5 mb-1.5">
                 <GitBranch className={`w-4 h-4 ${ingestMode === 'github' ? 'text-[#ff9f1c]' : 'text-neutral-500'}`} />
-                <span className="text-sm font-warrior font-bold text-white">Public GitHub Profile or Repo</span>
+                <span className="text-sm font-warrior font-bold text-white">Public GitHub Repository</span>
               </div>
               <p className="feature-note">
-                Reviews commit history, branches, and source files from a public repository.
+                Clones and audits real Git commit histories, branch rhythms, AST complexity, and MOSS clone tokens.
               </p>
             </button>
 
@@ -782,7 +286,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <span className="text-sm font-warrior font-bold text-white">Direct Local ZIP Upload</span>
               </div>
               <p className="feature-note">
-                For offline labs or students who cannot submit a public repository.
+                For offline assessments, hackathon submissions, or projects without a public GitHub remote.
               </p>
             </button>
           </div>
@@ -798,8 +302,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   type="text"
                   value={candidateName}
                   onChange={(e) => setCandidateName(e.target.value)}
-                  placeholder="Candidate Full Name"
-                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition"
+                  placeholder="e.g. Alex Morgan"
+                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
                 />
               </div>
 
@@ -811,8 +315,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   type="text"
                   value={college}
                   onChange={(e) => setCollege(e.target.value)}
-                  placeholder="University or College Name"
-                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition"
+                  placeholder="e.g. State Institute of Technology"
+                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
                 />
               </div>
             </div>
@@ -820,120 +324,56 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             {ingestMode === 'github' ? (
               <div>
                 <label className="block text-xs font-warrior font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
-                  GitHub Profile or Repository URL
+                  GitHub Repository URL
                 </label>
                 <input
                   type="text"
                   value={githubUrl}
                   onChange={(e) => handleGithubUrlChange(e.target.value)}
-                  placeholder="https://github.com/username/project or cand_fresher_267 or username"
+                  placeholder="https://github.com/owner/repository"
                   className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-mono"
                 />
 
-                {/* Dynamic & Benchmark Candidate Presets */}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-[#E6C280]/70 font-warrior">Presets:</span>
-
-                  {/* Contextual presets if user entered a custom GitHub handle */}
-                  {activeUser && !['priyanshuf1', 'shivendra1911', 'ananya-patel-dev', 'rohan-sharma-tech'].includes(activeUser.toLowerCase()) && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGithubUrl(`https://github.com/${activeUser}`);
-                        }}
-                        className="text-xs px-2.5 py-1 rounded bg-[#2c140a]/80 border border-[#E85D04]/60 text-[#FFD166] hover:bg-[#E85D04]/20 transition cursor-pointer font-mono"
-                      >
-                        ⚡ @{activeUser} (Full Profile)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGithubUrl(`https://github.com/${activeUser}/core-engine`);
-                        }}
-                        className="text-xs px-2.5 py-1 rounded bg-black/60 border border-[#E6C280]/30 text-[#E6C280] hover:border-[#E85D04] transition cursor-pointer font-mono"
-                      >
-                        📦 {activeUser}/core-engine
-                      </button>
-                    </>
-                  )}
+                {/* Real Live Benchmark Repositories for 1-Click Verification */}
+                <div className="mt-3.5 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-[#E6C280]/80 font-warrior">Quick Test Repositories:</span>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setGithubUrl('https://github.com/shivendra1911/Data_SIH');
-                      setCandidateName('Priyanshu Awasthi & Team');
-                      setCollege('GLA University (Mathura)');
+                      setGithubUrl('https://github.com/Priyanshuf1/rabto');
+                      setCandidateName('Priyanshu Awasthi');
+                      setCollege('GLA University');
                     }}
-                    className="text-xs px-2.5 py-1 rounded bg-[#200e07]/80 border border-[#E85D04]/40 text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer"
+                    className="text-xs px-2.5 py-1 rounded bg-[#200e07]/80 border border-[#E85D04]/40 text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer font-mono"
                   >
-                    ⚡ Priyanshu (Data_SIH - 95%)
+                    🚀 Priyanshuf1/rabto (Authentic Builder)
                   </button>
+
                   <button
                     type="button"
                     onClick={() => {
-                      setGithubUrl('cand_fresher_267');
-                      handleGithubUrlChange('cand_fresher_267');
+                      setGithubUrl('https://github.com/DJKalathiya/code-with-harry-projects');
+                      setCandidateName('Tutorial Clone Benchmark');
+                      setCollege('Public Archive');
                     }}
-                    className="text-xs px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-900/40 transition cursor-pointer"
+                    className="text-xs px-2.5 py-1 rounded bg-red-950/40 border border-red-500/40 text-red-200 hover:bg-red-900/40 transition cursor-pointer font-mono"
                   >
-                    🎯 Ayush (cand_fresher_267 · 98%)
+                    ⚠️ CodeWithHarry Projects (Tutorial Clone Test)
                   </button>
+
                   <button
                     type="button"
                     onClick={() => {
-                      setGithubUrl('cand_fresher_105');
-                      handleGithubUrlChange('cand_fresher_105');
+                      setGithubUrl('https://github.com/Priyanshuf1/SD-garments');
+                      setCandidateName('Priyanshu Awasthi');
+                      setCollege('GLA University');
                     }}
-                    className="text-xs px-2.5 py-1 rounded bg-cyan-950/40 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-900/40 transition cursor-pointer"
+                    className="text-xs px-2.5 py-1 rounded bg-black/60 border border-[#E6C280]/30 text-[#E6C280] hover:border-[#E85D04] transition cursor-pointer font-mono"
                   >
-                    🎯 Isha (cand_fresher_105 · 97%)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGithubUrl('https://github.com/ananya-patel-dev/microservices-orchestrator');
-                      setCandidateName('Ananya Patel');
-                      setCollege('Government Engineering College Bilaspur');
-                    }}
-                    className="text-xs px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-900/40 transition cursor-pointer"
-                  >
-                    🎓 Ananya (Tier-3 Star - 94%)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGithubUrl('https://github.com/rohan-sharma-tech/blockchain-voting-system');
-                      setCandidateName('Rohan Sharma');
-                      setCollege('Apex Institute of Technology');
-                    }}
-                    className="text-xs px-2.5 py-1 rounded bg-red-950/40 border border-red-500/40 text-red-200 hover:bg-red-900/40 transition cursor-pointer"
-                  >
-                    ⚠️ Rohan (Tutorial Clone - 18%)
+                    📦 Priyanshuf1/SD-garments
                   </button>
                 </div>
-
-                {/* Dynamically Generated Repositories for Active GitHub User */}
-                {dynamicRepos.length > 0 && (
-                  <div className="mt-3 p-3 bg-black/40 border border-[#E6C280]/20 rounded-xl">
-                    <div className="flex items-center justify-between text-xs text-[#E6C280] mb-2 font-warrior">
-                      <span>Available Repositories for @{activeUser} ({dynamicRepos.length}):</span>
-                      <span className="text-[10px] text-neutral-400">Click any repo chip to scan</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {dynamicRepos.map((repo) => (
-                        <button
-                          key={repo}
-                          type="button"
-                          onClick={() => setGithubUrl(`https://github.com/${activeUser}/${repo}`)}
-                          className="px-2.5 py-1 bg-[#1a0c07] hover:bg-[#E85D04]/30 border border-[#E6C280]/20 hover:border-[#E85D04] rounded text-xs text-[#ff9f1c] font-mono transition cursor-pointer"
-                        >
-                          📦 {repo}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div>
@@ -979,7 +419,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 />
                 <div className="text-xs text-neutral-300">
                   <span className="font-semibold text-white block">
-                    Candidate Authorization & Privacy Protocol (IM-105 Mandate)
+                    Candidate Static Analysis Authorization & Privacy Protocol
                   </span>
                   I authorize ProofCard to perform read-only static analysis on this repository. Demographics are decoupled prior to recruiter ranking.
                 </div>
@@ -997,7 +437,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 {isScanning ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Executing Deep Code Inspection...</span>
+                    <span>Executing Live Code Inspection...</span>
                   </>
                 ) : (
                   <>
@@ -1029,6 +469,345 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* BATCH ENTERPRISE COHORT MODE */}
+      {scopeMode === 'batch' && (
+        <div className="space-y-6">
+          {/* If Cohort is Empty: Show Clean Ingestion Dropzone */}
+          {cohort.length === 0 ? (
+            <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 flex items-center justify-center">
+                <Users className="w-8 h-8 text-[#D4AF37]" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
+                No Applicants in Batch Ingestion Queue
+              </h2>
+              <p className="text-sm text-[#C9B89A] max-w-lg mx-auto mb-6">
+                Upload a candidate CSV roster or ATS applicant export to run automated Git-DNA, commit velocity, and MOSS clone detection in parallel.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="px-4 py-2.5 rounded-xl bg-black/60 border border-[#D4AF37]/40 text-xs font-warrior font-bold text-[#FFD166] hover:bg-[#D4AF37]/20 transition cursor-pointer flex items-center gap-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Download CSV Template</span>
+                </button>
+
+                <label className="btn-dev-primary text-xs flex items-center gap-2 px-5 py-2.5 shadow-lg cursor-pointer font-bold">
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Upload Candidate CSV Roster</span>
+                  <input
+                    type="file"
+                    accept=".csv,.txt"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleCsvUpload(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Action Header Card with Real Cohort Loaded */}
+              <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                  <div>
+                    <span className="text-xs font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
+                      Active Ingestion Pipeline:
+                    </span>
+                    <h2 className="text-lg font-warrior font-bold text-white mt-0.5">
+                      {batchTitle}
+                    </h2>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={handleDownloadTemplate}
+                      className="px-3 py-2 rounded-xl bg-black/60 border border-[#D4AF37]/40 text-xs font-warrior font-bold text-[#FFD166] hover:bg-[#D4AF37]/20 transition cursor-pointer flex items-center gap-1.5"
+                      title="Download CSV Template"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>Template</span>
+                    </button>
+
+                    <label className="px-3.5 py-2 rounded-xl bg-[#200e07] border border-[#E85D04]/60 text-xs font-warrior font-bold text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer flex items-center gap-1.5">
+                      <UploadCloud className="w-3.5 h-3.5 text-[#ff9f1c]" />
+                      <span>Upload More CSV</span>
+                      <input
+                        type="file"
+                        accept=".csv,.txt"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleCsvUpload(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {onUpdateCohort && (
+                      <button
+                        onClick={() => onUpdateCohort([])}
+                        className="px-3 py-2 rounded-xl bg-red-950/40 border border-red-500/40 text-xs font-warrior font-bold text-red-300 hover:bg-red-900/40 transition cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Clear Queue</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Batch Processing Progress Bar */}
+                {isBatchProcessing && (
+                  <div className="mb-5 p-4 rounded-xl bg-[#1a0c07] border border-[#E85D04]/40 animate-pulse">
+                    <div className="flex items-center justify-between text-xs text-neutral-300 font-mono mb-2">
+                      <span className="flex items-center gap-2 text-[#ff9f1c] font-bold">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#D4AF37]" />
+                        PARALLEL GIT-DNA & AST WINNOWING INGESTION QUEUE...
+                      </span>
+                      <span>{batchProgress}%</span>
+                    </div>
+                    <div className="w-full bg-neutral-900 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-[#E85D04] via-[#D4AF37] to-[#FFD166] h-full transition-all duration-200"
+                        style={{ width: `${batchProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4 Summary Metric Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                  <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400">
+                        Verified Builders
+                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
+                      {buildersCount}
+                    </div>
+                    <span className="text-xs sm:text-sm text-emerald-300 font-mono font-medium block mt-1">
+                      {cohort.length > 0 ? Math.round((buildersCount / cohort.length) * 100) : 0}% Organic Git-DNA
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/40">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-red-400">
+                        Tutorial Clones Flagged
+                      </span>
+                      <AlertTriangle className="w-4 h-4 text-red-400" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
+                      {clonesCount}
+                    </div>
+                    <span className="text-xs sm:text-sm text-red-300 font-mono font-medium block mt-1">
+                      {cohort.length > 0 ? Math.round((clonesCount / cohort.length) * 100) : 0}% MOSS Plagiarism Hit
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">
+                        Single-Commit Dumps
+                      </span>
+                      <Clock className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
+                      {dumpsCount}
+                    </div>
+                    <span className="text-xs sm:text-sm text-amber-300 font-mono font-medium block mt-1">
+                      {cohort.length > 0 ? Math.round((dumpsCount / cohort.length) * 100) : 0}% 0 Refactor Deletions
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 shadow-inner">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166]">
+                        Recruiter Time Saved
+                      </span>
+                      <Award className="w-4 h-4 text-[#D4AF37]" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-deviathon font-bold text-white">
+                      {hoursSaved}h
+                    </div>
+                    <span className="text-xs sm:text-sm text-[#FFD166] font-mono font-medium block mt-1">
+                      ~10m manual audit / candidate
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search, Filter & Cohort Roster Table */}
+              <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-neutral-400" />
+                    <input
+                      type="text"
+                      value={batchSearch}
+                      onChange={(e) => setBatchSearch(e.target.value)}
+                      placeholder="Search by candidate name, college, or tech stack..."
+                      className="w-full bg-black/60 border border-[#3A2F27] rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37] font-mono"
+                    />
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-warrior">
+                    <button
+                      onClick={() => setBatchFilter('all')}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                        batchFilter === 'all'
+                          ? 'bg-[#8B1E1E] text-white border border-[#D4AF37]'
+                          : 'bg-black/40 text-neutral-400 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      All ({cohort.length})
+                    </button>
+                    <button
+                      onClick={() => setBatchFilter('builders')}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                        batchFilter === 'builders'
+                          ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-500'
+                          : 'bg-black/40 text-neutral-400 hover:text-emerald-300 border border-transparent'
+                      }`}
+                    >
+                      Builders ({buildersCount})
+                    </button>
+                    <button
+                      onClick={() => setBatchFilter('clones')}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                        batchFilter === 'clones'
+                          ? 'bg-red-900/60 text-red-200 border border-red-500'
+                          : 'bg-black/40 text-neutral-400 hover:text-red-300 border border-transparent'
+                      }`}
+                    >
+                      Clones ({clonesCount})
+                    </button>
+                    <button
+                      onClick={() => setBatchFilter('dumps')}
+                      className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                        batchFilter === 'dumps'
+                          ? 'bg-amber-900/60 text-amber-200 border border-amber-500'
+                          : 'bg-black/40 text-neutral-400 hover:text-amber-300 border border-transparent'
+                      }`}
+                    >
+                      Dumps ({dumpsCount})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ingested Table */}
+                <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
+                  <table className="w-full text-left text-sm text-neutral-200">
+                    <thead className="bg-[#140b08] uppercase font-bold text-xs sm:text-sm text-[#FFD166] border-b border-[#3A2F27]">
+                      <tr>
+                        <th className="py-3.5 px-3">#</th>
+                        <th className="py-3.5 px-3">Candidate & College</th>
+                        <th className="py-3.5 px-3">Stack / Project</th>
+                        <th className="py-3.5 px-3">Authenticity</th>
+                        <th className="py-3.5 px-3">Viva Score</th>
+                        <th className="py-3.5 px-3">Forensic Verdict</th>
+                        <th className="py-3.5 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#2A241B] font-mono text-xs sm:text-sm">
+                      {filteredCohort.slice(0, 25).map((cand, idx) => {
+                        const isHigh = (cand.authenticity_score || 0) >= 80;
+                        const isClone = cand.is_clone;
+                        return (
+                          <tr 
+                            key={cand.candidate_id || idx}
+                            className="hover:bg-white/5 transition"
+                          >
+                            <td className="py-3.5 px-3 text-neutral-400">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3.5 px-3">
+                              <strong className="text-white block font-sans text-sm sm:text-base font-bold">
+                                {cand.name}
+                              </strong>
+                              <span className="text-xs text-[#E6C280] flex items-center gap-1.5 mt-0.5">
+                                {cand.college}
+                                <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold ${
+                                  cand.college_tier === 'Tier-1' 
+                                    ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                                    : cand.college_tier === 'Tier-2'
+                                    ? 'bg-blue-950 text-blue-300 border border-blue-800'
+                                    : 'bg-neutral-800 text-neutral-300'
+                                }`}>
+                                  {cand.college_tier || 'Tier-3'}
+                                </span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-neutral-200 font-sans font-medium">
+                              {cand.project_type || 'Software Repository'}
+                            </td>
+                            <td className="py-3.5 px-3">
+                              <span className={`px-2.5 py-1 rounded-full font-bold text-xs sm:text-sm ${
+                                isHigh
+                                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
+                                  : isClone
+                                  ? 'bg-red-950 text-red-300 border border-red-600'
+                                  : 'bg-amber-950 text-amber-300 border border-amber-600'
+                              }`}>
+                                {cand.authenticity_score}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 font-bold text-white text-base">
+                              {cand.viva_score !== undefined ? `${cand.viva_score} / 10` : 'Pending'}
+                            </td>
+                            <td className="py-3.5 px-3 font-sans">
+                              {isClone ? (
+                                <span className="text-red-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
+                                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                                  <span>{cand.matched_tutorial ? `${Math.round(cand.matched_tutorial.similarity_score * 100)}% Copied: ${cand.matched_tutorial.name?.substring(0, 26)}...` : 'Plagiarism Detected'}</span>
+                                </span>
+                              ) : isHigh ? (
+                                <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
+                                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                  Verified Organic Architecture
+                                </span>
+                              ) : (
+                                <span className="text-amber-400 text-xs sm:text-sm">
+                                  Single Commit / Low Churn
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-3.5 px-3 text-right">
+                              <button
+                                onClick={() => handleSelectCohortMember(cand)}
+                                className="btn-dev-primary text-xs px-3.5 py-1.5 cursor-pointer font-bold"
+                              >
+                                Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filteredCohort.length > 25 && (
+                  <div className="mt-3 text-center text-xs text-[#C9B89A] font-sans">
+                    Showing top 25 of {filteredCohort.length} applicants in active cohort view.
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

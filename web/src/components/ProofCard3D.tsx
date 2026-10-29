@@ -15,11 +15,10 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { CandidateProfile, DeploymentContract } from '../types';
-import { CAMPUS_COHORT_100 } from '../data/cohortData';
 import { createDeploymentContract } from '../services/api';
 
 interface ProofCard3DProps {
-  candidate: CandidateProfile;
+  candidate: CandidateProfile | null;
   onNavigateToTab: (tab: string) => void;
   onSelectCandidate?: (candidate: CandidateProfile) => void;
   cohort?: CandidateProfile[];
@@ -29,19 +28,47 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   candidate,
   onNavigateToTab,
   onSelectCandidate,
-  cohort = CAMPUS_COHORT_100
+  cohort = []
 }) => {
+  // If no candidate is active, show clean high-tech empty state
+  if (!candidate) {
+    return (
+      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
+        <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 flex items-center justify-center">
+            <Award className="w-8 h-8 text-[#D4AF37]" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
+            No ProofCard Credential Generated
+          </h2>
+          <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
+            A candidate must undergo live repository scanning and technical defense evaluation to issue a tamper-proof 3D cryptographic ProofCard credential.
+          </p>
+          <button
+            onClick={() => onNavigateToTab('ingestion')}
+            className="btn-dev-primary text-xs flex items-center gap-2 px-6 py-3.5 mx-auto shadow-lg cursor-pointer font-bold"
+          >
+            <span>Go to Ingestion Scanner</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const card = candidate.proof_card || {
-    status: 'VERIFIED_COMPETENT',
-    headline: 'High-confidence authentic engineering signal.',
-    strengths: [
-      'Genuine iterative commits over a multi-week span',
-      'Extracted AST demonstrates clean modularity'
-    ],
-    growth_area: 'Add automated integration tests with mock fixtures.',
-    specific_action: 'Write unit tests covering boundary error edge cases.',
-    tamper_proof_hash: 'SHA256:verified_demo_hash_9921',
+    status: candidate.is_clone 
+      ? 'REJECT_SUSPECTED_PLAGIARISM' 
+      : ((candidate.authenticity_score || 0) >= 80 ? 'VERIFIED_EXEMPLARY' : 'VERIFIED_SOLID'),
+    headline: candidate.is_clone
+      ? 'Repository matched online tutorial patterns.'
+      : 'Authentic software engineering profile verified via live AST and Git-DNA telemetry.',
+    strengths: candidate.is_clone
+      ? ['Basic code compilation detected']
+      : ['Organic commit progression', 'Extracted AST demonstrates modularity'],
+    growth_area: 'Expand unit and integration test fixtures.',
+    specific_action: 'Write automated unit tests covering error edge cases.',
+    tamper_proof_hash: `SHA256:${candidate.candidate_id}`,
   };
 
   const isClone = candidate.is_clone;
@@ -91,7 +118,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-      {/* Header - Glassmorphic Deviathon Theme */}
+      {/* Header */}
       <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -153,7 +180,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         {/* Amber Ambient Vignette */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        {/* Institutional Verification Stamp - GLA University NAAC A+ */}
+        {/* Institutional Verification Stamp */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-2.5 rounded-xl relative z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#8B1E1E] border border-[#D4AF37] flex items-center justify-center text-sm text-[#FFD166] font-bold shadow-sm">
@@ -161,7 +188,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </div>
             <div>
               <div className="text-xs sm:text-sm font-bold text-white tracking-wider uppercase">
-                GLA University Mathura · NAAC A+ Accredited
+                {candidate.college || 'Verified Academic Institution'}
               </div>
               <div className="text-xs text-[#E6C280] font-sans font-medium mt-0.5">
                 Verifiable Credential Ledger · Problem Statement IM-105
@@ -172,7 +199,6 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <span>🛡️ INSTITUTIONALLY VERIFIED</span>
           </div>
         </div>
-
 
         {/* Top Header Row of Card */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#3A2F27] pb-5 mb-5 relative z-10">
@@ -213,7 +239,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <div className="text-right">
               <div className="text-xs text-neutral-300 uppercase font-bold">Viva Defense</div>
               <div className="text-2xl font-black text-[#D4AF37]">
-                {candidate.viva_score} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
+                {candidate.viva_score !== undefined ? candidate.viva_score : '--'} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
               </div>
             </div>
           </div>
@@ -254,7 +280,6 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             "{card.headline}"
           </p>
         </div>
-
 
         {/* 2-Column: Strengths & Growth Areas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 relative z-10">
@@ -365,63 +390,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               >
                 Run code defense
               </button>
-              <span className="feature-note basis-full">These actions review current evidence. They do not create a workplace result.</span>
             </div>
-
-            <div className="mt-4 pt-3 border-t border-[#3A2F27] grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {deploymentContract.outcome_checkpoints.map((checkpoint) => (
-                <div key={checkpoint.checkpoint} className="text-sm text-neutral-300">
-                  <span className="font-bold text-[#FFD166]">{checkpoint.checkpoint.replace('_', ' ')}</span>
-                  <span className="block text-amber-300 mt-0.5">Not recorded</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {candidate.readiness_plan && (
-          <div className="mb-5 p-5 rounded-xl bg-black/60 border border-[#D4AF37]/35 relative z-10">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2 text-base font-bold text-[#FFD166] uppercase tracking-wider font-mono">
-                <Zap className="w-4 h-4 text-[#D4AF37]" />
-                <span>Proof-to-Readiness Loop</span>
-              </div>
-              <span className="text-[11px] px-2 py-1 rounded-full border border-[#D4AF37]/40 text-[#FFD166] font-mono">
-                {candidate.readiness_plan.status.replaceAll('_', ' ')}
-              </span>
-            </div>
-            <p className="feature-note mb-4">
-              {candidate.readiness_plan.message || 'Evidence gaps are converted into assessable improvement work.'}
-            </p>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {candidate.readiness_plan.gaps.slice(0, 4).map((gap) => (
-                <div key={gap.id} className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <strong className="text-base text-white">{gap.skill}</strong>
-                    <span className="text-[10px] uppercase text-[#FFD166]">{gap.priority}</span>
-                  </div>
-                  <p className="feature-note mb-2">{gap.reason}</p>
-                  <p className="text-sm text-[#F5E9C7]"><strong>Next proof:</strong> {gap.task}</p>
-                  <p className="text-sm text-neutral-400 mt-1"><strong>Acceptance:</strong> {gap.acceptance}</p>
-                </div>
-              ))}
-            </div>
-            {candidate.readiness_plan.next_reassessment && (
-              <p className="mt-3 feature-note">{candidate.readiness_plan.next_reassessment}</p>
-            )}
-          </div>
-        )}
-
-        {/* Human-Readable Recruiter Explanation (Guardrail 1) */}
-        {card.human_readable_reason && (
-          <div className="mb-5 p-4 rounded-xl bg-amber-950/30 border border-[#D4AF37]/40 relative z-10 backdrop-blur-md">
-            <div className="flex items-center gap-2 mb-1.5 text-xs sm:text-sm font-mono font-bold text-[#FFD166] uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-              <span>IM-105 Human-Readable Ranking Rationale</span>
-            </div>
-            <p className="text-sm text-[#F5E9C7] font-sans leading-relaxed font-medium">
-              {card.human_readable_reason}
-            </p>
           </div>
         )}
 
@@ -431,7 +400,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <div className="flex items-center gap-2 text-neutral-300">
               <Lock className="w-4 h-4 text-[#D4AF37]" />
               <span className="font-bold text-white text-xs sm:text-sm">SHA-256:</span>
-              <span className="text-[#FFD166] text-xs sm:text-sm font-mono">{card.tamper_proof_hash.substring(0, 28)}...</span>
+              <span className="text-[#FFD166] text-xs sm:text-sm font-mono">{(card.tamper_proof_hash || '').substring(0, 28)}...</span>
             </div>
             <div className="mt-1 text-xs text-neutral-300 flex items-center gap-1.5 font-mono">
               <span>Public Link:</span>

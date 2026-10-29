@@ -8,14 +8,13 @@ import { RecruiterBattle } from './components/RecruiterBattle';
 import { BiasMirror } from './components/BiasMirror';
 import { Devithation3DCanvas } from './components/Devithation3DCanvas';
 import { ImatsApiModal } from './components/ImatsApiModal';
-import { OFFLINE_DEMO_PROFILES } from './data/offlineDemoData';
-import { CAMPUS_COHORT_100 } from './data/cohortData';
 import { CandidateProfile } from './types';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('ingestion');
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
-  const [currentCandidate, setCurrentCandidate] = useState<CandidateProfile>(OFFLINE_DEMO_PROFILES[0]); // Default to Priyanshu Awasthi
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+  const [currentCandidate, setCurrentCandidate] = useState<CandidateProfile | null>(null);
+  const [cohort, setCohort] = useState<CandidateProfile[]>([]);
   const [isImatsOpen, setIsImatsOpen] = useState<boolean>(false);
 
   React.useEffect(() => {
@@ -23,37 +22,47 @@ export const App: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
       const verifyId = params.get('verify');
       if (verifyId) {
-        const foundInCohort = CAMPUS_COHORT_100.find(p => p.candidate_id === verifyId);
-        const found = foundInCohort || OFFLINE_DEMO_PROFILES.find(p => p.candidate_id === verifyId);
-        if (found) {
-          setCurrentCandidate(found);
+        const foundInCohort = cohort.find(p => p.candidate_id === verifyId);
+        if (foundInCohort) {
+          setCurrentCandidate(foundInCohort);
+          setActiveTab('proofcard');
         }
-        setActiveTab('proofcard');
       }
     }
-  }, []);
+  }, [cohort]);
 
-  const handleSelectDemoProfile = (index: number) => {
-    const profile = OFFLINE_DEMO_PROFILES[index] || OFFLINE_DEMO_PROFILES[0];
-    setCurrentCandidate(profile);
-    setActiveTab('terminal');
+  const handleSelectDemoProfile = () => {
+    // Redirect to real scanner
+    setActiveTab('ingestion');
   };
 
   const handleScanComplete = (profile: CandidateProfile) => {
     setCurrentCandidate(profile);
+    setCohort(prev => {
+      const exists = prev.some(p => p.candidate_id === profile.candidate_id);
+      if (exists) {
+        return prev.map(p => p.candidate_id === profile.candidate_id ? profile : p);
+      }
+      return [profile, ...prev];
+    });
   };
 
   const handleUpdateVivaScore = (newScore: number) => {
-    setCurrentCandidate(prev => ({
-      ...prev,
-      viva_score: newScore,
-      proof_card: {
-        ...prev.proof_card,
-        headline: newScore >= 8 
-          ? 'Exceptional systems intuition with proven codebase ownership.'
-          : 'Competent engineer with solid understanding of primary workflows.'
-      }
-    }));
+    setCurrentCandidate(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        viva_score: newScore,
+        proof_card: {
+          ...prev.proof_card,
+          status: prev.proof_card?.status || 'VERIFIED_COMPETENT',
+          tamper_proof_hash: prev.proof_card?.tamper_proof_hash || `SHA256:${prev.candidate_id}`,
+          headline: newScore >= 8 
+            ? 'Exceptional systems intuition with proven codebase ownership.'
+            : 'Competent engineer with solid understanding of primary workflows.'
+        }
+      };
+    });
   };
 
   return (
@@ -91,6 +100,8 @@ export const App: React.FC = () => {
               setCurrentCandidate(cand);
               setActiveTab('terminal');
             }}
+            cohort={cohort}
+            onUpdateCohort={setCohort}
           />
         )}
 
@@ -99,7 +110,7 @@ export const App: React.FC = () => {
             candidate={currentCandidate}
             onNavigateToTab={setActiveTab}
             onSelectCandidate={setCurrentCandidate}
-            cohort={CAMPUS_COHORT_100}
+            cohort={cohort}
           />
         )}
 
@@ -109,7 +120,7 @@ export const App: React.FC = () => {
             onUpdateVivaScore={handleUpdateVivaScore}
             onNavigateToTab={setActiveTab}
             onSelectCandidate={setCurrentCandidate}
-            cohort={CAMPUS_COHORT_100}
+            cohort={cohort}
           />
         )}
 
@@ -118,7 +129,7 @@ export const App: React.FC = () => {
             candidate={currentCandidate}
             onNavigateToTab={setActiveTab}
             onSelectCandidate={setCurrentCandidate}
-            cohort={CAMPUS_COHORT_100}
+            cohort={cohort}
           />
         )}
 
@@ -127,12 +138,14 @@ export const App: React.FC = () => {
             currentCandidate={currentCandidate}
             onNavigateToTab={setActiveTab}
             onSelectCandidate={setCurrentCandidate}
-            cohort={CAMPUS_COHORT_100}
+            cohort={cohort}
           />
         )}
 
         {activeTab === 'bias-mirror' && (
-          <BiasMirror />
+          <BiasMirror 
+            cohort={cohort}
+          />
         )}
       </main>
       </div>
