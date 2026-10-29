@@ -1,3 +1,6 @@
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import sys
 
 # Prevent Windows ProactorEventLoop from terminating the server socket on client disconnects (WinError 64 / 10054)
@@ -118,32 +121,34 @@ app.include_router(readiness.router)
 app.include_router(deployment.router)
 app.include_router(webhooks.router)
 
-@app.get("/")
-def root():
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "uptime": "100%", "mode": "production_ready"}
+
+@app.get("/api")
+def api_root():
     return {
         "project": "ProofCard",
         "competition": "Deviathon 2.0",
         "problem_statement": "IM-105 (Integraminds)",
         "tagline": "Proof of skill, not a template resume",
         "status": "online",
-        "docs_url": "/docs",
-        "modules": [
-            "Local ZIP & GitHub Ingestion",
-            "AST Structural & Radon Complexity",
-            "Winnowing Tutorial Clone Detection (20 templates)",
-            "Git-DNA Temporal Forensics",
-            "Dynamic Code Viva & Conceptual Scorer",
-            "Recruiter JD Battle Matrix",
-            "Recruiter Bias Mirror & Equal Opportunity Audit",
-            "Deployment Readiness Contract",
-            "n8n Automation & Continuous Webhooks",
-            "Offline 100% Demo Survival Mode"
-        ]
+        "docs_url": "/docs"
     }
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy", "uptime": "100%", "mode": "production_ready"}
+@app.get("/")
+def root():
+    return api_root()
+
+# Optional static file serving for local standalone production run
+dist_dir = Path(__file__).resolve().parent.parent / "web" / "dist"
+if dist_dir.exists() and (dist_dir / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=dist_dir / "assets"), name="assets")
+
+
+
 
 if __name__ == "__main__":
     import uvicorn

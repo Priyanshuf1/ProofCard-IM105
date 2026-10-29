@@ -1,0 +1,14 @@
+.git
+.github
+.vscode
+node_modules
+web/node_modules
+web/dist
+**/__pycache__
+**/*.pyc
+.pytest_cache
+backend/tests
+tests
+*.log
+*.zip
+*.tar.gz
