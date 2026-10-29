@@ -9,15 +9,24 @@ from backend.main import app
 from backend.services.n8n_service import N8nService, CONFIG_PATH, DEFAULT_CONFIG
 
 client = TestClient(app)
+_INITIAL_CONFIG = None
+
+def setup_module():
+    """Remember initial configuration so tests don't overwrite user config on disk."""
+    global _INITIAL_CONFIG
+    _INITIAL_CONFIG = N8nService.get_config()
 
 def setup_function():
     """Ensure clean state for every test."""
     N8nService._recent_dispatches.clear()
 
 def teardown_module():
-    """Restore clean default config after tests run so disk state is pristine."""
+    """Restore user's config after tests run so disk state is preserved."""
     N8nService._recent_dispatches.clear()
-    N8nService.save_config(DEFAULT_CONFIG)
+    if _INITIAL_CONFIG is not None:
+        N8nService.save_config(_INITIAL_CONFIG)
+    else:
+        N8nService.save_config(DEFAULT_CONFIG)
 
 def test_n8n_config_endpoints():
     initial_cfg = N8nService.get_config()
