@@ -500,7 +500,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   className="accent-[#E85D04] w-4 h-4 cursor-pointer"
                 />
                 <span className="text-xs text-neutral-200 font-medium">
-                  I confirm this is public code submitted for evaluation. ProofCard will evaluate code quality without demographic bias.
+                  I confirm this is public code submitted for evaluation. Pariksha will evaluate code quality without demographic bias.
                 </span>
               </label>
             </div>

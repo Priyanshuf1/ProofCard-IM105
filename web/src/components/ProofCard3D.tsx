@@ -39,10 +39,10 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <Award className="w-8 h-8 text-[#D4AF37]" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
-            No ProofCard Credential Generated
+            No Pariksha Card Generated
           </h2>
           <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
-            A candidate must undergo live repository scanning and technical defense evaluation to issue a tamper-proof 3D cryptographic ProofCard credential.
+            A candidate must undergo live repository scanning and technical defense evaluation to issue a tamper-proof 3D cryptographic Pariksha card credential.
           </p>
           <button
             onClick={() => onNavigateToTab('ingestion')}
@@ -83,7 +83,8 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   };
 
   const isClone = candidate.is_clone;
-  const isAdversarial = Boolean(candidate.has_prompt_injection || card.has_prompt_injection || card.status === 'FLAGGED_ADVERSARIAL_INJECTION');
+  const isAdversarial = Boolean(candidate.has_prompt_injection || card.has_prompt_injection || card.status === 'FLAGGED_ADVERSARIAL_INJECTION' || candidate.is_prompt_injected || card.status === 'FLAGGED_PROMPT_INJECTION' || candidate.security_scan?.is_prompt_injected);
+  const isPromptInjected = isAdversarial;
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
@@ -135,7 +136,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
-              ProofCard Verification Ledger
+              Pariksha Verification Ledger
             </h1>
           </div>
 
@@ -216,25 +217,25 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#3A2F27] pb-5 mb-5 relative z-10">
           <div className="flex items-center gap-3.5">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-inner ${
-              isAdversarial
-                ? 'bg-red-950 text-red-300 border border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]'
+              isPromptInjected
+                ? 'bg-red-950 text-red-300 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
                 : isClone 
                 ? 'bg-red-950/50 text-red-400 border border-red-500/50' 
                 : 'bg-[#2A241B] text-[#D4AF37] border border-[#D4AF37]/50 shadow-[0_0_12px_rgba(212,175,55,0.3)]'
             }`}>
-              {isAdversarial ? '🚨' : isClone ? '⚠️' : 'Ω'}
+              {isPromptInjected ? '🚨' : isClone ? '⚠️' : 'Ω'}
             </div>
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="text-xl sm:text-2xl font-bold text-white tracking-wide font-sans">{candidate.name}</span>
                 <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full border ${
-                  isAdversarial
-                    ? 'bg-red-950 text-red-200 border-red-500 font-mono font-bold'
+                  isPromptInjected
+                    ? 'bg-red-950 text-red-200 border-red-500 font-extrabold shadow-sm' 
                     : isClone
                     ? 'bg-red-900/40 text-red-300 border-red-500/40'
                     : 'bg-[#8B1E1E]/40 text-[#FFD166] border-[#D4AF37]/50'
                 }`}>
-                  {card.status}
+                  {isPromptInjected ? 'FLAGGED: PROMPT INJECTION' : card.status}
                 </span>
               </div>
               <p className="text-sm text-neutral-200 mt-1 font-medium font-sans">
@@ -263,17 +264,23 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
         {/* Mentor Assessment Headline & Plagiarism Origin Attribution */}
         <div className={`rounded-xl border p-4 sm:p-5 mb-5 relative z-10 ${
-          isAdversarial
-            ? 'bg-red-950/70 border-red-500'
+          isPromptInjected
+            ? 'bg-red-950/60 border-2 border-red-500 shadow-lg' 
             : isClone
             ? 'bg-red-950/40 border-red-500/50'
             : 'bg-black/50 border-[#3A2F27]'
         }`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${
+<<<<<<< HEAD
               isAdversarial ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
             }`}>
               {isAdversarial ? '🚨 Security Alert: Prompt Injection Neutralized' : (isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:')}
+=======
+              isPromptInjected ? 'text-red-300' : isClone ? 'text-red-400' : 'text-[#FFD166]'
+            }`}>
+              {isPromptInjected ? '🚨 Adversarial Prompt Injection Security Verdict:' : isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:'}
+>>>>>>> friend/pariksha-features
             </span>
             {isClone && candidate.matched_tutorial && (
               <div className="flex items-center gap-2">

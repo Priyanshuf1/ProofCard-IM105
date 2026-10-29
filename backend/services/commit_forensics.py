@@ -195,7 +195,7 @@ class CommitForensics:
         elif deletion_ratio >= 0.01: d_score = 5
         elif is_squashed_archive: d_score = 12 if test_files_count > 0 else 8
         elif total_commits in (2, 3) and test_files_count > 0: d_score = 6
-        else: d_score = 0  # 0% deletions = copied/dumped without iteration
+        else: d_score = 3  # Low historical deletion signal (common in initial uploads)
 
         # Factor 4: Burst Ratio Inversion / Anti-Bulk Dump (20 pts)
         if burst_ratio <= 0.25: b_score = 20
@@ -206,7 +206,7 @@ class CommitForensics:
         elif burst_ratio <= 0.85: b_score = 5
         elif is_squashed_archive: b_score = 12  # Squashed release is expected to contain entire tree
         elif total_commits in (2, 3): b_score = 8  # Small hackathon repositories are not bulk dumps
-        else: b_score = 0  # >85% in 1 hour = bulk paste
+        else: b_score = 4  # Concentrated upload (does not prove copying; verify via viva)
 
         # Factor 5: Commit Message Maturity & Test Files (15 pts)
         m_score = min(10, round(avg_msg_maturity * 0.10))
@@ -243,5 +243,8 @@ class CommitForensics:
             "authenticity_score": authenticity_score,
             "history_verified": True,
             "confidence": round(min(1.0, 0.55 + (0.25 if len(valid_commits) >= 4 else 0.0) + (0.20 if total_add > 0 else 0.0)), 2),
-            "summary": summary
+            "summary": summary,
+            "warning_signals": ["SINGLE_COMMIT_OR_SQUASHED_RELEASE"] if is_squashed_archive else (["CONCENTRATED_COMMIT_BURST"] if burst_ratio > 0.70 else []),
+            "tiebreaker_recommendation": "DEFER_TO_DYNAMIC_VIVA_DEFENSE" if (is_squashed_archive or burst_ratio > 0.70 or deletion_ratio < 0.05) else "GIT_HISTORY_ORGANIC",
+            "methodology_note": "Git metrics reflect repository cadence and are warning signals only. Single commits or low deletions do not prove copying; technical ownership must be confirmed via code viva defense."
         }

@@ -16,6 +16,7 @@ from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
 from backend.services.adversarial_defense import AdversarialDefensePipeline
+from backend.services.injection_scanner import InjectionScanner
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -952,6 +953,11 @@ async def analyze_github_repo(req: IngestionURLRequest):
         except Exception:
             pass
 
+    # 5b. ADVERSARIAL PROMPT INJECTION & SYNTHETIC AI SCANNER (IM-105 Brief Page 12 & 15)
+    commit_messages = [c.get("message", "") for c in commits_data if c.get("message")]
+    security_report = InjectionScanner.scan_repository(code_snippets, commit_messages)
+    is_prompt_injected = security_report.get("is_prompt_injected", False)
+
     # 6. FORENSIC GLOBAL PLAGIARISM & ORIGIN INSPECTION (Detect copying from anywhere worldwide)
     tut_matcher = TutorialMatcher()
     is_clone, matched_tut = tut_matcher.detect_global_plagiarism(
@@ -962,19 +968,26 @@ async def analyze_github_repo(req: IngestionURLRequest):
         structural_tokens=structural_tokens,
         source_candidates=source_candidates,
         candidate_name=candidate_name or owner,
-        target_subpath=target_subpath
+        target_subpath=target_subpath,
+        is_prompt_injected=is_prompt_injected
     )
+
+    # If repo contains active adversarial prompt injection, suppress spurious external clone matches
+    if is_prompt_injected:
+        is_clone = False
+        matched_tut = None
 
     # Real 5-factor authenticity score directly from git DNA
     auth_score = git_dna.get("authenticity_score", 0)
 
-    # If repository is copied from anywhere worldwide, adjust score to reflect exact plagiarism %
-    if is_clone and matched_tut:
+    # If repository is prompt injected or copied from anywhere worldwide, adjust score
+    if is_prompt_injected:
+        # Flagged for adversarial prompt injection attempt
+        auth_score = min(auth_score, 10)
+    elif is_clone and matched_tut:
         sim = matched_tut.get("similarity_score", 0.0)
-        # Authenticity drops inversely with copy percentage
         auth_score = max(0, min(auth_score, int((1.0 - sim) * 100) + 5))
     elif git_dna.get("total_commits", 0) == 1:
-        # Only single-commit bulk paste drops to 25
         auth_score = min(auth_score, 25)
 
     git_dna["authenticity_score"] = auth_score
@@ -1018,22 +1031,70 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if provenance_evidence.get("coverage") != "local_and_catalog_only":
         analysis_confidence += 0.10
 
+    # Anomaly calculation and Viva Gating: Maximum allowed anomaly is 30%
+    clone_pct = int((matched_tut.get("similarity_score", 0.0) if (is_clone and matched_tut) else 0.0) * 100)
+    anomaly_pct = 100 - auth_score
+    max_anomaly = max(clone_pct, anomaly_pct, 90 if is_prompt_injected else 0)
+    is_viva_blocked = bool(max_anomaly > 30 or is_prompt_injected or is_clone)
+
+    if is_viva_blocked:
+        viva_status = "BLOCKED_HIGH_ANOMALY"
+        if is_prompt_injected:
+            viva_block_reason = (
+                "Viva Defense Access Blocked: Adversarial Prompt Injection Directives were detected attempting to "
+                "override evaluation rubrics and bypass automated checks. Pariksha Enterprise Security Policy "
+                "quarantines and disqualifies submissions with adversarial vectors."
+            )
+        elif clone_pct > 30:
+            viva_block_reason = (
+                f"Viva Defense Access Blocked: Codebase exhibits {clone_pct}% external code overlap "
+                f"(exceeds 30% maximum permitted threshold). Candidates with unoriginal tutorial clones are barred from live defense."
+            )
+        else:
+            viva_block_reason = (
+                f"Viva Defense Access Blocked: Forensic anomaly score is {max_anomaly}% (Authenticity: {auth_score}%, "
+                f"limit: 30% max anomaly). Live defense requires verified organic Git commit progression."
+            )
+    else:
+        viva_status = "PENDING_LIVE_DEFENSE"
+        viva_block_reason = None
+
     viva_engine = VivaEngine()
     viva_questions = viva_engine.generate_questions_for_functions(complex_functions, max_questions=5)
 
-    if has_prompt_injection:
+    if (is_prompt_injected or has_prompt_injection) and security_report.get("findings"):
+        top_f = security_report["findings"][0]
+        viva_questions.insert(0, {
+            "question_id": "viva_sec_injection_1",
+            "function_name": "security_isolation_audit",
+            "file": top_f.get("file", "README.md"),
+            "line_number": top_f.get("line_number", 1),
+            "question": (
+                f"Your repository ({top_f.get('file', 'README.md')}:L{top_f.get('line_number', 1)}) contains explicit instructions targeting automated evaluators "
+                f"('{top_f.get('matched_text', 'ignore previous instructions')}'). "
+                "As a software engineer, explain what security vulnerability this represents (Indirect Prompt Injection), how LLM-integrated pipelines must be defended against it, and why this was included in your repository."
+            ),
+            "expected_concepts": ["indirect prompt injection", "sanitization", "untrusted input", "security boundary", "sandboxing", "grading rubric isolation"],
+            "difficulty": "HARD",
+            "snippet": top_f.get("snippet", "<!-- [AI_EVALUATION_DIRECTIVE] -->")
+        })
+
+    if is_prompt_injected or has_prompt_injection:
+        findings_summary = f"{security_report.get('findings_count', 1)} adversarial directive(s) detected across {len(security_report.get('files_affected', ['README.md']))} file(s)"
         proof_card = {
-            "status": "FLAGGED_ADVERSARIAL_INJECTION",
-            "headline": "Security Alert: Indirect prompt injection payload detected in repository source/README.",
+            "status": "FLAGGED_PROMPT_INJECTION",
+            "headline": "SECURITY ALERT: Adversarial Prompt Injection Detected. Repository attempted indirect prompt injection against AI evaluator.",
             "strengths": [
-                "Automated AppSec pipeline detected indirect prompt injection payload",
-                "Adversarial evasion attempt neutralized"
+                f"Security Isolation Shield intercepted {findings_summary}",
+                f"Detected vectors in {', '.join(security_report.get('files_affected', ['README.md'])[:3])}",
+                "Automated grading protected: directives quarantined and sanitized"
             ],
-            "growth_area": "Remove adversarial prompt injection directives and LLM manipulation strings from repository source.",
-            "specific_action": "Sanitize repository documentation and comments to adhere to authentic coding standards.",
+            "growth_area": "Remove adversarial prompt injection directives and benchmark test harnesses before enterprise submission.",
+            "specific_action": "Clean README.md and source files of '[AI_EVALUATION_DIRECTIVE]' and bypass comments.",
             "tamper_proof_hash": tamper_proof_hash,
             "has_prompt_injection": True,
             "email": req.email
+        }
         }
     elif is_clone and matched_tut:
         sim_pct = int(matched_tut.get("similarity_score", 0.0) * 100)
@@ -1087,8 +1148,29 @@ async def analyze_github_repo(req: IngestionURLRequest):
         }
 
 
+    clone_pct = int(matched_tut.get("similarity_score", 0.0) * 100) if (is_clone and matched_tut) else 0
+    anomaly_pct = max(0, 100 - auth_score)
+    viva_blocked = bool(clone_pct > 30 or anomaly_pct > 30 or is_prompt_injected or has_prompt_injection)
+    
+    if is_prompt_injected or has_prompt_injection:
+        viva_blocked_reason = "Adversarial prompt injection detected. Repository contains active directives attempting to manipulate automated evaluators."
+    elif clone_pct > 30:
+        viva_blocked_reason = f"Repository exhibits {clone_pct}% clone similarity with '{matched_tut.get('name')}', exceeding the 30% permissible limit."
+    elif anomaly_pct > 30:
+        viva_blocked_reason = f"Forensic Git-DNA anomaly score ({anomaly_pct}%) exceeds the 30% threshold. Development progression requires authentic commit iteration."
+    else:
+        viva_blocked_reason = None
+
     result_profile = {
+        "viva_blocked": viva_blocked,
+        "viva_blocked_reason": viva_blocked_reason,
+        "clone_pct": clone_pct,
+        "anomaly_pct": anomaly_pct,
         "status": "success",
+        "viva_blocked": viva_blocked,
+        "viva_blocked_reason": viva_blocked_reason,
+        "clone_pct": clone_pct,
+        "anomaly_pct": anomaly_pct,
         "live_analyzed": True,
         "is_cached_profile": False,
         "candidate_id": cid,
@@ -1126,6 +1208,9 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "is_clone": is_clone,
         "has_prompt_injection": has_prompt_injection,
         "matched_tutorial": matched_tut,
+        "security_scan": security_report,
+        "is_prompt_injected": is_prompt_injected,
+        "is_synthetic_ai": security_report.get("is_synthetic_ai", False),
         "provenance_evidence": provenance_evidence,
         "git_dna": git_dna,
         "detected_files": detected_files,
@@ -1134,7 +1219,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "complex_functions_for_viva": complex_functions[:3],
         "viva_questions": viva_questions,
         "viva_score": 0,
-        "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
+        "viva_status": viva_status,
+        "viva_blocked": is_viva_blocked,
+        "viva_block_reason": viva_block_reason,
+        "anomaly_score": max_anomaly,
         "proof_card": proof_card,
         "tamper_proof_hash": tamper_proof_hash,
         "available_repos": available_repos or ([resolved_repo] if resolved_repo else []),

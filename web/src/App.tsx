@@ -98,6 +98,7 @@ export const App: React.FC = () => {
           onSelectDemoProfile={handleSelectDemoProfile}
           onOpenImatsModal={() => setIsImatsOpen(true)}
           onOpenN8nModal={() => setIsN8nOpen(true)}
+          currentCandidate={currentCandidate}
         />
       {/* Main Content View Switcher */}
       <main className="flex-1">

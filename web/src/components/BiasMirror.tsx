@@ -61,7 +61,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>ProofCard (100% Code Quality)</span>
+              <span>Pariksha (100% Code Quality)</span>
             </button>
           </div>
         </div>
@@ -78,7 +78,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               <h2 className="text-xl font-bold text-white">
                 {activeEngine === 'traditional_ats' 
                   ? 'Traditional Filter: Brand Names Artificially Boost Ranking'
-                  : 'ProofCard Filter: 100% Blind to University Brand, 100% Merit'}
+                  : 'Pariksha Filter: 100% Blind to University Brand, 100% Merit'}
               </h2>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-bold font-mono border ${
@@ -177,7 +177,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
           </div>
         </div>
         <p className="text-sm text-neutral-200 mb-6 leading-relaxed">
-          Adjust the sliders below. ProofCard guarantees that two candidates with the exact same code scores receive the exact same ProofCard evaluation regardless of whether their degree is from an IIT or a regional college.
+          Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code scores receive the exact same Pariksha evaluation regardless of whether their degree is from an IIT or a regional college.
         </p>
 
         {/* Sliders */}
@@ -219,7 +219,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-1 Elite University Candidate</span>
             <span className="text-sm font-bold text-white block">Candidate from Top Tier College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">ProofCard Score:</span>
+              <span className="text-neutral-400">Pariksha Score:</span>
               <span className="text-emerald-400 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
@@ -230,7 +230,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-3 Regional University Candidate</span>
             <span className="text-sm font-bold text-white block">Candidate from Regional College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">ProofCard Score:</span>
+              <span className="text-neutral-400">Pariksha Score:</span>
               <span className="text-emerald-400 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
@@ -241,7 +241,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         <div className="mt-4 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>
-            <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. ProofCard completely decouples pedigree bias from hiring.
+            <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. Pariksha completely decouples pedigree bias from hiring.
           </span>
         </div>
       </div>

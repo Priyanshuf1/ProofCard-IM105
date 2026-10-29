@@ -12,6 +12,8 @@ import {
   MicOff,
   Users,
   ShieldCheck,
+  ShieldAlert,
+  Lock,
   AlertTriangle,
   Code
 } from 'lucide-react';
@@ -109,6 +111,46 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
   const [showCohortRoster, setShowCohortRoster] = useState(false);
+
+
+
+  // Enterprise Anomaly & Plagiarism Viva Gating (Threshold: 30%)
+
+  const cloneScore = candidate.is_clone 
+
+    ? Math.round((candidate.matched_tutorial?.similarity_score || 0.7) * 100) 
+
+    : 0;
+
+  const authenticityScore = candidate.authenticity_score ?? 100;
+
+  const anomalyScore = Math.max(
+
+    cloneScore,
+
+    100 - authenticityScore,
+
+    (candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected) ? 90 : 0,
+
+    candidate.anomaly_score || 0
+
+  );
+
+  const isVivaBlocked = Boolean(
+
+    candidate.viva_blocked ?? (
+
+      anomalyScore > 30 || 
+
+      candidate.is_prompt_injected || 
+
+      candidate.security_scan?.is_prompt_injected || 
+
+      candidate.is_clone
+
+    )
+
+  );
 
   // Web Speech API state
   const [isListening, setIsListening] = useState(false);
@@ -547,6 +589,126 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         </div>
       )}
 
+      {/* VIVA ACCESS BLOCKED SCREEN IF ANOMALY > 30% */}
+      {isVivaBlocked ? (
+        <div className="p-6 sm:p-8 rounded-2xl bg-red-950/40 border-2 border-red-500/70 shadow-2xl backdrop-blur-md animate-in fade-in mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-red-900/60 pb-5 mb-5">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-red-900 border-2 border-red-400 flex items-center justify-center text-red-100 shrink-0 shadow-lg mt-0.5">
+                <Lock className="w-8 h-8 text-red-200 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-red-600 border border-red-400 text-white uppercase tracking-wider">
+                    VIVA ACCESS RESTRICTED
+                  </span>
+                  <span className="text-xs font-mono font-bold text-red-200 bg-black/60 px-2.5 py-0.5 rounded-full border border-red-500/50">
+                    Enterprise Screening Gate (30% Max Anomaly)
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white font-sans tracking-wide">
+                  Candidate Blocked from Code Defense Viva
+                </h2>
+                <p className="text-xs sm:text-sm text-red-200 mt-1 font-sans leading-relaxed">
+                  {candidate.viva_block_reason || candidate.viva_blocked_reason || (
+                    candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected
+                      ? "Adversarial Prompt Injection Directives were detected in this repository attempting to override evaluation rubrics."
+                      : candidate.is_clone
+                      ? `Candidate repository exhibits high code overlap (${cloneScore}%) with external tutorial sources, exceeding the 30% threshold.`
+                      : `Candidate repository exhibits a ${anomalyScore}% forensic anomaly (Authenticity: ${authenticityScore}%), exceeding the 30% permissible limit.`
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-black/60 border border-red-500/50 px-4 py-3 rounded-xl shrink-0 text-right">
+              <span className="text-[10px] text-neutral-400 uppercase font-bold block">Observed Anomaly</span>
+              <span className="text-2xl font-black text-red-400 font-mono">{anomalyScore}%</span>
+              <span className="text-[10px] text-red-300 block font-bold">Policy Limit: 30%</span>
+            </div>
+          </div>
+
+          {/* 3 Metric Diagnosis Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            <div className="p-3.5 rounded-xl bg-black/60 border border-red-500/30">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                Authenticity Score
+              </span>
+              <span className="text-xl font-bold font-mono text-red-400">
+                {authenticityScore}%
+              </span>
+              <span className="text-[10px] text-neutral-400 block mt-0.5">Required: ≥ 70%</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-black/60 border border-red-500/30">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                Security Threat
+              </span>
+              <span className="text-xl font-bold font-mono text-[#FFD166]">
+                {candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected ? "CRITICAL" : "NORMAL"}
+              </span>
+              <span className="text-[10px] text-neutral-400 block mt-0.5">Prompt Injection Shield</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-black/60 border border-red-500/30">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                Git Progression
+              </span>
+              <span className="text-xl font-bold font-mono text-white">
+                {candidate.git_dna?.total_commits || 0} Commits
+              </span>
+              <span className="text-[10px] text-neutral-400 block mt-0.5">Single commit dump flagged</span>
+            </div>
+          </div>
+
+          {/* Quarantined Vectors or Clone Overlap Display */}
+          {candidate.security_scan?.findings && candidate.security_scan.findings.length > 0 && (
+            <div className="mb-5 p-4 rounded-xl bg-black/60 border border-red-500/40">
+              <span className="text-xs font-bold text-[#FFD166] uppercase tracking-wider block mb-2">
+                Violating Vectors Intercepted in Repository:
+              </span>
+              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {candidate.security_scan.findings.slice(0, 4).map((f, i) => (
+                  <div key={i} className="text-xs font-mono text-neutral-200 flex items-center justify-between bg-red-950/30 p-2 rounded border border-red-900/40">
+                    <span className="text-red-400 font-bold">{f.file}:{f.line_number}</span>
+                    <span className="text-neutral-300 truncate max-w-[280px]">"{f.snippet}"</span>
+                    <span className="px-1.5 py-0.5 rounded bg-red-900/60 text-red-200 text-[10px] uppercase font-bold">
+                      {f.category}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action to Re-qualify */}
+          <div className="p-4 rounded-xl bg-black/50 border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold text-[#FFD166] uppercase tracking-wider block">
+                Enterprise Remediation Guidance:
+              </span>
+              <p className="text-xs text-[#C9B89A] mt-0.5">
+                Remove adversarial instructions, eliminate public tutorial boilerplate, and submit an authentic multi-commit repository to unlock Viva.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => onNavigateToTab('terminal')}
+                className="btn-dev-outline text-xs px-3.5 py-2 font-bold cursor-pointer"
+              >
+                Inspect Clone Radar
+              </button>
+              <button
+                onClick={() => onNavigateToTab('proofcard')}
+                className="btn-dev-primary text-xs px-3.5 py-2 font-bold cursor-pointer"
+              >
+                View Skill Card
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Question Selector & Countdown Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-1.5">
@@ -774,13 +936,15 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 onClick={handleNext}
                 className="btn-dev-primary text-xs flex items-center gap-2 shadow-lg cursor-pointer px-5 py-2.5 font-bold"
               >
-                <span>{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Verified ProofCard'}</span>
+                <span>{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Verified Pariksha Card'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

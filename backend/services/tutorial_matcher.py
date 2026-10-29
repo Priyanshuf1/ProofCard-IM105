@@ -88,8 +88,15 @@ class TutorialMatcher:
         """
         candidate_tokens = cls.normalize_tokens(candidate)
         source_tokens = cls.normalize_tokens(source)
-        if len(candidate_tokens) < 12 or len(source_tokens) < 12:
-            return {"similarity": 0.0, "candidate_coverage": 0.0, "source_coverage": 0.0}
+        if len(candidate_tokens) < 30 or len(source_tokens) < 30:
+            return {
+                "similarity": 0.0,
+                "candidate_coverage": 0.0,
+                "source_coverage": 0.0,
+                "intersection_count": 0,
+                "candidate_tokens": len(candidate_tokens),
+                "source_tokens": len(source_tokens),
+            }
 
         candidate_grams = cls._token_ngrams(candidate_tokens)
         source_grams = cls._token_ngrams(source_tokens)
@@ -111,6 +118,7 @@ class TutorialMatcher:
             "source_coverage": round(source_coverage, 4),
             "jaccard": round(jaccard, 4),
             "sequence_ratio": round(sequence_ratio, 4),
+            "intersection_count": len(intersection),
             "candidate_tokens": len(candidate_tokens),
             "source_tokens": len(source_tokens),
         }
@@ -163,7 +171,8 @@ class TutorialMatcher:
         structural_tokens: Optional[Dict[str, str]] = None,
         source_candidates: Optional[List[Dict[str, Any]]] = None,
         candidate_name: Optional[str] = None,
-        target_subpath: Optional[str] = None
+        target_subpath: Optional[str] = None,
+        is_prompt_injected: bool = False
     ) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """
         Comprehensive forensic inspection to detect if repository is copied
@@ -199,7 +208,14 @@ class TutorialMatcher:
                             "source_path": source_path,
                             "metrics": metrics,
                         }
-            if best_pair and best_pair["metrics"]["candidate_coverage"] >= 0.65 and best_pair["metrics"]["similarity"] >= 0.58:
+            if (
+                not is_prompt_injected
+                and best_pair
+                and best_pair["metrics"]["candidate_coverage"] >= 0.65
+                and best_pair["metrics"]["similarity"] >= 0.58
+                and best_pair["metrics"].get("intersection_count", 0) >= 25
+                and best_pair["metrics"].get("candidate_tokens", 0) >= 45
+            ):
                 candidate_loc = sum(
                     len(v.splitlines())
                     for path, v in code_snippets.items()
@@ -269,7 +285,7 @@ class TutorialMatcher:
                 "evidence": ["GITHUB_FORK_METADATA", "UPSTREAM_PARENT_REPOSITORY"],
                 "matched_files": file_tree[:8],
                 "verdict": (
-                    f"UPSTREAM GITHUB FORK DETECTED ({copied_pct}% copied): Repository is forked directly from "
+                    f"UPSTREAM GITHUB FORK SIGNAL ({copied_pct}% upstream content): Repository is forked from "
                     f"'{parent_full_name}' ({parent_url}). Only {cand_commits} of {total_commits} commits authored by candidate."
                 )
             }
@@ -413,8 +429,8 @@ class TutorialMatcher:
                                 "evidence": ["DOMINANT_EXTERNAL_COMMIT_AUTHOR", "CANDIDATE_AUTHOR_ABSENT"],
                                 "matched_files": file_tree[:6],
                                 "verdict": (
-                                    f"THIRD-PARTY COMMIT ORIGIN DETECTED ({copied_pct}% copied): {count} of {len(commits_data)} commits "
-                                    f"were authored by '{dominant_author}', proving repository was cloned directly from external author."
+                                    f"THIRD-PARTY COMMIT ORIGIN SIGNAL: {count} of {len(commits_data)} commits "
+                                    f"were authored by '{dominant_author}'. Verify if candidate contributed under a different git identity."
                                 )
                             }
 
@@ -555,9 +571,9 @@ class TutorialMatcher:
         ):
             pct = int(best_match["similarity_score"] * 100)
             best_match["verdict"] = (
-                f"GLOBAL TUTORIAL CLONE DETECTED ({pct}% copied): Codebase is cloned from '{best_match['name']}' "
+                f"POTENTIAL TUTORIAL OVERLAP SIGNAL ({pct}% structural overlap): Codebase exhibits structural similarity with '{best_match['name']}' "
                 f"authored by {best_match['author']} ({best_match['source_url']}). "
-                f"Structural AST signatures, verbatim functions, and tutorial files ({', '.join(best_match['matched_files'][:4])}) confirmed."
+                f"Matching files: {', '.join(best_match['matched_files'][:4])}. Overlap is an inspection signal, never standalone proof of copying."
             )
             return True, best_match
         elif best_match and highest_score >= 0.40 and len(best_match.get("matched_files", [])) >= 2:

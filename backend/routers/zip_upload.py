@@ -17,6 +17,7 @@ from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
 from backend.services.adversarial_defense import AdversarialDefensePipeline
+from backend.services.injection_scanner import InjectionScanner
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -268,6 +269,11 @@ async def upload_project_zip(
                 "summary": f"Offline Direct Code Submission: Evaluated {len(code_files)} source files ({total_loc} LOC) across {days_span} day(s) of archive timestamps with {test_files_count} test suites (Max AST Cyclomatic Complexity: {max_comp}). Git history was not supplied, so development rhythm is unverified."
             }
 
+        # Security: Adversarial Prompt Injection & Synthetic AI Scanner
+        commit_msgs = [c.get("message", "") for c in real_commits if c.get("message")]
+        security_report = InjectionScanner.scan_repository(code_snippets, commit_msgs)
+        is_prompt_injected = security_report.get("is_prompt_injected", False)
+
         # 4-Stage Forensic Global Plagiarism & Origin Detection
         matcher = TutorialMatcher()
         is_clone, matched_tutorial = matcher.detect_global_plagiarism(
@@ -276,8 +282,15 @@ async def upload_project_zip(
             file_tree=file_tree,
             code_snippets=code_snippets,
             structural_tokens=structural_tokens,
-            candidate_name=candidate_name
+            candidate_name=candidate_name,
+            is_prompt_injected=is_prompt_injected
         )
+
+        if is_prompt_injected:
+            is_clone = False
+            matched_tutorial = None
+            auth_score = min(auth_score, 10)
+            git_dna["authenticity_score"] = auth_score
 
         # Authenticity scoring calculation
         if is_clone and matched_tutorial:
@@ -324,15 +337,16 @@ async def upload_project_zip(
         tamper_proof_hash = "SHA256:" + hashlib.sha256(manifest_str.encode()).hexdigest()
 
         # Generate Explainable ProofCard
-        if has_prompt_injection:
-            card_status = "FLAGGED_ADVERSARIAL_INJECTION"
-            card_headline = "Security Alert: Indirect prompt injection payload detected in repository source/README."
+        if is_prompt_injected or has_prompt_injection:
+            card_status = "FLAGGED_PROMPT_INJECTION"
+            card_headline = "SECURITY ALERT: Adversarial Prompt Injection Detected. Uploaded archive attempted prompt injection against AI evaluator."
             card_strengths = [
-                "Automated AppSec pipeline detected indirect prompt injection payload",
-                "Adversarial evasion attempt neutralized"
+                f"Security Isolation Shield intercepted {security_report.get('findings_count', 1)} adversarial directive(s)",
+                f"Quarantined vectors in {', '.join(security_report.get('files_affected', ['source'])[:3])}",
+                "Automated grading protected: directives quarantined and sanitized"
             ]
-            card_growth = "Remove adversarial prompt injection directives and LLM manipulation strings from repository source."
-            card_action = "Sanitize repository documentation and comments to adhere to authentic coding standards."
+            card_growth = "Remove adversarial prompt injection directives and benchmark test harnesses before enterprise submission."
+            card_action = "Clean files of '[AI_EVALUATION_DIRECTIVE]' and bypass comments."
         elif is_clone:
             card_status = "FLAGGED_CLONE"
             card_headline = f"High probability tutorial clone detected ({int((matched_tutorial or {}).get('similarity_score', 0.0)*100)}% structural match)."
@@ -395,9 +409,26 @@ async def upload_project_zip(
 
         first_seq = list(structural_tokens.values())[0] if structural_tokens else ""
 
+        clone_pct = int((matched_tutorial or {}).get("similarity_score", 0.0) * 100) if (is_clone and matched_tutorial) else 0
+        anomaly_pct = max(0, 100 - auth_score)
+        viva_blocked = bool(clone_pct > 30 or anomaly_pct > 30 or is_prompt_injected or has_prompt_injection)
+
+        if is_prompt_injected or has_prompt_injection:
+            viva_blocked_reason = "Adversarial prompt injection detected in uploaded archive."
+        elif clone_pct > 30:
+            viva_blocked_reason = f"Uploaded code exhibits {clone_pct}% clone similarity with '{matched_tutorial.get('name')}', exceeding the 30% permissible limit."
+        elif anomaly_pct > 30:
+            viva_blocked_reason = f"Forensic anomaly score ({anomaly_pct}%) exceeds the 30% threshold."
+        else:
+            viva_blocked_reason = None
+
         result_profile = {
             "status": "success",
             "email": email,
+            "viva_blocked": viva_blocked,
+            "viva_blocked_reason": viva_blocked_reason,
+            "clone_pct": clone_pct,
+            "anomaly_pct": anomaly_pct,
             "candidate_id": f"cand_zip_{hashlib.md5(candidate_name.encode()).hexdigest()[:8]}",
             "name": candidate_name,
             "candidate_name": candidate_name,
@@ -422,6 +453,9 @@ async def upload_project_zip(
             "is_clone": is_clone,
             "has_prompt_injection": has_prompt_injection,
             "matched_tutorial": matched_tutorial,
+            "security_scan": security_report,
+            "is_prompt_injected": is_prompt_injected,
+            "is_synthetic_ai": security_report.get("is_synthetic_ai", False),
             "git_dna": git_dna,
             "detected_files": file_tree,
             "structural_token_sequence": first_seq,
@@ -435,7 +469,9 @@ async def upload_project_zip(
             "complex_functions_for_viva": complex_functions,
             "viva_questions": viva_questions,
             "viva_score": 0,
-            "viva_status": "PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE",
+            "viva_status": "BLOCKED_HIGH_ANOMALY" if viva_blocked else ("PENDING_LIVE_DEFENSE" if viva_questions else "UNAVAILABLE_NO_COMPLEX_SOURCE"),
+            "viva_block_reason": viva_blocked_reason,
+            "anomaly_score": max(clone_pct, anomaly_pct, 90 if is_prompt_injected else 0),
             "proof_card": proof_card,
             "tamper_proof_hash": tamper_proof_hash,
             "consent_recorded": True
