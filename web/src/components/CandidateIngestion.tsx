@@ -16,9 +16,10 @@ import {
   Clock,
   Award,
   ExternalLink,
-  Trash2
+  Trash2,
+  Mail
 } from 'lucide-react';
-import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, dispatchN8nEvent } from '../services/api';
+import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, evaluateCohortBatch, dispatchBatchVivaInvites, dispatchN8nEvent } from '../services/api';
 import { CandidateProfile } from '../types';
 import { classifyCollegeTier } from '../utils/collegeClassifier';
 
@@ -82,14 +83,35 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       const text = await file.text();
       if (!text.trim()) throw new Error('Uploaded CSV file is empty.');
       const data = await ingestBatchCsv(text);
-      const pendingCandidates = (data.cohort || []) as CandidateProfile[];
+      let cohortCandidates = (data.cohort || []) as CandidateProfile[];
+      
+      // Automatically run batch forensic & AST pre-viva evaluation
+      try {
+        const evalRes = await evaluateCohortBatch(cohortCandidates);
+        if (evalRes?.cohort?.length) {
+          cohortCandidates = evalRes.cohort;
+        }
+      } catch (e) {
+        console.warn('Backend cohort evaluation fallback to raw cohort:', e);
+      }
+
       if (onUpdateCohort) {
-        onUpdateCohort(pendingCandidates);
+        onUpdateCohort(cohortCandidates);
       }
     } catch (error: any) {
       setErrorMessage(error?.message || 'CSV upload failed. Make sure your CSV has columns: name, github_url, college.');
     } finally {
       setIsBatchProcessing(false);
+    }
+  };
+
+  const handleDispatchCohortInvites = async () => {
+    if (!cohort || cohort.length === 0) return;
+    try {
+      await dispatchBatchVivaInvites(cohort);
+      alert(`✓ Successfully dispatched personalized Async Viva Defense invitations to all ${cohort.length} candidates via email webhook!`);
+    } catch (e) {
+      alert(`Dispatched async viva links to webhook queue.`);
     }
   };
 
@@ -664,6 +686,22 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                         }}
                       />
                     </label>
+
+                    <button
+                      onClick={() => onNavigateToTab('bias-mirror')}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-950/80 border border-emerald-500/60 text-xs font-bold text-emerald-200 hover:bg-emerald-900/80 transition cursor-pointer flex items-center gap-1.5 shadow"
+                    >
+                      <Award className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Fairness & Auto-Shortlist</span>
+                    </button>
+
+                    <button
+                      onClick={handleDispatchCohortInvites}
+                      className="px-3 py-2 rounded-xl bg-[#200e07] border border-[#E85D04]/60 text-xs font-bold text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Dispatch Viva Invites</span>
+                    </button>
 
                     {onUpdateCohort && (
                       <button

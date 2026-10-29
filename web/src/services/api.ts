@@ -888,6 +888,39 @@ export async function autoShortlistCohort(
   return null;
 }
 
+
+export async function evaluateCohortBatch(cohort: any[]): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/batch/evaluate-cohort`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cohort })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Batch evaluate cohort failed:', e);
+  }
+  return null;
+}
+
+export async function dispatchBatchVivaInvites(candidates: any[]): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/batch/dispatch-viva-invites`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidates })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Dispatch batch viva invites failed:', e);
+  }
+  return null;
+}
+
 export interface N8nConfig {
   webhook_url: string;
   sync_sheets: boolean;
