@@ -22,6 +22,39 @@ import { PRESET_JOB_DESCRIPTIONS } from '../data/offlineDemoData';
 import { runBattleCompare, parseJobDescription, analyzeGithubUrl, autoShortlistCohort, dispatchN8nEvent } from '../services/api';
 import { BattleResponse, CandidateProfile } from '../types';
 
+const KNOWN_TECH_KEYWORDS: Record<string, string> = {
+  'python': 'python', 'fastapi': 'fastapi', 'flask': 'flask', 'django': 'django',
+  'redis': 'redis', 'postgres': 'postgresql', 'postgresql': 'postgresql', 'sql': 'sql',
+  'mysql': 'mysql', 'mongodb': 'mongodb', 'mongo': 'mongodb', 'docker': 'docker',
+  'k8s': 'kubernetes', 'kubernetes': 'kubernetes', 'aws': 'aws', 'gcp': 'gcp', 'azure': 'azure',
+  'react': 'react', 'next': 'next.js', 'nextjs': 'next.js', 'next.js': 'next.js',
+  'node': 'nodejs', 'nodejs': 'nodejs', 'node.js': 'nodejs', 'express': 'express',
+  'typescript': 'typescript', 'ts': 'typescript', 'javascript': 'javascript', 'js': 'javascript',
+  'graphql': 'graphql', 'rest': 'rest_api', 'rest api': 'rest_api', 'api': 'rest_api',
+  'kafka': 'kafka', 'rabbitmq': 'rabbitmq', 'microservices': 'microservices',
+  'testing': 'testing', 'pytest': 'pytest', 'jest': 'jest', 'vitest': 'vitest', 'unit test': 'testing',
+  'ci/cd': 'ci/cd', 'github actions': 'ci/cd', 'git': 'git', 'linux': 'linux',
+  'asyncio': 'asyncio', 'websocket': 'websocket', 'websockets': 'websocket',
+  'machine learning': 'machine_learning', 'ml': 'machine_learning', 'ai': 'ai',
+  'pytorch': 'pytorch', 'tensorflow': 'tensorflow', 'pandas': 'pandas', 'numpy': 'numpy',
+  'go': 'go', 'golang': 'go', 'rust': 'rust', 'c++': 'c++', 'java': 'java', 'spring': 'spring',
+  'tailwind': 'tailwind'
+};
+
+export function extractSkillsFromText(text: string): string[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  const found = new Set<string>();
+  for (const [key, canonical] of Object.entries(KNOWN_TECH_KEYWORDS)) {
+    const escaped = key.replace(/([.+*?^=!:${}()|[\]\/\\])/g, "\\$1");
+    const regex = new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i');
+    if (regex.test(lower)) {
+      found.add(canonical);
+    }
+  }
+  return Array.from(found);
+}
+
 interface RecruiterBattleProps {
   currentCandidate?: CandidateProfile | null;
   onNavigateToTab: (tab: string) => void;
@@ -43,6 +76,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
   const [jobTitle, setJobTitle] = useState(PRESET_JOB_DESCRIPTIONS[0].title);
   const [requiredSkills, setRequiredSkills] = useState(['python', 'fastapi', 'redis', 'postgresql', 'docker', 'testing']);
   const [newSkillInput, setNewSkillInput] = useState('');
+  const [extractNotice, setExtractNotice] = useState<string | null>(null);
   
   // Funnel settings
   const [targetCount, setTargetCount] = useState<number>(10);
@@ -199,6 +233,30 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       handleRunBattle();
     }
   }, [candidatePool.length]);
+
+  const handleJdTextChange = (text: string) => {
+    setJdText(text);
+    const extracted = extractSkillsFromText(`${jobTitle} ${text}`);
+    if (extracted.length > 0) {
+      setRequiredSkills(extracted);
+      setExtractNotice(`Auto-extracted ${extracted.length} skills from job text.`);
+      if (candidatePool.length >= 2) {
+        handleRunBattle(extracted);
+      }
+    }
+  };
+
+  const handleJobTitleChange = (title: string) => {
+    setJobTitle(title);
+    const extracted = extractSkillsFromText(`${title} ${jdText}`);
+    if (extracted.length > 0) {
+      setRequiredSkills(extracted);
+      setExtractNotice(`Auto-extracted ${extracted.length} skills.`);
+      if (candidatePool.length >= 2) {
+        handleRunBattle(extracted);
+      }
+    }
+  };
 
   const handlePresetSelect = async (idx: number) => {
     setSelectedPreset(idx);
@@ -368,15 +426,15 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
             <input
               type="text"
               value={jobTitle}
-              onChange={e => setJobTitle(e.target.value)}
-              placeholder="e.g. Backend Engineer"
+              onChange={e => handleJobTitleChange(e.target.value)}
+              placeholder="e.g. Backend Engineer / Distributed Systems"
               className="w-full bg-black/50 border border-[#3A2F27] rounded-xl px-4 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-[#D4AF37] font-medium"
             />
             <textarea
               rows={2}
               value={jdText}
-              onChange={e => setJdText(e.target.value)}
-              placeholder="Paste job description..."
+              onChange={e => handleJdTextChange(e.target.value)}
+              placeholder="Paste job description or requirements (e.g. Seeking Python, FastAPI, Docker, and Redis engineer with async testing experience)..."
               className="w-full bg-black/50 border border-[#3A2F27] rounded-xl p-3.5 text-sm text-neutral-200 focus:outline-none focus:border-[#D4AF37] font-sans"
             />
           </div>
@@ -384,9 +442,12 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
           {/* Skill Tag Manager */}
           <div className="bg-black/50 rounded-xl border border-[#3A2F27] p-4 flex flex-col justify-between">
             <div>
-              <span className="text-xs text-[#FFD166] uppercase tracking-wider block mb-2 font-bold">
-                Required Skills ({requiredSkills.length})
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-[#FFD166] uppercase tracking-wider block font-bold">
+                  Active Match Skills ({requiredSkills.length})
+                </span>
+                <span className="text-[10px] text-emerald-400 font-mono">Live In Sync</span>
+              </div>
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                 {requiredSkills.map((skill, i) => (
                   <span key={i} className="px-2.5 py-1 rounded-full text-xs font-mono bg-[#8B1E1E]/30 border border-[#D4AF37]/40 text-[#F5E9C7] flex items-center gap-1.5">
@@ -395,6 +456,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                       type="button"
                       onClick={() => handleRemoveSkill(skill)}
                       className="text-neutral-400 hover:text-white cursor-pointer text-xs"
+                      title="Remove skill"
                     >
                       ✕
                     </button>
@@ -408,7 +470,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 type="text"
                 value={newSkillInput}
                 onChange={e => setNewSkillInput(e.target.value)}
-                placeholder="+ Add skill (e.g. docker)"
+                placeholder="+ Add custom skill"
                 className="w-full bg-black/60 border border-[#3A2F27] rounded-lg px-2.5 py-1 text-xs text-[#F5E9C7] font-mono focus:outline-none focus:border-[#D4AF37]"
               />
               <button
@@ -418,6 +480,42 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 +
               </button>
             </form>
+          </div>
+        </div>
+
+        {/* Real-time Match Engine Impact Bar */}
+        <div className="mt-3.5 p-3 rounded-xl bg-black/60 border border-[#D4AF37]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-neutral-300">
+            <Sparkles className="w-4 h-4 text-[#FFD166] shrink-0" />
+            <span>
+              <strong className="text-white">Active Match Engine Impact:</strong> These <strong className="text-[#FFD166]">{requiredSkills.length} required skills</strong> dynamically scan candidate repositories, calculate JD Match % (35% weight), and crown the #1 head-to-head winner.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {extractNotice && (
+              <span className="text-[11px] text-emerald-400 font-mono font-bold animate-fadeIn">
+                ✓ {extractNotice}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const extracted = extractSkillsFromText(`${jobTitle} ${jdText}`);
+                if (extracted.length > 0) {
+                  setRequiredSkills(extracted);
+                  setExtractNotice(`Synced ${extracted.length} skills.`);
+                  if (candidatePool.length >= 2) handleRunBattle(extracted);
+                } else {
+                  setExtractNotice('Add technical keywords to job text.');
+                }
+                setTimeout(() => setExtractNotice(null), 3500);
+              }}
+              className="px-3 py-1 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#FFD166] text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+              title="Re-extract keywords from title and text"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Extract Skills</span>
+            </button>
           </div>
         </div>
       </div>
@@ -657,7 +755,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                           </div>
                           <div>
                             <span className="text-neutral-400 text-[10px] block">Viva</span>
-                            <span className="font-bold text-[#D4AF37]">{c.viva_score}/10</span>
+                            <span className="font-bold text-[#D4AF37]">{c.viva_score ? `${c.viva_score}/10` : "Pending"}</span>
                           </div>
                         </div>
 

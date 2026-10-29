@@ -491,7 +491,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   }
 
   // Real Cohort Stats if present
-  const validVivaCandidates = cohort.filter(c => c.viva_score !== undefined);
+  const validVivaCandidates = cohort.filter(c => (c.viva_score || 0) > 0 && !c.is_clone);
   const avgCohortViva = validVivaCandidates.length > 0 
     ? (validVivaCandidates.reduce((acc, c) => acc + (c.viva_score || 0), 0) / validVivaCandidates.length).toFixed(1)
     : 'N/A';
@@ -519,11 +519,11 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                     className="bg-[#140b08] border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-[#FFD166] font-warrior font-bold focus:outline-none cursor-pointer max-w-[200px]"
                   >
                     <option value={candidate.candidate_id}>
-                      {candidate.name} ({candidate.viva_score !== undefined ? `${candidate.viva_score}/10` : 'Pending'})
+                      {candidate.name} ({(candidate.viva_score && candidate.viva_score > 0) ? `${candidate.viva_score}/10` : 'Pending Defense'})
                     </option>
                     {cohort.filter(c => c.candidate_id !== candidate.candidate_id).map(c => (
                       <option key={c.candidate_id} value={c.candidate_id}>
-                        {c.name} ({c.viva_score !== undefined ? `${c.viva_score}/10` : 'Pending'})
+                        {c.name} ({(c.viva_score && c.viva_score > 0) ? `${c.viva_score}/10` : 'Pending Defense'})
                       </option>
                     ))}
                   </select>
@@ -585,9 +585,13 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                       {cand.college}
                     </td>
                     <td className="py-3 px-3 font-bold text-base">
-                      <span className={(cand.viva_score || 0) >= 7 ? 'text-emerald-400' : 'text-amber-400'}>
-                        {cand.viva_score !== undefined ? `${cand.viva_score} / 10` : 'Pending'}
-                      </span>
+                      {cand.is_clone ? (
+                        <span className="text-red-400 text-xs font-bold">✕ Disqualified</span>
+                      ) : (cand.viva_score && cand.viva_score > 0) ? (
+                        <span className="text-emerald-400 font-bold">{cand.viva_score} / 10</span>
+                      ) : (
+                        <span className="text-amber-400 text-xs font-bold">⏳ Awaiting Defense</span>
+                      )}
                     </td>
                     <td className="py-3 px-3">
                       {(cand.viva_score || 0) >= 7 ? (

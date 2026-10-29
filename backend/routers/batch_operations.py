@@ -360,11 +360,15 @@ def evaluate_cohort(req: EvaluateCohortRequest):
 
         seed = int(hashlib.md5(f"{name}:{repo_url}".encode()).hexdigest()[:6], 16)
 
+        # Check if candidate previously defended their viva in live session
+        has_completed_live_viva = Boolean = c.get("viva_status") == "COMPLETED" and (c.get("viva_score") or 0) > 0
+
         if is_clone:
             clones += 1
             auth_score = 18 + (seed % 14)  # 18-31%
-            viva_score = round(2.5 + ((seed % 15) / 10), 1)  # 2.5-4.0
-            viva_status = "FAILED_TUTORIAL_CLONE"
+            viva_score = 0
+            viva_status = "BLOCKED_CLONE"
+            defense_type = "DISQUALIFIED_CLONE"
             burst_ratio = 0.94
             matched_tutorial = {
                 "name": "Public Video Tutorial Codebase",
@@ -374,11 +378,22 @@ def evaluate_cohort(req: EvaluateCohortRequest):
             }
             viva_blocked = True
             viva_block_reason = "Plagiarism match exceeds 30% permissible threshold."
+        elif has_completed_live_viva:
+            authentic += 1
+            auth_score = c.get("authenticity_score") or (78 + (seed % 20))
+            viva_score = c.get("viva_score")
+            viva_status = "COMPLETED"
+            defense_type = "LIVE_DEFENDED"
+            burst_ratio = round(0.12 + ((seed % 15) / 100), 2)
+            matched_tutorial = None
+            viva_blocked = False
+            viva_block_reason = None
         else:
             authentic += 1
             auth_score = 78 + (seed % 20)  # 78-97%
-            viva_score = round(7.2 + ((seed % 25) / 10), 1)  # 7.2-9.6
-            viva_status = "PRE_VIVA_ESTIMATED"
+            viva_score = 0  # Unscored: Awaiting remote defense
+            viva_status = "PENDING_DEFENSE"
+            defense_type = "ASYNC_REMOTE"
             burst_ratio = round(0.12 + ((seed % 15) / 100), 2)
             matched_tutorial = None
             viva_blocked = False
@@ -406,6 +421,8 @@ def evaluate_cohort(req: EvaluateCohortRequest):
             "viva_status": viva_status,
             "viva_blocked": viva_blocked,
             "viva_block_reason": viva_block_reason,
+            "defense_type": defense_type,
+            "live_analyzed": has_completed_live_viva,
             "analysis_status": "COMPLETED",
             "detected_files": ["src/main.py", "tests/test_core.py", "Dockerfile"],
             "git_dna": {

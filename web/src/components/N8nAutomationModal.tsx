@@ -94,7 +94,7 @@ export const N8nAutomationModal: React.FC<N8nAutomationModalProps> = ({ isOpen, 
       viva_score: 9,
       is_clone: false,
       status: "VERIFIED_EXEMPLARY",
-      headline: "Verified engineering signals with clean AST modularity and Git progression.",
+      headline: "Demonstrated authentic software development with steady commit history and structured code design.",
       qr_verification_url: "https://proofcard.dev/verify/cand_builder_02",
       tamper_proof_hash: "SHA256:d8b7a2c4e1f9801..."
     }

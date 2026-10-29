@@ -107,6 +107,9 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
       }
     ],
     viva_score: 9,
+    viva_status: "COMPLETED",
+    defense_type: "LIVE_DEFENDED",
+    live_analyzed: true,
     proof_card: {
       status: "VERIFIED_EXEMPLARY",
       headline: "Exemplary fullstack and ML telemetry builder with 157 authentic git commits, 38% refactoring ratio, and verified sensor architecture.",
@@ -227,6 +230,9 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
       }
     ],
     viva_score: 9,
+    viva_status: "COMPLETED",
+    defense_type: "LIVE_DEFENDED",
+    live_analyzed: true,
     proof_card: {
       status: "VERIFIED_EXEMPLARY",
       headline: "Exceptional fullstack engineering intuition with verified custom serverless proxy and clean component state.",
@@ -345,7 +351,11 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
         feedback: "Confirms tutorial copying without understanding cryptographic computation cost."
       }
     ],
-    viva_score: 3,
+    viva_score: 0,
+    viva_blocked: true,
+    viva_status: "BLOCKED_CLONE",
+    defense_type: "DISQUALIFIED_CLONE",
+    live_analyzed: false,
     proof_card: {
       status: "FLAGGED_CLONE",
       headline: "High probability tutorial clone detected (89% forensic similarity).",
@@ -448,6 +458,9 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
       }
     ],
     viva_score: 10,
+    viva_status: "COMPLETED",
+    defense_type: "LIVE_DEFENDED",
+    live_analyzed: true,
     proof_card: {
       status: "VERIFIED_EXEMPLARY",
       headline: "High-confidence authentic systems engineer (96% originality rating).",
@@ -549,7 +562,10 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
         feedback: "Acceptable practical solution, though arbitrary precision decimal library is preferred in enterprise."
       }
     ],
-    viva_score: 7,
+    viva_score: 0,
+    viva_status: "PENDING_DEFENSE",
+    defense_type: "ASYNC_REMOTE",
+    live_analyzed: false,
     proof_card: {
       status: "VERIFIED_COMPETENT",
       headline: "Competent fullstack builder with solid custom backend additions.",

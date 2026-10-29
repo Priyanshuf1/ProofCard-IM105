@@ -144,3 +144,31 @@ async def send_decision_email(req: DecisionEmailRequest):
         "email_data": email_data,
         "dispatch_result": dispatch_res
     }
+
+
+class VivaInvitationRequest(BaseModel):
+    candidate: Dict[str, Any]
+    custom_message: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+@router.post("/send-viva-invitation")
+async def send_viva_invitation(req: VivaInvitationRequest):
+    """
+    Generates professional Viva Defense Invitation email with direct links and mailto fallback,
+    and dispatches via webhook or returns email payload.
+    """
+    invitation_data = EmailFormatter.generate_viva_invitation(
+        candidate=req.candidate,
+        custom_note=req.custom_message
+    )
+    dispatch_res = await N8nService.dispatch(
+        event_type="VIVA_INVITATION_DISPATCH",
+        payload=invitation_data,
+        webhook_url=req.webhook_url
+    )
+    return {
+        "status": "success",
+        "delivered": dispatch_res.get("delivered", False),
+        "invitation_data": invitation_data,
+        "dispatch_result": dispatch_res
+    }

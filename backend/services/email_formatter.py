@@ -75,42 +75,45 @@ class EmailFormatter:
             badge_bg = "#450A0A"
             headline = f"Thank you for participating, {name}. Detailed technical evaluation findings & constructive feedback."
             
-            # Formulate specific polite rejection rationale
+            # Formulate clear, professional, empathetic rejection feedback in plain English
             if has_prompt_injection:
                 decision_statement = (
-                    "Your repository was flagged by our Application Security scanner for containing indirect prompt injection payloads "
-                    "or LLM directive manipulation strings. Integrity protocol requires manual security remediation."
+                    "During our automated code analysis, we identified adversarial prompt directives hidden within code comments or documentation. "
+                    "We maintain strict standards for code transparency and security, and require all submissions to be free of hidden automated directives."
                 )
             elif is_clone:
                 decision_statement = (
-                    f"Your repository codebase demonstrated a significant structural AST and token overlap ({tut.get('similarity_score', 85)}%) "
-                    f"with the known tutorial pattern '{tut_name or 'External Online Tutorial'}'. Hiring policy prioritizes unique, non-templated software."
+                    f"Our analysis found that this project closely mirrors an online tutorial template ('{tut_name or 'Public Tutorial Codebase'}'). "
+                    "While building along with tutorials is a wonderful way to learn, our hiring team is looking for original, self-directed code "
+                    "that demonstrates your independent problem-solving and architectural decision-making."
                 )
             elif rejection_reason_code == "VIVA_INCOMPLETE" or viva_score < 6.0:
                 decision_statement = (
-                    f"While your code was authentic, your Live Technical Defense Viva score ({viva_score}/10) did not demonstrate the "
-                    "conceptual depth required for this role. Candidates must comfortably explain algorithmic trade-offs and edge case handling."
+                    f"Your codebase is original and cleanly written. However, during the Technical Defense Viva (Score: {viva_score}/10), "
+                    "you found it challenging to explain the internal design trade-offs, error-handling decisions, and how specific functions operate. "
+                    "In this role, software engineers collaborate closely with team members and must be able to clearly communicate how their code works."
                 )
             elif rejection_reason_code == "JUNIOR_SCOPE":
                 decision_statement = (
-                    "Your repository demonstrated authentic work, but the current architectural scope is geared toward junior-level applications. "
-                    "This position requires demonstrated experience in distributed concurrency, asynchronous services, and production deployment."
+                    "Your project is clean, authentic, and demonstrates strong fundamentals. However, for this particular opening, "
+                    "our team needs demonstrated hands-on experience with production-scale challenges, such as asynchronous worker queues, "
+                    "caching layers, database indexing, and automated testing suites."
                 )
             elif rejection_reason_code == "JD_MISMATCH":
                 decision_statement = (
-                    "Your technical project demonstrated quality execution, but your core stack does not align with the immediate technical "
-                    "requirements of this specific opening. We encourage you to apply for roles matching your specialized stack."
+                    "We were very impressed by the quality and craftsmanship of your submission. However, this specific role demands day-to-day "
+                    "depth in our core production stack. Your skills would be a much stronger match for openings tailored to your primary technologies."
                 )
             elif rejection_reason_code == "BULK_DUMP" or commits <= 2:
                 decision_statement = (
-                    "Your project was uploaded in a single bulk commit without progressive temporal Git-DNA history. "
-                    "Our evaluation guidelines require step-by-step commit history to verify authentic iterative engineering."
+                    "Your project code looks promising, but it was uploaded in a single initial commit rather than developed incrementally over time. "
+                    "We value developers who practice healthy version control by committing small, logical steps with clear messages that show how a feature evolved."
                 )
             else:
                 decision_statement = (
                     custom_note or 
-                    "After careful evaluation of your technical submission, code structure, and current team requirements, "
-                    "we have decided to proceed with other candidates whose experience aligns more closely with our current opening."
+                    "After a thorough review of your technical project and code architecture, we have chosen to proceed with candidates whose "
+                    "immediate hands-on experience more closely matches the specific engineering challenges of our current opening."
                 )
         else:
             badge_title = "EVALUATION FEEDBACK"
@@ -347,4 +350,153 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
             "formatted_email_text": text_content.strip(),
             "formatted_email_html": html_content.strip(),
             "verification_url": verify_url
+        }
+
+    @classmethod
+    def generate_viva_invitation(
+        cls,
+        candidate: Dict[str, Any],
+        origin_url: str = "https://proofcard.vercel.app",
+        custom_note: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generates a warm, professional, executive Viva Defense Invitation email
+        with live links, preparation tips, and clear instructions.
+        """
+        cid = candidate.get("candidate_id") or "cand_unknown"
+        name = candidate.get("name") or "Candidate"
+        email = candidate.get("email") or "candidate@example.edu"
+        college = candidate.get("college") or "Engineering Institute"
+        college_tier, college_tier_label = CollegeTierClassifier.classify(college)
+        repo_url = candidate.get("repo_url") or candidate.get("github_url") or "https://github.com"
+        project_name = candidate.get("project_name") or candidate.get("project_type") or "Software Project"
+        
+        # Build direct viva link
+        viva_url = f"{origin_url}/viva?cid={cid}&name={urllib.parse.quote(name)}&email={urllib.parse.quote(email)}"
+
+        subject = f"Next Step: 3-Minute Technical Viva Defense for {name} ({project_name})"
+        
+        headline = f"Hello {name}, you are invited to complete your 3-Minute Technical Defense Viva."
+        
+        body_message = (
+            f"Thank you for submitting your project for technical review. As part of our merit-based hiring evaluation at {college}, "
+            "we invite you to complete a brief, 3-minute oral or written defense of your codebase.\n\n"
+            "Why the Viva exists: Rather than relying on rigid multiple-choice tests or college brand bias, we evaluate real engineering skills. "
+            "Our system will present 3 targeted questions about your specific implementation, and you will explain your architectural choices in your own words."
+        )
+        if custom_note and custom_note.strip():
+            body_message += f"\n\nRecruiter Note: {custom_note.strip()}"
+
+        mailto_subject = urllib.parse.quote(subject)
+        mailto_body = urllib.parse.quote(
+            f"Hi {name},\n\n"
+            f"You are invited to complete your 3-minute Technical Defense Viva for your project: {project_name}.\n\n"
+            f"Click here to start: {viva_url}\n\n"
+            "Best regards,\nPariksha Hiring Team"
+        )
+        mailto_link = f"mailto:{email}?subject={mailto_subject}&body={mailto_body}"
+
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #050302; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f5f0eb;">
+  <div style="max-width: 620px; margin: 30px auto; background-color: #0c0604; border: 1px solid #D4AF37; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #180d09 0%, #0c0604 100%); border-bottom: 1px solid #331b12; padding: 32px 36px;">
+      <div style="display: inline-block; background-color: #064E3B; color: #34D399; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 6px 14px; border-radius: 20px; border: 1px solid #059669; margin-bottom: 14px;">
+        VIVA DEFENSE INVITATION
+      </div>
+      <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 8px 0; line-height: 1.3;">
+        3-Minute Technical Viva Defense
+      </h1>
+      <div style="color: #c9b89a; font-size: 13px;">
+        Candidate: <strong style="color: #ffffff;">{name}</strong> · {college} ({college_tier})
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px 36px; line-height: 1.6;">
+      <p style="color: #e6ded5; font-size: 14px; margin: 0 0 20px 0;">
+        Hello {name},
+      </p>
+      <p style="color: #c9b89a; font-size: 13px; margin: 0 0 22px 0;">
+        Thank you for submitting your project <strong>{project_name}</strong>. As part of our objective, bias-free technical screening process, you are invited to complete your <strong>3-minute Technical Defense Viva</strong>.
+      </p>
+
+      <!-- How it works box -->
+      <div style="background-color: #140b08; border: 1px solid #3A2F27; border-radius: 12px; padding: 20px; margin-bottom: 26px;">
+        <div style="color: #D4AF37; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+          What to Expect in Your Viva Defense:
+        </div>
+        <ul style="margin: 0; padding-left: 20px; color: #d6cbbf; font-size: 12px; line-height: 1.6;">
+          <li style="margin-bottom: 6px;"><strong>3 Targeted Questions:</strong> Derived directly from key functions extracted from your codebase.</li>
+          <li style="margin-bottom: 6px;"><strong>3 Minutes Total:</strong> Answer via voice or type your defense directly in the browser.</li>
+          <li style="margin-bottom: 0;"><strong>Immediate Verification:</strong> Your score and verified ProofCard are issued immediately upon defense.</li>
+        </ul>
+      </div>
+
+      <!-- Action Button -->
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{viva_url}" target="_blank" style="display: inline-block; background-color: #D4AF37; color: #0c0604; font-size: 14px; font-weight: 800; text-decoration: none; padding: 14px 34px; border-radius: 10px; letter-spacing: 0.5px; box-shadow: 0 4px 18px rgba(212,175,55,0.4);">
+          START MY VIVA DEFENSE NOW &rarr;
+        </a>
+      </div>
+
+      <p style="color: #8c7f73; font-size: 11px; text-align: center; margin: 0;">
+        Direct Link: <a href="{viva_url}" style="color: #D4AF37; text-decoration: underline;">{viva_url}</a>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #070402; border-top: 1px solid #29180f; padding: 18px 36px; text-align: center; font-size: 11px; color: #6e6155;">
+      <div>Pariksha Verification Platform · Merit-Based Technical Evaluation</div>
+      <div style="margin-top: 4px; color: #4d433b;">Zero Pedigree Bias Guarantee · 100% Code Quality & Viva Defense</div>
+    </div>
+
+  </div>
+</body>
+</html>"""
+
+        text_content = f"""
+================================================================================
+                    PARIKSHA VIVA DEFENSE INVITATION
+================================================================================
+Candidate: {name}
+Institution: {college} ({college_tier})
+Target Project: {project_name}
+
+Hello {name},
+
+You have been invited to complete your 3-minute Technical Defense Viva for your project submission: {project_name}.
+
+WHAT TO EXPECT:
+- 3 short conceptual questions about your specific code implementation
+- 3 minutes total time to respond via voice or written defense
+- Immediate verification and inclusion in the recruiter shortlist pool
+
+START YOUR VIVA:
+{viva_url}
+
+Best regards,
+Pariksha Technical Evaluation Team
+================================================================================
+"""
+
+        return {
+            "candidate_id": cid,
+            "candidate_name": name,
+            "email": email,
+            "college": college,
+            "college_tier": college_tier,
+            "subject": subject,
+            "headline": headline,
+            "body_message": body_message,
+            "viva_url": viva_url,
+            "mailto_link": mailto_link,
+            "formatted_email_html": html_content.strip(),
+            "formatted_email_text": text_content.strip()
         }

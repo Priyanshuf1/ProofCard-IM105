@@ -1045,3 +1045,45 @@ export async function sendDecisionEmail(
     }
   };
 }
+
+export async function sendVivaInvitation(
+  candidate: any,
+  customMessage?: string,
+  webhookUrl?: string
+): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/send-viva-invitation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate,
+        custom_message: customMessage,
+        webhook_url: webhookUrl || (typeof window !== 'undefined' ? localStorage.getItem('n8n_webhook_url') : undefined) || undefined
+      })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Failed to dispatch viva invitation to backend, falling back:', e);
+  }
+  const vivaUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/viva?cid=${encodeURIComponent(candidate.candidate_id || candidate.id || 'candidate')}`
+    : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(candidate.candidate_id || candidate.id || 'candidate')}`;
+  const subject = `Invitation to 3-Minute Technical Viva Defense: ${candidate.name || 'Candidate'}`;
+  const body = `Hello ${candidate.name || 'Candidate'},\n\nYou are invited to complete your 3-minute Technical Defense Viva for your project submission: ${candidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\nBest regards,\nPariksha Technical Evaluation Team`;
+  const mailtoLink = `mailto:${encodeURIComponent(candidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return {
+    status: 'success',
+    delivered: false,
+    invitation_data: {
+      candidate_id: candidate.candidate_id || candidate.id,
+      candidate_name: candidate.name,
+      email: candidate.email || 'candidate@example.edu',
+      subject,
+      viva_url: vivaUrl,
+      mailto_link: mailtoLink,
+      formatted_email_text: body
+    }
+  };
+}

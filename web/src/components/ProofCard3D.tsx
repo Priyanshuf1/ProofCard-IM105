@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ShieldCheck, 
   Share2, 
@@ -7,15 +7,13 @@ import {
   ArrowRight,
   Lock,
   Zap,
-  Sparkles,
   Award,
   AlertTriangle,
   Copy,
   ExternalLink
 } from 'lucide-react';
 import QRCode from 'qrcode';
-import { CandidateProfile, DeploymentContract } from '../types';
-import { createDeploymentContract } from '../services/api';
+import { CandidateProfile } from '../types';
 
 interface ProofCard3DProps {
   candidate: CandidateProfile | null;
@@ -42,7 +40,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             No Pariksha Card Generated
           </h2>
           <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
-            A candidate must undergo live repository scanning and technical defense evaluation to issue a tamper-proof 3D cryptographic Pariksha card credential.
+            A candidate must undergo repository scanning and technical defense evaluation to issue a verified Pariksha card credential.
           </p>
           <button
             onClick={() => onNavigateToTab('ingestion')}
@@ -64,39 +62,64 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         : ((candidate.authenticity_score || 0) >= 80 ? 'VERIFIED_EXEMPLARY' : 'VERIFIED_SOLID')),
     has_prompt_injection: Boolean(candidate.has_prompt_injection),
     headline: candidate.has_prompt_injection
-      ? 'Security Alert: Indirect prompt injection payload detected in repository source/README.'
+      ? 'Security Notice: Manipulative directive strings detected in repository source.'
       : (candidate.is_clone
-        ? 'Repository matched online tutorial patterns.'
-        : 'Authentic software engineering profile verified via live AST and Git-DNA telemetry.'),
+        ? 'Repository matched public tutorial architecture.'
+        : 'Demonstrated authentic software development with steady commit history, structured code organization, and verified implementation of core application logic.'),
     strengths: candidate.has_prompt_injection
-      ? ['Automated AppSec pipeline detected indirect prompt injection payload', 'Adversarial evasion attempt neutralized']
+      ? ['Automated security scan flagged adversarial evasion directives', 'Integrity filter prevented automated score spoofing']
       : (candidate.is_clone
-        ? ['Basic code compilation detected']
-        : ['Organic commit progression', 'Extracted AST demonstrates modularity']),
+        ? ['Basic syntax and file structure verified']
+        : ['Organic commit progression across multiple days', 'Modular function design with clear separation of concerns']),
     growth_area: candidate.has_prompt_injection
-      ? 'Remove adversarial prompt injection directives and LLM manipulation strings from repository source.'
-      : 'Expand unit and integration test fixtures.',
+      ? 'Remove prompt injection directives from repository comments and documentation.'
+      : (candidate.is_clone 
+        ? 'Build original project architectures rather than copying online tutorials.' 
+        : 'Expand automated unit tests and integration test fixtures.'),
     specific_action: candidate.has_prompt_injection
-      ? 'Sanitize repository documentation and comments to adhere to authentic coding standards.'
-      : 'Write automated unit tests covering error edge cases.',
+      ? 'Clean repository documentation to reflect genuine code authorship.'
+      : (candidate.is_clone
+        ? 'Implement a unique feature or custom database schema to prove independent engineering.'
+        : 'Write automated unit tests covering error edge cases and failure recovery.'),
     tamper_proof_hash: `SHA256:${candidate.candidate_id}`,
   };
 
-  const isClone = candidate.is_clone;
-  const isAdversarial = Boolean(candidate.has_prompt_injection || card.has_prompt_injection || card.status === 'FLAGGED_ADVERSARIAL_INJECTION' || candidate.is_prompt_injected || card.status === 'FLAGGED_PROMPT_INJECTION' || candidate.security_scan?.is_prompt_injected);
-  const isPromptInjected = isAdversarial;
+  const isClone = Boolean(candidate.is_clone || candidate.viva_status === 'BLOCKED_CLONE');
+  const isPromptInjected = Boolean(
+    candidate.has_prompt_injection || 
+    card.has_prompt_injection || 
+    card.status === 'FLAGGED_ADVERSARIAL_INJECTION' || 
+    candidate.is_prompt_injected || 
+    card.status === 'FLAGGED_PROMPT_INJECTION' || 
+    candidate.security_scan?.is_prompt_injected
+  );
+  const isAdversarial = isPromptInjected;
+
+  const hasCompletedViva = Boolean(
+    (candidate.live_analyzed || candidate.viva_status === 'COMPLETED' || candidate.defense_type === 'LIVE_DEFENDED') && 
+    (candidate.viva_score || 0) > 0
+  );
+
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
-  const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
+
+  // Clean human-friendly headline: replaces any robotic AST jargon with natural English
+  const cleanHeadline = useMemo(() => {
+    const raw = card.headline || '';
+    if (raw.includes('clean AST modularity') || raw.includes('engineering signals with clean AST') || raw.includes('progression across rabto')) {
+      const proj = candidate.project_name || candidate.project_type || 'the application';
+      return `Demonstrated authentic software development with steady commit history, structured code organization, and verified implementation of core application logic across ${proj}.`;
+    }
+    return raw;
+  }, [card.headline, candidate.project_name, candidate.project_type]);
 
   const publicVerifyUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}`
-    : `http://localhost:5173/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}`;
+    ? `${window.location.origin}/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}&college=${encodeURIComponent(candidate.college || '')}&tier=${encodeURIComponent(candidate.college_tier || '')}&project=${encodeURIComponent(candidate.project_name || candidate.project_type || '')}&track=${encodeURIComponent(candidate.project_type || '')}`
+    : `https://proofcard.vercel.app/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}&college=${encodeURIComponent(candidate.college || '')}&tier=${encodeURIComponent(candidate.college_tier || '')}&project=${encodeURIComponent(candidate.project_name || candidate.project_type || '')}&track=${encodeURIComponent(candidate.project_type || '')}`;
 
   useEffect(() => {
-    // Generate real, high-resolution scannable QR code
     QRCode.toDataURL(publicVerifyUrl, {
-      width: 128,
+      width: 140,
       margin: 1,
       color: {
         dark: '#000000',
@@ -106,20 +129,6 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       .then((url: string) => setQrCodeDataUrl(url))
       .catch((err: any) => console.error('QR Generation Error:', err));
   }, [candidate.candidate_id, publicVerifyUrl]);
-
-  useEffect(() => {
-    let active = true;
-    createDeploymentContract(
-      candidate,
-      candidate.project_type || 'Software Engineer',
-      Object.keys(candidate.skill_evidence || {}),
-    ).then((contract) => {
-      if (active) setDeploymentContract(contract);
-    });
-    return () => {
-      active = false;
-    };
-  }, [candidate]);
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -136,8 +145,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
-              Pariksha Verification Ledger
+              Academic Credential Ledger
             </h1>
+            <p className="text-xs text-[#E6C280] mt-1 font-sans">
+              Cryptographically verified engineering competency report · Zero Pedigree Bias
+            </p>
           </div>
 
           {/* Action Buttons & Candidate Switcher */}
@@ -188,7 +200,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         </div>
       </div>
 
-      {/* The 3D ProofCard Container */}
+      {/* The De-Nucleated Pariksha Card */}
       <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
         {/* Amber Ambient Vignette */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -204,12 +216,12 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                 {candidate.college || 'Verified Academic Institution'}
               </div>
               <div className="text-xs text-[#E6C280] font-sans font-medium mt-0.5">
-                Verifiable Credential Ledger · Problem Statement IM-105
+                Academic Credential
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1 text-xs font-mono font-bold text-[#FFD166] bg-black/60 px-3 py-1 rounded-lg border border-[#D4AF37]/30">
-            <span>🛡️ INSTITUTIONALLY VERIFIED</span>
+            <span>✓ VERIFIED CANDIDATE</span>
           </div>
         </div>
 
@@ -235,11 +247,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                     ? 'bg-red-900/40 text-red-300 border-red-500/40'
                     : 'bg-[#8B1E1E]/40 text-[#FFD166] border-[#D4AF37]/50'
                 }`}>
-                  {isPromptInjected ? 'FLAGGED: PROMPT INJECTION' : card.status}
+                  {isPromptInjected ? 'FLAGGED: PROMPT INJECTION' : (isClone ? 'FLAGGED: TUTORIAL CLONE' : 'VERIFIED ENGINEER')}
                 </span>
               </div>
               <p className="text-sm text-neutral-200 mt-1 font-medium font-sans">
-                Verified Skill Track: <strong className="text-white">{candidate.project_type || 'Full Stack Engineer'}</strong>
+                Skill Track: <strong className="text-white">{candidate.project_type || 'Full Stack Engineer'}</strong>
               </p>
             </div>
           </div>
@@ -247,7 +259,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           {/* Scores Overview */}
           <div className="flex items-center gap-4 font-mono bg-black/60 px-5 py-3 rounded-xl border border-[#3A2F27]">
             <div className="text-right">
-              <div className="text-xs text-neutral-300 uppercase font-bold">Authenticity</div>
+              <div className="text-xs text-neutral-300 uppercase font-bold">Code Quality</div>
               <div className={`text-2xl font-black ${isAdversarial || isClone ? 'text-red-400' : 'text-[#FFD166]'}`}>
                 {candidate.authenticity_score} <span className="text-xs text-neutral-400 font-normal">/ 100</span>
               </div>
@@ -255,14 +267,24 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <div className="h-9 w-[1px] bg-[#3A2F27]"></div>
             <div className="text-right">
               <div className="text-xs text-neutral-300 uppercase font-bold">Viva Defense</div>
-              <div className="text-2xl font-black text-[#D4AF37]">
-                {candidate.viva_score !== undefined ? candidate.viva_score : '--'} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
-              </div>
+              {hasCompletedViva ? (
+                <div className="text-2xl font-black text-[#D4AF37]">
+                  {candidate.viva_score} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
+                </div>
+              ) : isClone ? (
+                <div className="text-xs font-bold text-red-400 pt-1 uppercase">
+                  Disqualified
+                </div>
+              ) : (
+                <div className="text-xs font-bold text-amber-300 pt-1 uppercase">
+                  Awaiting Defense
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Mentor Assessment Headline & Plagiarism Origin Attribution */}
+        {/* Evaluation Summary */}
         <div className={`rounded-xl border p-4 sm:p-5 mb-5 relative z-10 ${
           isPromptInjected
             ? 'bg-red-950/60 border-2 border-red-500 shadow-lg' 
@@ -274,7 +296,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${
               isPromptInjected ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
             }`}>
-              {isPromptInjected ? '🚨 Security Alert: Adversarial Prompt Injection Neutralized' : (isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:')}
+              {isPromptInjected ? 'Security Notice: Prompt Injection Directive Detected' : 'Evaluation Summary'}
             </span>
             {isClone && candidate.matched_tutorial && (
               <div className="flex items-center gap-2">
@@ -288,7 +310,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                     rel="noreferrer"
                     className="text-xs text-[#FFD166] hover:underline inline-flex items-center gap-1 font-mono font-bold"
                   >
-                    <span>View Upstream Source</span>
+                    <span>View Tutorial Source</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -296,22 +318,22 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             )}
           </div>
           <p className="text-base sm:text-lg text-neutral-100 font-semibold leading-relaxed font-sans">
-            "{card.headline}"
+            "{cleanHeadline}"
           </p>
         </div>
 
-        {/* 2-Column: Strengths & Growth Areas */}
+        {/* 2-Column: Strengths & Recommended Next Steps */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 relative z-10">
           {/* Strengths */}
           <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
             <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-400 uppercase tracking-wider font-mono">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Verified Strengths</span>
+              <span>Technical Strengths</span>
             </div>
             <ul className="space-y-2 text-sm text-neutral-200 font-sans font-medium">
               {(card.strengths && card.strengths.length > 0 ? card.strengths : [
                 'Demonstrated code originality with organic development cadence',
-                'Solid architecture and cyclomatic complexity defense',
+                'Solid architecture and verified implementation of core application logic',
                 'Tamper-proof cryptographic commit ledger verification'
               ]).map((str, idx) => (
                 <li key={idx} className="flex items-start gap-2">
@@ -322,98 +344,42 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </ul>
           </div>
 
-          {/* Growth Area & Action */}
+          {/* Recommended Next Steps */}
           <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
             <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#FFD166] uppercase tracking-wider font-mono">
               <Zap className="w-4 h-4 text-[#D4AF37]" />
-              <span>Engineering Growth Roadmap</span>
+              <span>Recommended Next Steps</span>
             </div>
             <div className="space-y-2.5 text-sm text-neutral-200 font-sans font-medium">
-              <p className="text-neutral-200"><strong className="text-[#FFD166]">Gap:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
+              <p className="text-neutral-200"><strong className="text-[#FFD166]">Area for Growth:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
               <div className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
-                <p className="text-[#F5E9C7] leading-snug"><strong className="text-[#D4AF37]">Action:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
+                <p className="text-[#F5E9C7] leading-snug"><strong className="text-[#D4AF37]">Action Item:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {deploymentContract && (
-          <div className="mb-5 p-5 rounded-xl bg-black/60 border border-[#E6C280]/30 relative z-10">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-              <div>
-                <div className="flex items-center gap-2 text-base font-bold text-[#FFD166] uppercase tracking-wider font-mono">
-                  <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-                  <span>Deployment Readiness Contract</span>
-                </div>
-                <p className="feature-note mt-1">Evidence for this role, the work sample still required, and the outcomes an authorised mentor must verify later.</p>
+        {/* Oral Defense Banner if Pending */}
+        {!hasCompletedViva && !isClone && (
+          <div className="mb-5 p-4 rounded-xl bg-[#2A180C] border border-[#D4AF37]/50 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+            <div>
+              <div className="text-xs uppercase font-bold text-[#FFD166] tracking-wider font-mono flex items-center gap-1.5">
+                <span>⏳ Oral Defense Pending</span>
               </div>
-              <span className="text-sm px-2.5 py-1 rounded-full border border-[#D4AF37]/40 text-[#FFD166] font-mono font-bold">
-                {deploymentContract.status.replaceAll('_', ' ')}
-              </span>
+              <p className="text-xs text-neutral-200 mt-0.5 font-sans">
+                This candidate is awaiting their 3-minute technical defense viva to finalize their verified credential.
+              </p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4">
-              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
-                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Role</span>
-                <strong className="text-sm text-white block mt-1">{deploymentContract.role_title}</strong>
-              </div>
-              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
-                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Source proof</span>
-                <strong className="text-sm text-white block mt-1">{deploymentContract.evidence_basis.source_files.length} linked files</strong>
-              </div>
-              <div className="rounded-lg bg-[#2A241B]/60 border border-[#3A2F27] p-3">
-                <span className="text-xs uppercase tracking-wider text-[#C9B89A] block">Workplace result</span>
-                <strong className="text-sm text-amber-300 block mt-1">Not recorded</strong>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-              {deploymentContract.competencies.map((competency) => (
-                <div key={competency.id} className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <strong className="text-sm text-white">{competency.name}</strong>
-                    <span className={`text-xs uppercase font-bold ${competency.state === 'OBSERVED_IN_SOURCE' ? 'text-emerald-300' : 'text-amber-300'}`}>
-                      {competency.state === 'OBSERVED_IN_SOURCE' ? 'Observed' : 'Needs proof'}
-                    </span>
-                  </div>
-                  {competency.source_files.length > 0 ? (
-                    <p className="feature-note">Source: {competency.source_files.join(', ')}</p>
-                  ) : (
-                    <p className="feature-note">{competency.next_proof}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 rounded-lg bg-[#8B1E1E]/20 border border-[#D4AF37]/35 mb-4">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <strong className="text-sm uppercase tracking-wider text-[#FFD166]">Required work sample</strong>
-                <span className="text-xs uppercase text-amber-300 font-bold">Not started</span>
-              </div>
-              <p className="text-sm text-neutral-100 leading-relaxed">{deploymentContract.work_sample.brief}</p>
-              <p className="feature-note mt-2">Evidence required: {deploymentContract.work_sample.required_evidence.join(' · ')}</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onNavigateToTab('terminal')}
-                className="btn-dev-outline text-sm px-4 py-2 cursor-pointer font-bold"
-              >
-                Review source evidence
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateToTab('viva')}
-                className="btn-dev-primary text-sm px-4 py-2 cursor-pointer font-bold"
-              >
-                Run code defense
-              </button>
-            </div>
+            <button
+              onClick={() => onNavigateToTab('viva')}
+              className="btn-dev-primary text-xs px-4 py-2 font-bold cursor-pointer whitespace-nowrap"
+            >
+              Start Defense Viva &rarr;
+            </button>
           </div>
         )}
 
-        {/* Footer Integrity Seal & REAL WORKING QR CODE */}
+        {/* Footer Integrity Seal & REAL WORKING QR CODE & LINK */}
         <div className="pt-4 border-t border-[#3A2F27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono relative z-10">
           <div>
             <div className="flex items-center gap-2 text-neutral-300">
@@ -423,24 +389,41 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </div>
             <div className="mt-1 text-xs text-neutral-300 flex items-center gap-1.5 font-mono">
               <span>Public Link:</span>
-              <span className="text-[#FFD166] truncate max-w-[240px] sm:max-w-xs">{publicVerifyUrl}</span>
+              <a
+                href={publicVerifyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#FFD166] hover:underline truncate max-w-[240px] sm:max-w-xs inline-flex items-center gap-1 font-mono font-bold"
+                title="Click to open public verified credential"
+              >
+                <span className="truncate">{publicVerifyUrl}</span>
+                <ExternalLink className="w-3 h-3 shrink-0" />
+              </a>
             </div>
           </div>
 
-          {/* Real Scannable Barcode / QR Code */}
+          {/* Real Scannable & Clickable Barcode / QR Code */}
           <div className="flex items-center gap-3 bg-black/60 p-3 rounded-xl border border-[#3A2F27] shrink-0">
-            {qrCodeDataUrl ? (
-              <img 
-                src={qrCodeDataUrl} 
-                alt="Verifiable Credential QR Code" 
-                className="w-16 h-16 rounded-lg bg-white p-1 shadow-sm"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-lg bg-white/10 animate-pulse" />
-            )}
+            <a
+              href={publicVerifyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block cursor-pointer"
+              title="Click or scan to view verified credential"
+            >
+              {qrCodeDataUrl ? (
+                <img 
+                  src={qrCodeDataUrl} 
+                  alt="Verifiable Credential QR Code" 
+                  className="w-16 h-16 rounded-lg bg-white p-1 shadow-sm group-hover:scale-105 transition"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-lg bg-white/10 animate-pulse" />
+              )}
+            </a>
             <div>
-              <span className="text-xs sm:text-sm text-white font-bold block">Scan to Verify</span>
-              <span className="text-xs text-neutral-300 block">Camera opens live ledger</span>
+              <span className="text-xs sm:text-sm text-white font-bold block">Scan or Click to Verify</span>
+              <span className="text-xs text-neutral-300 block">Opens public ledger credential</span>
               <button
                 onClick={handleShare}
                 className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 mt-1 cursor-pointer font-bold font-sans"

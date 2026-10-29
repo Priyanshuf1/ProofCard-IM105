@@ -124,7 +124,8 @@ def test_evaluate_cohort_endpoint():
     priyanshu = next(c for c in data["cohort"] if "Priyanshu" in c["name"])
     assert priyanshu["college_tier"] == "Tier-2"
     assert priyanshu["authenticity_score"] >= 70
-    assert priyanshu["viva_score"] >= 7.0
+    assert priyanshu["viva_status"] == "PENDING_DEFENSE"
+    assert priyanshu["viva_score"] == 0
     assert priyanshu["is_clone"] is False
 
     clone = next(c for c in data["cohort"] if "Clone" in c["name"])

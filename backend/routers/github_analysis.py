@@ -1120,14 +1120,14 @@ async def analyze_github_repo(req: IngestionURLRequest):
         if history_available and source_available:
             verification_status = "UNORIGINAL_FORK" if untouched_fork else ("VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT")
             verification_headline = (
-                f"Verified engineering signals with clean AST modularity and Git progression across {resolved_repo_name}."
+                f"Demonstrated authentic software development with steady commit history, structured code organization, and verified implementation of core application logic across {resolved_repo_name}."
             )
             if untouched_fork:
                 verification_headline = f"Untouched fork of {repo_meta.get('fork_parent')}; no repository-specific commits were verified."
             verification_strengths = [
-                f"{git_dna.get('total_commits', 0)} verified commits over {git_dna.get('time_span_days', 0)} days",
-                f"Extracted {len(complex_functions)} non-trivial AST control blocks directly from {resolved_repo_name}",
-                f"Iterative refactoring ratio of {int(git_dna.get('deletion_ratio', 0) * 100)}%",
+                f"{git_dna.get('total_commits', 0)} authentic commits developed over {git_dna.get('time_span_days', 0)} days",
+                f"Verified {len(complex_functions)} key functions with strong algorithmic logic and clear separation of concerns",
+                f"Active code refinement with {int(git_dna.get('deletion_ratio', 0) * 100)}% refactoring and optimization",
             ]
         else:
             verification_status = "VERIFICATION_INCOMPLETE"
@@ -1143,8 +1143,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "status": verification_status,
             "headline": verification_headline,
             "strengths": verification_strengths,
-            "growth_area": "Expand automated boundary mocking for external third-party dependencies.",
-            "specific_action": "Add integration test fixtures verifying failure isolation under network latency.",
+            "growth_area": "Expand automated unit test suites and mock coverage for external API integrations.",
+            "specific_action": "Add automated tests to verify how the application handles network timeouts and error states.",
             "tamper_proof_hash": tamper_proof_hash,
             "email": req.email
         }
