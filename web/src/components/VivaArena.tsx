@@ -386,6 +386,63 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     }
   };
 
+  const getEvaluationTier = (score: number) => {
+    if (score >= 9) {
+      return {
+        badgeText: `EXCELLENT (Score: ${score}/10)`,
+        containerClass: 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200',
+        badgeClass: 'bg-emerald-900/60 border-emerald-400 text-emerald-300',
+        iconType: 'check' as const
+      };
+    }
+    if (score >= 7) {
+      return {
+        badgeText: `STRONG PASS (Score: ${score}/10)`,
+        containerClass: 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200',
+        badgeClass: 'bg-emerald-900/60 border-emerald-400 text-emerald-300',
+        iconType: 'check' as const
+      };
+    }
+    if (score >= 6) {
+      return {
+        badgeText: `PASSED (Score: ${score}/10)`,
+        containerClass: 'bg-green-950/40 border-green-500/50 text-green-200',
+        badgeClass: 'bg-green-900/60 border-green-400 text-green-300',
+        iconType: 'check' as const
+      };
+    }
+    if (score >= 4) {
+      return {
+        badgeText: `BORDERLINE (Score: ${score}/10)`,
+        containerClass: 'bg-amber-950/40 border-amber-500/50 text-amber-200',
+        badgeClass: 'bg-amber-900/60 border-amber-400 text-amber-300',
+        iconType: 'alert' as const
+      };
+    }
+    if (score >= 2) {
+      return {
+        badgeText: `NEEDS IMPROVEMENT (Score: ${score}/10)`,
+        containerClass: 'bg-orange-950/40 border-orange-500/50 text-orange-200',
+        badgeClass: 'bg-orange-900/60 border-orange-400 text-orange-300',
+        iconType: 'x' as const
+      };
+    }
+    if (score === 1) {
+      return {
+        badgeText: `WEAK (Score: 1/10)`,
+        containerClass: 'bg-red-950/40 border-red-500/50 text-red-200',
+        badgeClass: 'bg-red-900/60 border-red-400 text-red-300',
+        iconType: 'x' as const
+      };
+    }
+    return {
+      badgeText: `UNANSWERED / GIBBERISH (Score: 0/10)`,
+      containerClass: 'bg-red-950/40 border-red-500/60 text-red-200',
+      badgeClass: 'bg-red-900/60 border-red-400 text-red-300',
+      iconType: 'x' as const
+    };
+  };
+
   const currentQ = questions[currentQuestionIndex] || questions[0];
   const isCurrentEvaluated = evaluatedAnswers[currentQuestionIndex] !== undefined;
 
@@ -508,20 +565,30 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                       {cand.college}
                     </td>
                     <td className="py-3 px-3 font-bold text-base">
-                      <span className={(cand.viva_score || 0) >= 7 ? 'text-emerald-400' : 'text-amber-400'}>
+                      <span className={(cand.viva_score || 0) >= 6 ? 'text-emerald-400' : (cand.viva_score !== undefined && cand.viva_score >= 4 ? 'text-amber-400' : 'text-red-400')}>
                         {cand.viva_score !== undefined ? `${cand.viva_score} / 10` : 'Pending'}
                       </span>
                     </td>
                     <td className="py-3 px-3">
-                      {(cand.viva_score || 0) >= 7 ? (
+                      {(cand.viva_score || 0) >= 6 ? (
                         <span className="text-emerald-400 text-xs sm:text-sm flex items-center gap-1 font-semibold">
                           <CheckCircle className="w-3.5 h-3.5" />
                           Passed Architectural Defense
                         </span>
-                      ) : (
+                      ) : cand.viva_score !== undefined && cand.viva_score >= 4 ? (
                         <span className="text-amber-400 text-xs sm:text-sm flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5" />
-                          Pending / Borderline
+                          Borderline Understanding
+                        </span>
+                      ) : cand.viva_score !== undefined ? (
+                        <span className="text-red-400 text-xs sm:text-sm flex items-center gap-1">
+                          <XCircle className="w-3.5 h-3.5" />
+                          Needs Improvement / Flagged
+                        </span>
+                      ) : (
+                        <span className="text-neutral-400 text-xs sm:text-sm flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          Defense Pending
                         </span>
                       )}
                     </td>
@@ -669,77 +736,75 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         </div>
 
         {/* Evaluation Result Banner */}
-        {isCurrentEvaluated && (
-          <div className={`p-4 rounded-xl border mb-4 text-xs ${
-            evaluatedAnswers[currentQuestionIndex].passed
-              ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/40 border-red-500/60 text-red-200'
-          }`}>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-warrior font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
-                {evaluatedAnswers[currentQuestionIndex].passed ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <XCircle className="w-4 h-4 text-red-400" />
-                )}
-                <span className="text-sm font-bold">Score: {evaluatedAnswers[currentQuestionIndex].score} / 10</span>
-              </span>
-              <span className={`text-xs uppercase font-bold px-3 py-1 rounded-full border ${
-                evaluatedAnswers[currentQuestionIndex].passed
-                  ? 'bg-emerald-900/60 border-emerald-400 text-emerald-300'
-                  : 'bg-red-900/60 border-red-400 text-red-300'
-              }`}>
-                {evaluatedAnswers[currentQuestionIndex].passed ? 'PASSED' : 'FAILED (Score: 0)'}
-              </span>
-            </div>
-            <p className="text-neutral-100 text-sm leading-relaxed font-sans font-medium">
-              {evaluatedAnswers[currentQuestionIndex].feedback}
-            </p>
-
-            {/* Prompt Injection Warning if detected */}
-            {evaluatedAnswers[currentQuestionIndex].adversarial_injection_detected && (
-              <div className="mt-3 p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/60 text-amber-200 text-xs flex items-center gap-2 font-mono">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span><strong>Adversarial Injection Neutralized:</strong> Hostile system prompt overrides or HTML comments in candidate response were detected and sanitized.</span>
+        {isCurrentEvaluated && (() => {
+          const evalItem = evaluatedAnswers[currentQuestionIndex];
+          const tier = getEvaluationTier(evalItem.score);
+          return (
+            <div className={`p-4 rounded-xl border mb-4 text-xs ${tier.containerClass}`}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-warrior font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
+                  {tier.iconType === 'check' ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  ) : tier.iconType === 'alert' ? (
+                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-400" />
+                  )}
+                  <span className="text-sm font-bold">Score: {evalItem.score} / 10</span>
+                </span>
+                <span className={`text-xs uppercase font-bold px-3 py-1 rounded-full border ${tier.badgeClass}`}>
+                  {tier.badgeText}
+                </span>
               </div>
-            )}
+              <p className="text-neutral-100 text-sm leading-relaxed font-sans font-medium">
+                {evalItem.feedback}
+              </p>
 
-            {/* AI Text Pattern Detection Analysis */}
-            {evaluatedAnswers[currentQuestionIndex].ai_detection && (
-              <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <span className="text-neutral-400">AI Pattern Detection:</span>
-                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'ai_like' && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500 text-red-200 font-bold flex items-center gap-1">
-                      <span>🤖 AI-Generated Pattern ({Math.round((evaluatedAnswers[currentQuestionIndex].ai_detection.ai_probability || 0.8) * 100)}% prob) — Score Penalized</span>
-                    </span>
-                  )}
-                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'human_like' && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500 text-emerald-200 font-bold flex items-center gap-1">
-                      <span>👤 Verified Human Authorship ({Math.round((evaluatedAnswers[currentQuestionIndex].ai_detection.human_probability || 0.9) * 100)}% confidence)</span>
-                    </span>
-                  )}
-                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'mixed_or_uncertain' && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-500 text-amber-200 font-bold flex items-center gap-1">
-                      <span>⚖️ Mixed / Uncertain Style</span>
-                    </span>
-                  )}
-                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'insufficient_text' && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
-                      <span>ℹ️ Short Answer (AI check skipped)</span>
-                    </span>
-                  )}
-                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'unsupported_language' && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
-                      <span>🌐 Non-English Script</span>
-                    </span>
-                  )}
+              {/* Prompt Injection Warning if detected */}
+              {evalItem.adversarial_injection_detected && (
+                <div className="mt-3 p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/60 text-amber-200 text-xs flex items-center gap-2 font-mono">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span><strong>Adversarial Injection Neutralized:</strong> Hostile system prompt overrides or HTML comments in candidate response were detected and sanitized.</span>
                 </div>
-                <span className="text-[10px] text-neutral-400 font-mono">Model: {evaluatedAnswers[currentQuestionIndex].ai_detection.model_version}</span>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+
+              {/* AI Text Pattern Detection Analysis */}
+              {evalItem.ai_detection && (
+                <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-mono">
+                    <span className="text-neutral-400">AI Pattern Detection:</span>
+                    {evalItem.ai_detection.classification === 'ai_like' && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500 text-red-200 font-bold flex items-center gap-1">
+                        <span>🤖 AI-Generated Pattern ({Math.round((evalItem.ai_detection.ai_probability || 0.8) * 100)}% prob) — Score Penalized</span>
+                      </span>
+                    )}
+                    {evalItem.ai_detection.classification === 'human_like' && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500 text-emerald-200 font-bold flex items-center gap-1">
+                        <span>👤 Verified Human Authorship ({Math.round((evalItem.ai_detection.human_probability || 0.9) * 100)}% confidence)</span>
+                      </span>
+                    )}
+                    {evalItem.ai_detection.classification === 'mixed_or_uncertain' && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-500 text-amber-200 font-bold flex items-center gap-1">
+                        <span>⚖️ Mixed / Uncertain Style</span>
+                      </span>
+                    )}
+                    {evalItem.ai_detection.classification === 'insufficient_text' && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
+                        <span>ℹ️ Short Answer (AI check skipped)</span>
+                      </span>
+                    )}
+                    {evalItem.ai_detection.classification === 'unsupported_language' && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
+                        <span>🌐 Non-English Script</span>
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-neutral-400 font-mono">Model: {evalItem.ai_detection.model_version}</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#3A2F27]">

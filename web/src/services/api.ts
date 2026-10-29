@@ -396,7 +396,8 @@ export async function evaluateVivaAnswer(
     hash: ["sha256", "sha", "digest", "checksum", "integrity", "signature", "hmac", "tamper", "tampering", "hashes", "hashing"],
     canonical: ["deterministic", "encoding", "bytes", "format", "reproducible", "canonicalize", "canonicalization", "determinism", "deterministically", "serialization"],
     debounce: ["throttle", "lock", "guard", "flag", "state", "abortcontroller"],
-    isolation: ["sandbox", "modular", "boundary", "decouple", "trap", "isolate", "isolating", "fault", "tolerance", "layer"],
+    isolation: ["sandbox", "modular", "boundary", "decouple", "trap", "isolate", "isolating", "fault", "tolerance", "layer", "guard", "mutations", "safeguard"],
+    defensive: ["defense", "defensive", "guard", "protect", "shield", "safe", "safeguard", "isolation"],
     failure: ["fail", "error", "fault", "crash", "exception", "exceptions", "tolerance", "recovery"],
     contract: ["contract", "partial", "success", "interface", "format", "schema"],
     crash: ["process", "crash", "global", "handler", "bubble", "top-level", "terminate", "exit", "prevent", "unhandled"],
@@ -428,6 +429,11 @@ export async function evaluateVivaAnswer(
   const missing: string[] = [];
   const consumedTokens = new Set<string>();
 
+  const GENERIC_CONCEPT_TOKENS = new Set([
+    "time", "platform", "byte", "bytes", "code", "file", "data", "call", "test",
+    "type", "state", "run", "line", "user", "set", "word", "item", "cross", "order"
+  ]);
+
   expectedConcepts.forEach(concept => {
     const conceptNormalized = concept.toLowerCase().replace(/-/g, ' ');
     if (ansNormalized.includes(conceptNormalized)) {
@@ -438,24 +444,24 @@ export async function evaluateVivaAnswer(
     const conceptTokens = (concept.toLowerCase().match(/[a-z0-9]+/g) || [])
       .filter(w => !STOP_WORDS.has(w) && w.length >= 3);
     
-    let matchFound = false;
+    const matchedKeywords: string[] = [];
     for (const cw of conceptTokens) {
       const cwStem = stemWord(cw);
       const availTokens = ansTokens.filter(w => !consumedTokens.has(w));
 
       // 1. Exact match
       if (availTokens.includes(cw)) {
+        matchedKeywords.push(cw);
         consumedTokens.add(cw);
-        matchFound = true;
-        break;
+        continue;
       }
       // 2. Strict stem match (min stem length >= 4)
       if (cwStem.length >= 4) {
         const stemMatches = availTokens.filter(w => w.length >= 4 && stemWord(w) === cwStem);
         if (stemMatches.length > 0) {
+          matchedKeywords.push(stemMatches[0]);
           consumedTokens.add(stemMatches[0]);
-          matchFound = true;
-          break;
+          continue;
         }
       }
       // 3. Bidirectional cluster synonym match (NO substring leakage!)
@@ -472,9 +478,21 @@ export async function evaluateVivaAnswer(
         if (matchedSyn) break;
       }
       if (matchedSyn) {
+        matchedKeywords.push(matchedSyn);
         consumedTokens.add(matchedSyn);
+        continue;
+      }
+    }
+
+    let matchFound = false;
+    if (conceptTokens.length <= 1 && matchedKeywords.length >= 1) {
+      matchFound = true;
+    } else if (matchedKeywords.length >= 2) {
+      matchFound = true;
+    } else if (matchedKeywords.length === 1) {
+      const mk = matchedKeywords[0];
+      if (!GENERIC_CONCEPT_TOKENS.has(mk) && mk.length >= 4) {
         matchFound = true;
-        break;
       }
     }
 
@@ -523,8 +541,9 @@ export async function evaluateVivaAnswer(
     "hashing", "hashes", "side-channel", "attack"
   ]);
 
-  const matchedVocab = Array.from(TECH_VOCAB).filter(tv => 
-    ansTokenSet.has(tv) || (tv.length >= 4 && ansStemSet.has(stemWord(tv)))
+  const techStems = new Set(Array.from(TECH_VOCAB).filter(tv => tv.length >= 4).map(stemWord));
+  const matchedVocab = Array.from(ansTokenSet).filter(tv => 
+    TECH_VOCAB.has(tv) || (tv.length >= 4 && techStems.has(stemWord(tv)))
   );
 
   const nDem = demonstrated.length;
@@ -534,37 +553,74 @@ export async function evaluateVivaAnswer(
     "because", "in order to", "to ensure", "ensure", "ensuring", "ensures",
     "prevent", "prevents", "preventing", "mitigate", "mitigates", "mitigating",
     "tradeoff", "trade-off", "rather than", "instead of",
-    "guarantee", "guarantees", "guaranteeing", "eliminates", "reproducible", "constant-time"
+    "guarantee", "guarantees", "guaranteeing", "eliminate", "eliminates", "eliminating",
+    "to cancel", "to eliminate", "reproducible", "constant-time"
+  ];
+  const tradeoffKeywords = [
+    "tradeoff", "trade-off", "rather than", "instead of", "overhead", "bottleneck",
+    "concurrency", "race condition", "side-channel", "replay", "constant-time",
+    "edge case", "edge-case", "timing attack", "attack vectors"
   ];
   const hasRationale = rationaleKeywords.some(k => text.includes(k));
+  const hasTradeoff = tradeoffKeywords.some(k => text.includes(k));
   const vocabCount = matchedVocab.length;
   const tokenCount = ansTokens.length;
 
   let finalScore = 0;
   if (nDem === 1) {
-    const raw = 2 + (hasRationale && tokenCount >= 8 ? 1 : 0);
-    finalScore = Math.min(3, Math.max(1, raw));
+    if (tokenCount <= 1 && !hasRationale) {
+      finalScore = 1;
+    } else if (tokenCount <= 3 && !hasRationale && vocabCount <= 1) {
+      finalScore = 2;
+    } else if (hasRationale) {
+      finalScore = 4;
+    } else {
+      finalScore = 3;
+    }
   } else if (nDem === 2) {
-    const raw = 4 + (hasRationale ? 1 : 0) + (vocabCount >= 2 ? 1 : 0) + (ratio >= 0.65 && hasRationale && vocabCount >= 2 ? 1 : 0);
-    finalScore = Math.min(7, Math.max(4, raw));
-  } else if (nDem === 3 && ratio < 1.0) {
-    const raw = 6 + (hasRationale ? 1 : 0) + (vocabCount >= 2 ? 1 : 0);
-    finalScore = Math.min(8, Math.max(6, raw));
+    if (hasRationale && vocabCount >= 3) {
+      finalScore = 7;
+    } else if (hasRationale) {
+      finalScore = 6;
+    } else {
+      finalScore = 5;
+    }
+  } else if (nDem === 3) {
+    if (hasRationale && (hasTradeoff || vocabCount >= 2)) {
+      finalScore = (hasTradeoff && vocabCount >= 2) ? 9 : 8;
+    } else if (hasRationale && vocabCount >= 1) {
+      finalScore = 8;
+    } else if (hasRationale) {
+      finalScore = 7;
+    } else {
+      finalScore = 6;
+    }
   } else {
-    const raw = 8 + (hasRationale ? 1 : 0) + (vocabCount >= 3 ? 1 : 0);
-    finalScore = Math.min(10, Math.max(8, raw));
+    if (hasRationale && (hasTradeoff || vocabCount >= 4) && tokenCount >= 18) {
+      finalScore = 10;
+    } else if (hasRationale && vocabCount >= 2) {
+      finalScore = 9;
+    } else {
+      finalScore = 8;
+    }
   }
   const passed = finalScore >= 6;
 
   let feedback = '';
-  if (finalScore >= 8) {
-    feedback = `Exemplary architectural rationale. Thoroughly demonstrated: ${demonstrated.slice(0, 3).join(', ')} (Score: ${finalScore}/10).`;
-  } else if (passed) {
-    feedback = `Solid technical competence. Demonstrated command of: ${demonstrated.slice(0, 2).join(', ')} (Score: ${finalScore}/10).`;
+  if (finalScore >= 9) {
+    feedback = `Exemplary master-level architectural rationale. Thoroughly demonstrated: ${demonstrated.slice(0, 3).join(', ')} (Score: ${finalScore}/10).`;
+  } else if (finalScore >= 8) {
+    feedback = `Outstanding technical depth and causal reasoning. Demonstrated: ${demonstrated.slice(0, 3).join(', ')} (Score: ${finalScore}/10).`;
+  } else if (finalScore >= 7) {
+    feedback = `Strong pass. Clear cause-and-effect understanding of: ${demonstrated.slice(0, 2).join(', ')} (Score: ${finalScore}/10).`;
+  } else if (finalScore >= 6) {
+    feedback = `Competent pass. Demonstrated basic mechanics of: ${demonstrated.slice(0, 2).join(', ')} (Score: ${finalScore}/10).`;
   } else if (finalScore >= 4) {
-    feedback = `Borderline response. Mentioned baseline concepts but lacked depth on: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
+    feedback = `Borderline response. Mentioned baseline concepts but lacked architectural depth on: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
+  } else if (finalScore >= 2) {
+    feedback = `Needs improvement. Superficial answer lacking causal mechanism for: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
   } else {
-    feedback = `Weak buzzword response without architectural mechanism. Missing: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
+    feedback = `Weak response. Zero substantive architectural explanation. Missing: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
   }
 
   return {
