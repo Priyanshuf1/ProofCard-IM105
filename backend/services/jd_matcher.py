@@ -1,4 +1,5 @@
 import re
+from pathlib import PurePosixPath
 from typing import List, Dict, Any, Tuple
 
 TECH_DICTIONARY = {
@@ -50,7 +51,8 @@ class JDMatcher:
         required_skills: List[str],
         skill_evidence: Dict[str, List[str]] | None = None,
     ) -> Tuple[List[str], List[str]]:
-        files_str = " ".join(detected_files).lower()
+        normalized_files = [PurePosixPath(str(path).replace("\\", "/")).as_posix().lower() for path in detected_files]
+        files_str = " ".join(normalized_files)
         verified = []
         missing = []
         for skill in required_skills:

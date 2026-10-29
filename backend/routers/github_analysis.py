@@ -21,6 +21,8 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 import os
 import subprocess
 import tempfile
+import shutil
+import time
 from urllib.parse import quote
 
 def get_scratch_cache_dir() -> Path:
@@ -39,6 +41,49 @@ def get_scratch_cache_dir() -> Path:
     p.mkdir(parents=True, exist_ok=True)
     return p
 
+
+def cleanup_expired_repo_cache(max_age_hours: int = 24) -> int:
+    """Remove only ProofCard's expired clone cache entries.
+
+    Cleanup is opportunistic so the API needs no scheduler and never touches
+    user repositories outside ``cache_repos``.
+    """
+    cache_base = get_scratch_cache_dir() / "cache_repos"
+    if not cache_base.exists():
+        return 0
+    cutoff = time.time() - (max_age_hours * 60 * 60)
+    removed = 0
+    for entry in cache_base.iterdir():
+        try:
+            if entry.stat().st_mtime < cutoff:
+                if entry.is_dir():
+                    shutil.rmtree(entry, ignore_errors=True)
+                else:
+                    entry.unlink(missing_ok=True)
+                removed += 1
+        except OSError:
+            continue
+    return removed
+
+
+def _detect_subprojects(file_paths: List[str]) -> List[Dict[str, str]]:
+    """Find package roots in a monorepo without assuming one root project."""
+    manifests = {"package.json", "requirements.txt", "pyproject.toml", "pom.xml", "cargo.toml", "go.mod"}
+    projects: Dict[str, Dict[str, str]] = {}
+    for raw_path in file_paths:
+        path = raw_path.replace("\\", "/").strip("/")
+        if not path:
+            continue
+        name = path.rsplit("/", 1)[-1].lower()
+        if name not in manifests:
+            continue
+        parent = path.rsplit("/", 1)[0] if "/" in path else "."
+        projects.setdefault(parent, {"path": parent, "manifest": name})
+    return [
+        {**item, "label": "Root project" if item["path"] == "." else item["path"]}
+        for item in sorted(projects.values(), key=lambda item: (item["path"] != ".", item["path"].lower()))
+    ]
+
 def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None, target_subpath: Optional[str] = None):
     """
     Fetches 100% accurate git commit history and code files.
@@ -49,6 +94,8 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
     """
     if not repo:
         return [], [], {}
+
+    cleanup_expired_repo_cache()
 
     repo_clean = (repo or "").strip().lower()
     owner_clean = (owner or "").strip().lower()
@@ -180,6 +227,8 @@ def fetch_real_git_telemetry(owner: str, repo: str, token: Optional[str] = None,
             for cf in code_files[:30]:
                 try:
                     content = subprocess.check_output(["git", "-c", "gc.auto=0", "-C", str(found_dir), "show", f"HEAD:{cf}"], encoding="utf-8", errors="ignore", timeout=5)
+                    if len(content) > 400_000 or any(len(line) > 2_000 for line in content.splitlines()):
+                        continue
                     code_snippets[cf] = content
                 except Exception:
                     pass
@@ -499,7 +548,7 @@ async def analyze_github_repo(req: IngestionURLRequest):
     match_repo = re.search(r"github\.com/([^/?#]+)/([^/?#]+)", raw_url)
     match_user = re.search(r"github\.com/([^/?#]+)/?$", raw_url)
     subpath_match = re.search(r"github\.com/[^/?#]+/[^/?#]+/(?:blob|tree)/[^/?#]+/(.+)", raw_url)
-    target_subpath = subpath_match.group(1).strip() if subpath_match else None
+    target_subpath = req.target_subpath.strip("/ ") if req.target_subpath else (subpath_match.group(1).strip() if subpath_match else None)
 
     if match_repo and match_repo.group(2).strip():
         owner = match_repo.group(1).strip()
@@ -618,6 +667,23 @@ async def analyze_github_repo(req: IngestionURLRequest):
                     default_branch = r_json.get("default_branch", "main")
                     lang = r_json.get("language") or lang or "Fullstack"
                     project_type = f"{lang} Application"
+                    if r_json.get("fork"):
+                        parent = r_json.get("parent") or {}
+                        repo_meta["fork_parent"] = (parent.get("full_name") or parent.get("html_url") or "")
+                        repo_meta["fork_ahead_by"] = None
+                        parent_owner = (parent.get("owner") or {}).get("login")
+                        parent_name = parent.get("name")
+                        parent_branch = parent.get("default_branch") or default_branch
+                        if parent_owner and parent_name:
+                            try:
+                                compare_res = await client.get(
+                                    f"https://api.github.com/repos/{parent_owner}/{parent_name}/compare/{quote(parent_branch, safe='')}...{owner}:{quote(default_branch, safe='')}",
+                                    headers=headers,
+                                )
+                                if compare_res.status_code == 200:
+                                    repo_meta["fork_ahead_by"] = int(compare_res.json().get("ahead_by", 0) or 0)
+                            except (TypeError, ValueError, Exception):
+                                pass
     except HTTPException:
         raise
     except Exception:
@@ -869,6 +935,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if "name" not in repo_meta:
         repo_meta["name"] = resolved_repo_name
 
+    subprojects = _detect_subprojects(raw_files or detected_files)
+
     # 5. Resolve declared repositories and authenticated code-search candidates.
     # A search result is never treated as proof until its source bytes are
     # fetched and compared by TutorialMatcher.
@@ -933,6 +1001,15 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
     git_dna["authenticity_score"] = auth_score
     source_available = any(Path(path).suffix.lower() in CODE_SOURCE_EXTENSIONS for path in code_snippets)
+    untouched_fork = bool(
+        repo_meta.get("fork")
+        and repo_meta.get("fork_ahead_by") == 0
+        and repo_meta.get("fork_parent")
+    )
+    repository_status = "UNORIGINAL_FORK" if untouched_fork else "ANALYZED"
+    if untouched_fork:
+        auth_score = 0
+        git_dna["authenticity_score"] = 0
 
     tamper_proof_hash = "SHA256:" + hashlib.sha256(f"{cid}:{owner}:{resolved_repo_name}:{auth_score}".encode()).hexdigest()
     analysis_confidence = 0.0
@@ -964,10 +1041,12 @@ async def analyze_github_repo(req: IngestionURLRequest):
     else:
         history_available = bool(commits_data and git_dna.get("history_verified"))
         if history_available and source_available:
-            verification_status = "VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT"
+            verification_status = "UNORIGINAL_FORK" if untouched_fork else ("VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT")
             verification_headline = (
                 f"Verified engineering signals with clean AST modularity and Git progression across {resolved_repo_name}."
             )
+            if untouched_fork:
+                verification_headline = f"Untouched fork of {repo_meta.get('fork_parent')}; no repository-specific commits were verified."
             verification_strengths = [
                 f"{git_dna.get('total_commits', 0)} verified commits over {git_dna.get('time_span_days', 0)} days",
                 f"Extracted {len(complex_functions)} non-trivial AST control blocks directly from {resolved_repo_name}",
@@ -1015,6 +1094,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "authenticity_score": auth_score,
         "analysis_confidence": round(min(1.0, analysis_confidence), 2),
         "analysis_status": "COMPLETED" if (git_dna.get("history_verified") and source_available) else "VERIFICATION_INCOMPLETE",
+        "repository_status": repository_status,
+        "fork_parent": repo_meta.get("fork_parent"),
+        "fork_ahead_by": repo_meta.get("fork_ahead_by"),
+        "available_subprojects": subprojects,
         "skill_evidence": JDMatcher.extract_skill_evidence(code_snippets, detected_files),
         "readiness_plan": ReadinessEngine.build_plan(
             skill_evidence=JDMatcher.extract_skill_evidence(code_snippets, detected_files),

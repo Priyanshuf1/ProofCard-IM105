@@ -13,6 +13,7 @@ class IngestionURLRequest(BaseModel):
     college: Optional[str] = "Affiliated Engineering Institute"
     consent_granted: bool = True
     github_token: Optional[str] = None
+    target_subpath: Optional[str] = None
 
 class ComplexFunction(BaseModel):
     file: str

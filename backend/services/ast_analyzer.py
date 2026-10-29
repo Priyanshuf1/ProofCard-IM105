@@ -116,6 +116,8 @@ class ASTAnalyzer:
         Parses JS/TS functions and calculates McCabe cyclomatic complexity.
         """
         results = []
+        if any(len(line) > 2_000 for line in code.splitlines()):
+            return results
         lines = code.splitlines()
         
         # Regex to locate JS/TS function declarations & arrow functions
@@ -170,6 +172,8 @@ class ASTAnalyzer:
         """
         if "\x00" in code:
             return []
+        if any(len(line) > 2_000 for line in code.splitlines()):
+            return []
 
         results = []
         lines = code.splitlines()
@@ -223,6 +227,8 @@ class ASTAnalyzer:
         """
         if "\x00" in code:
             return "Program>BinaryData"
+        if any(len(line) > 2_000 for line in code.splitlines()):
+            return "Program>PrebuiltAsset"
 
         tokens = []
         lines = code.splitlines()
