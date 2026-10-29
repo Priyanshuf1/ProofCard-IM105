@@ -111,9 +111,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-2xl sm:text-3xl font-extrabold text-[#f7f3ee] tracking-tight font-sans">
                 Pariksha
               </span>
-              <span className="text-xs font-mono uppercase bg-[#8B1E1E]/60 border border-[#D4AF37]/50 px-2.5 py-0.5 rounded-full text-[#FFD166] font-bold">
-                IM-105
-              </span>
             </div>
             <p className="text-xs sm:text-sm text-[#E6C280] font-mono tracking-wide mt-0.5">
               Code Verification & Unbiased Hiring Intelligence Platform

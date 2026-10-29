@@ -241,9 +241,6 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
             Code Scanner & Candidate Ingestion
           </h1>
-          <p className="text-sm sm:text-base text-[#E6C280] font-normal mt-1">
-            Paste a public GitHub link or upload a code ZIP to verify genuine authorship, commit history, and technical skill.
-          </p>
         </div>
 
         {/* Mode Switcher */}
@@ -302,13 +299,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   : 'bg-[#100603] border-[#E6C280]/15 hover:border-[#E6C280]/40 text-neutral-400 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="flex items-center gap-2.5">
                 <GitBranch className={`w-4 h-4 ${ingestMode === 'github' ? 'text-[#ff9f1c]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-bold text-white">GitHub Repository Link</span>
               </div>
-              <p className="text-xs text-neutral-300">
-                Paste any public GitHub repository to analyze commits and check for copy-pasting.
-              </p>
             </button>
 
             <button
@@ -319,13 +313,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   : 'bg-[#100603] border-[#E6C280]/15 hover:border-[#E6C280]/40 text-neutral-400 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-2.5 mb-1.5">
+              <div className="flex items-center gap-2.5">
                 <UploadCloud className={`w-4 h-4 ${ingestMode === 'zip' ? 'text-[#ff9f1c]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-bold text-white">Upload Code ZIP</span>
               </div>
-              <p className="text-xs text-neutral-300">
-                Upload a project ZIP file for offline or local projects without a GitHub link.
-              </p>
             </button>
           </div>
 

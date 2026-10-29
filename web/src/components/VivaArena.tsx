@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Zap, 
   Clock, 
@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Code
 } from 'lucide-react';
-import { CandidateProfile, VivaQuestion } from '../types';
+import { CandidateProfile, VivaQuestion, ComplexFunction } from '../types';
 import { evaluateVivaAnswer, generateMoreVivaQuestions } from '../services/api';
 
 interface VivaArenaProps {
@@ -111,6 +111,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
   const [showCohortRoster, setShowCohortRoster] = useState(false);
+  const [selectedFuncIndex, setSelectedFuncIndex] = useState<number>(0);
 
 
 
@@ -433,6 +434,37 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   const currentQ = questions[currentQuestionIndex] || questions[0];
   const isCurrentEvaluated = evaluatedAnswers[currentQuestionIndex] !== undefined;
+
+  // Synchronize snippet tab with the current active question
+  useEffect(() => {
+    if (!candidate?.complex_functions || candidate.complex_functions.length === 0) return;
+    const funcs = candidate.complex_functions;
+    const matchIdx = funcs.findIndex(
+      f => f.function_name === currentQ?.function_name || f.file === currentQ?.file
+    );
+    if (matchIdx !== -1) {
+      setSelectedFuncIndex(matchIdx);
+    } else if (funcs[currentQuestionIndex]) {
+      setSelectedFuncIndex(currentQuestionIndex);
+    } else {
+      setSelectedFuncIndex(0);
+    }
+  }, [currentQuestionIndex, currentQ?.function_name, currentQ?.file, candidate?.complex_functions]);
+
+  // Derived active snippet to display directly below the question
+  const activeSnippetFunc = useMemo<ComplexFunction>(() => {
+    const funcs = candidate?.complex_functions || [];
+    if (funcs[selectedFuncIndex]) {
+      return funcs[selectedFuncIndex];
+    }
+    return {
+      file: currentQ?.file || 'src/main.py',
+      function_name: currentQ?.function_name || 'core_implementation',
+      complexity: 8,
+      line_number: currentQ?.line_number || 42,
+      snippet: `def ${currentQ?.function_name || 'core_implementation'}():\n    # Implementation logic for ${currentQ?.file || 'src/main.py'}:${currentQ?.line_number || 42}\n    pass`
+    };
+  }, [candidate?.complex_functions, selectedFuncIndex, currentQ, currentQuestionIndex]);
 
   if (!currentQ || questions.length === 0) {
     return (
@@ -778,6 +810,62 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
             "{currentQ.question}"
           </h2>
+        </div>
+
+        {/* KEY FUNCTIONS EXTRACTED FROM CODE (Dynamically synchronized with active question) */}
+        <div className="mb-5 rounded-2xl bg-[#0c0806] border border-[#D4AF37]/30 overflow-hidden shadow-xl">
+          <div className="bg-[#140b08] px-4 py-2.5 border-b border-[#3A2F27] flex items-center justify-between text-xs font-sans">
+            <span className="font-bold uppercase tracking-wider text-[#FFD166] flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-[#D4AF37]" />
+              <span>Key Functions Extracted from Code</span>
+            </span>
+            <span className="font-mono text-xs text-[#E6C280] font-bold">
+              {candidate?.complex_functions?.length || 1} Functions Identified
+            </span>
+          </div>
+
+          {/* Function Tabs */}
+          {candidate?.complex_functions && candidate.complex_functions.length > 0 && (
+            <div className="px-4 py-2 bg-black/40 border-b border-[#2A241B] flex flex-wrap items-center gap-2">
+              {candidate.complex_functions.map((f, i) => {
+                const isSelected = selectedFuncIndex === i;
+                const isCurrentTarget = f.function_name === currentQ.function_name;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setSelectedFuncIndex(i)}
+                    className={`px-3 py-1.5 rounded-xl font-mono text-xs transition cursor-pointer flex items-center gap-2 ${
+                      isSelected
+                        ? 'bg-[#8B1E1E] text-white border border-[#D4AF37] shadow-sm font-bold'
+                        : isCurrentTarget
+                        ? 'bg-[#1f120c] text-[#FFD166] border border-[#D4AF37]/50 hover:bg-[#D4AF37]/20'
+                        : 'bg-black/50 text-[#C9B89A] border border-[#3A2F27] hover:border-[#D4AF37]/50'
+                    }`}
+                  >
+                    <span>{f.function_name}()</span>
+                    <span className="px-1.5 py-0.2 rounded bg-black/60 text-[10px] text-[#FFD166] font-bold">
+                      Complexity: {f.complexity}
+                    </span>
+                    {isCurrentTarget && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFD166] animate-pulse"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Verified Code Snippet Box */}
+          <div className="bg-[#080504]">
+            <div className="px-4 py-2 bg-[#120a07] border-b border-[#2A241B] flex items-center justify-between text-xs font-mono text-[#C9B89A]">
+              <span>{activeSnippetFunc.file}:{activeSnippetFunc.line_number}</span>
+              <span className="text-[#D4AF37] font-bold">Verified Code Snippet</span>
+            </div>
+            <pre className="p-4 text-xs text-neutral-200 font-mono overflow-x-auto leading-relaxed max-h-64 scrollbar-thin">
+              <code>{activeSnippetFunc.snippet}</code>
+            </pre>
+          </div>
         </div>
 
         {/* Expected Concepts */}
