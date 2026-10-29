@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field
 
 class ConsentRequest(BaseModel):
@@ -93,9 +93,9 @@ class CandidateBattleProfile(BaseModel):
     candidate_id: str
     name: str
     college: str
-    authenticity_score: int
+    authenticity_score: Union[int, float]
     detected_files: List[str] = Field(default_factory=list)
-    viva_score: int
+    viva_score: Union[int, float]
     project_type: Optional[str] = "Fullstack"
     is_clone: bool = False
     analysis_status: Optional[str] = "COMPLETED"
@@ -112,11 +112,12 @@ class BattleCandidateResult(BaseModel):
     college: str
     authenticity_score: int
     jd_match_pct: int
-    viva_score: int
+    viva_score: Union[int, float]
     composite_score: int
     verified_skills: List[str]
     missing_skills: List[str]
     has_tests: bool
+    is_clone: Optional[bool] = False
 
 class BattleResponse(BaseModel):
     status: str

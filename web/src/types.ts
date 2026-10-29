@@ -163,6 +163,7 @@ export interface BattleCandidateResult {
   verified_skills: string[];
   missing_skills: string[];
   has_tests: boolean;
+  is_clone?: boolean;
 }
 
 export interface BattleResponse {

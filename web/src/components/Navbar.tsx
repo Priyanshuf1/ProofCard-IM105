@@ -25,52 +25,49 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  isDemoMode,
-  setIsDemoMode,
-  onSelectDemoProfile,
   onOpenImatsModal,
 }) => {
   const features = [
     {
       id: 'ingestion',
       step: '01',
-      name: 'Code Ingestion & Scanner',
-      desc: 'Upload a project ZIP or scan a GitHub profile to inspect raw source code.',
+      name: 'Scan Code',
+      desc: 'Paste a GitHub link or upload a code ZIP archive.',
       icon: Cpu,
     },
     {
       id: 'terminal',
       step: '02',
-      name: 'Authenticity & Clone Radar',
-      desc: 'Detects copy-pasted YouTube tutorials, commit rhythms, and AI-generated code.',
+      name: 'Clone & Git Check',
+      desc: 'Checks commit history, copy-paste tutorials, and code quality.',
       icon: Terminal,
     },
     {
       id: 'viva',
       step: '03',
-      name: 'Live Code Viva Interview',
-      desc: 'Tests conceptual understanding with 3 sharp questions pulled directly from hard code.',
+      name: 'Code Defense Viva',
+      desc: 'Candidate answers 3 technical questions based on their own code.',
       icon: Zap,
     },
     {
       id: 'proofcard',
       step: '04',
-      name: '3D Holographic ProofCard',
-      desc: 'Tamper-proof digital credential with verified skills, QR verification, and mentorship plan.',
+      name: 'Verified ProofCard',
+      desc: 'Digital skill card with QR verification link.',
       icon: Award,
     },
     {
       id: 'battle',
       step: '05',
-      name: 'Recruiter Battle Arena',
-      desc: 'Compares candidates side-by-side against job requirements to prove who can actually build.',
+      name: 'Recruiter Battle',
+      desc: 'Compare candidates side-by-side against job requirements.',
       icon: Swords,
     },
     {
       id: 'bias-mirror',
       step: '06',
-      name: 'Equal Opportunity Audit',
-      desc: 'Guarantees hiring decisions are based strictly on code quality, not college brand names.',
+      name: 'Fairness & Bias Audit',
+      desc: 'Audits hiring fairness to eliminate college brand name bias.',
       icon: Scale,
     },
   ];
@@ -95,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p className="text-xs sm:text-sm text-[#E6C280] font-mono tracking-wide mt-0.5">
-              Verified Code Intelligence & Recruiter Bias Auditing
+              Code Verification & Unbiased Hiring Intelligence Platform
             </p>
           </div>
         </div>
@@ -108,13 +105,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#D4AF37]/30 transition text-sm font-bold cursor-pointer shadow-sm"
             >
               <Zap className="w-4 h-4 text-[#D4AF37]" />
-              <span>IMATS Enterprise Sandbox</span>
+              <span>IMATS Enterprise API</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 6-Feature Sleek Navigation Tabs */}
+      {/* Sleek Navigation Tabs */}
       <div className="border-t border-[#D4AF37]/20 bg-black/60 backdrop-blur-md px-4 sm:px-8 py-2.5 overflow-x-auto">
         <div className="flex items-center gap-2.5 min-w-max">
           {features.map((feat) => {

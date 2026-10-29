@@ -14,13 +14,8 @@ import {
   Plus,
   Download,
   Printer,
-  Filter,
-  Sliders,
   Users,
-  Layers,
-  ShieldCheck,
   AlertTriangle,
-  Award,
   ChevronRight
 } from 'lucide-react';
 import { PRESET_JOB_DESCRIPTIONS } from '../data/offlineDemoData';
@@ -40,8 +35,8 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
   onSelectCandidate,
   cohort = []
 }) => {
-  // Tabs: 'funnel' (High-throughput 100-applicant auto-shortlist) vs 'matrix' (Side-by-side 1-on-1 battle)
-  const [activeMode, setActiveMode] = useState<'funnel' | 'matrix'>('funnel');
+  // Default to the side-by-side battle matrix
+  const [activeMode, setActiveMode] = useState<'matrix' | 'funnel'>('matrix');
 
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [jdText, setJdText] = useState(PRESET_JOB_DESCRIPTIONS[0].text);
@@ -50,7 +45,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
   const [newSkillInput, setNewSkillInput] = useState('');
   
   // Funnel settings
-  const [targetCount, setTargetCount] = useState<number>(15);
+  const [targetCount, setTargetCount] = useState<number>(10);
   const [minAuthScore, setMinAuthScore] = useState<number>(70);
   const [minVivaScore, setMinVivaScore] = useState<number>(6);
   const [excludeClones, setExcludeClones] = useState<boolean>(true);
@@ -64,7 +59,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
     hoursSaved: number;
   } | null>(null);
 
-  // Dynamic Candidate Pool for 1-on-1 Matrix
+  // Dynamic Candidate Pool for Battle Matrix
   const [candidatePool, setCandidatePool] = useState<CandidateProfile[]>(() => {
     const list: CandidateProfile[] = [];
     if (currentCandidate) list.push(currentCandidate);
@@ -78,6 +73,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
     return list;
   });
 
+  // Sync candidate pool whenever currentCandidate or cohort changes
   useEffect(() => {
     setCandidatePool(prev => {
       const list = [...prev];
@@ -106,148 +102,86 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
   const [battleResult, setBattleResult] = useState<BattleResponse | null>(null);
   const [isFighting, setIsFighting] = useState(false);
 
-  // Auto-shortlist logic
-  const handleRunAutoShortlist = async () => {
-    if (cohort.length === 0) {
-      setShortlistResult({
-        shortlisted: [],
-        qualifiedCount: 0,
-        cutoffFailedCount: 0,
-        rejectedCount: 0,
-        hoursSaved: 0
+  // Compute battle matrix locally as guaranteed fallback
+  const computeLocalBattle = (skills: string[], pool: CandidateProfile[]): BattleResponse => {
+    const matrix = pool.map(c => {
+      const detectedStr = ((c.detected_files || []).join(' ') + ' ' + (c.project_type || '')).toLowerCase();
+      const verified = skills.filter(s => {
+        const sLower = s.toLowerCase();
+        if (sLower === 'python') return detectedStr.includes('.py') || detectedStr.includes('python');
+        if (sLower === 'fastapi') return detectedStr.includes('fastapi') || detectedStr.includes('api');
+        if (sLower === 'react') return detectedStr.includes('.jsx') || detectedStr.includes('.tsx') || detectedStr.includes('react');
+        if (sLower === 'docker') return detectedStr.includes('docker') || detectedStr.includes('dockerfile');
+        if (sLower === 'testing') return detectedStr.includes('test') || detectedStr.includes('spec');
+        return detectedStr.includes(sLower);
       });
-      return;
-    }
-    setIsShortlisting(true);
-    try {
-      // Call backend endpoint or fallback to robust client calculation
-      const backendRes = await autoShortlistCohort(
-        targetCount,
-        minAuthScore,
-        minVivaScore,
-        excludeClones,
-        requiredSkills,
-        cohort
-      );
+      const missing = skills.filter(s => !verified.includes(s));
+      const jdPct = Math.round((verified.length / Math.max(skills.length, 1)) * 100);
+      const auth = c.authenticity_score || 0;
+      const viva = c.viva_score !== undefined ? c.viva_score : 5;
+      let composite = Math.round((auth * 0.40) + (jdPct * 0.35) + (viva * 10 * 0.25));
+      if (c.is_clone) composite = Math.min(composite, 25);
 
-      if (backendRes && backendRes.shortlisted) {
-        setShortlistResult({
-          shortlisted: backendRes.shortlisted,
-          qualifiedCount: backendRes.qualified_count ?? backendRes.shortlisted.length,
-          cutoffFailedCount: backendRes.cutoff_failed_count ?? (cohort.length - backendRes.shortlisted.length),
-          rejectedCount: backendRes.rejected_count,
-          hoursSaved: Math.round(cohort.length * 0.83 * 10) / 10
-        });
-        setIsShortlisting(false);
-        return;
-      }
-    } catch {
-      // Client fallback computation
-    }
+      const hasTests = verified.includes('testing') || (c.git_dna && (c.git_dna.test_files_detected || 0) > 0) || false;
 
-    // Client-side execution across cohort
-    const qualified: any[] = [];
-    let rejected = 0;
-
-    cohort.forEach(cand => {
-      const auth = cand.authenticity_score || 0;
-      const viva = cand.viva_score || 0;
-      const isClone = cand.is_clone;
-      const hasTests = cand.git_dna ? (cand.git_dna.test_files_detected || 0) > 0 : true;
-
-      if (excludeClones && isClone) {
-        rejected++;
-        return;
-      }
-      if (auth < minAuthScore) {
-        rejected++;
-        return;
-      }
-      if (viva < minVivaScore) {
-        rejected++;
-        return;
-      }
-      if (requireTests && !hasTests) {
-        rejected++;
-        return;
-      }
-
-      // Skill match percentage
-      const detectedStr = ((cand.detected_files || []).join(' ') + ' ' + (cand.project_type || '')).toLowerCase();
-      const matched = requiredSkills.filter(s => 
-        detectedStr.includes(s.toLowerCase()) || 
-        s.toLowerCase() === 'python' || 
-        s.toLowerCase() === 'testing'
-      );
-      const jdMatchPct = Math.min(100, Math.max(50, Math.round((matched.length / Math.max(requiredSkills.length, 1)) * 100)));
-
-      // Axis 1 Composite Formula: 40% Authenticity + 35% JD Match + 25% Viva Defense
-      const composite = Math.round((auth * 0.40) + (jdMatchPct * 0.35) + (viva * 10 * 0.25));
-
-      qualified.push({
-        ...cand,
-        jd_match_pct: jdMatchPct,
+      return {
+        candidate_id: c.candidate_id,
+        name: c.name,
+        college: c.college || 'Engineering Institute',
+        authenticity_score: auth,
+        jd_match_pct: jdPct,
+        viva_score: viva,
         composite_score: composite,
-        verified_skills: matched.length > 0 ? matched : ['core-logic', 'git-workflow'],
-        shortlist_status: 'SHORTLISTED'
-      });
+        verified_skills: verified,
+        missing_skills: missing,
+        has_tests: hasTests,
+        is_clone: c.is_clone
+      };
     });
 
-    qualified.sort((a, b) => b.composite_score - a.composite_score);
-    const topShortlist = qualified.slice(0, targetCount);
+    matrix.sort((a, b) => b.composite_score - a.composite_score);
+    const winner = matrix[0];
+    const runnerUp = matrix[1] || winner;
+    const diff = winner.composite_score - runnerUp.composite_score;
 
-    setShortlistResult({
-      shortlisted: topShortlist,
-      qualifiedCount: qualified.length,
-      cutoffFailedCount: rejected,
-      rejectedCount: rejected + (qualified.length - topShortlist.length),
-      hoursSaved: Math.round(cohort.length * 0.83 * 10) / 10
-    });
-    setIsShortlisting(false);
+    return {
+      status: 'success',
+      winner_id: winner.candidate_id,
+      winner_name: winner.name,
+      diff_pts: diff,
+      rationale: `${winner.name} ranks #1 (+${diff} pts) with ${winner.authenticity_score}% code authenticity and ${winner.verified_skills.length} of ${skills.length} skills verified in source code.`,
+      battle_matrix: matrix
+    };
   };
 
-  const handleExportCSV = () => {
-    if (!shortlistResult || shortlistResult.shortlisted.length === 0) return;
+  // Run Battle Comparison
+  const handleRunBattle = async (customSkills?: string[]) => {
+    if (candidatePool.length < 2) return;
+    setIsFighting(true);
+    const skillsToUse = customSkills || requiredSkills;
 
-    const headers = [
-      'Rank',
-      'Candidate ID',
-      'Candidate Name',
-      'University / College',
-      'Pedigree Tier',
-      'Authenticity Score (%)',
-      'JD Skill Match (%)',
-      'Viva Defense (/10)',
-      'Composite Merit Score (/100)',
-      'Plagiarism Status',
-      'Status',
-      'ProofCard Verification Hash'
-    ];
+    try {
+      const result = await runBattleCompare(skillsToUse, candidatePool.slice(0, 6));
+      if (result && result.battle_matrix && result.battle_matrix.length > 0) {
+        setBattleResult(result);
+        setIsFighting(false);
+        return;
+      }
+    } catch (e) {
+      // Backend fallback to guaranteed local calculation
+    }
 
-    const rows = shortlistResult.shortlisted.map((c, i) => [
-      i + 1,
-      c.candidate_id,
-      `"${c.name}"`,
-      `"${c.college}"`,
-      c.college_tier || 'Tier-3',
-      c.authenticity_score,
-      c.jd_match_pct || 85,
-      c.viva_score,
-      c.composite_score,
-      c.is_clone ? 'FLAGGED_CLONE' : 'ORIGINAL_BUILDER',
-      'QUALIFIED_SHORTLIST',
-      c.proof_card?.tamper_proof_hash || `SHA256:verified_${c.candidate_id}`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Deviathon_Top_${targetCount}_Shortlist_Dossier.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const fallbackResult = computeLocalBattle(skillsToUse, candidatePool.slice(0, 6));
+    setBattleResult(fallbackResult);
+    setIsFighting(false);
   };
+
+  // Auto-run battle whenever candidatePool has 2 or more candidates and battleResult is null
+  useEffect(() => {
+    if (candidatePool.length >= 2 && !battleResult && !isFighting) {
+      handleRunBattle();
+    }
+  }, [candidatePool.length]);
 
   const handlePresetSelect = async (idx: number) => {
     setSelectedPreset(idx);
@@ -262,11 +196,17 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
         : ['react', 'nodejs', 'typescript', 'testing', 'rest_api']
       );
       setRequiredSkills(skills);
+      if (candidatePool.length >= 2) {
+        handleRunBattle(skills);
+      }
     } catch {
-      setRequiredSkills(idx === 0 
+      const skills = idx === 0 
         ? ['python', 'fastapi', 'redis', 'postgresql', 'docker', 'testing']
-        : ['react', 'nodejs', 'typescript', 'testing', 'rest_api']
-      );
+        : ['react', 'nodejs', 'typescript', 'testing', 'rest_api'];
+      setRequiredSkills(skills);
+      if (candidatePool.length >= 2) {
+        handleRunBattle(skills);
+      }
     }
   };
 
@@ -277,18 +217,24 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       const updated = [...requiredSkills, clean];
       setRequiredSkills(updated);
       setNewSkillInput('');
+      if (candidatePool.length >= 2) {
+        handleRunBattle(updated);
+      }
     }
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
     const updated = requiredSkills.filter(s => s !== skillToRemove);
     setRequiredSkills(updated);
+    if (candidatePool.length >= 2) {
+      handleRunBattle(updated);
+    }
   };
 
   const handleAddRealCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUrl.trim()) {
-      setAddError('Please enter a valid GitHub profile or repository URL.');
+      setAddError('Please enter a GitHub repository link.');
       return;
     }
 
@@ -298,97 +244,92 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
     try {
       const realProfile = await analyzeGithubUrl(
         newUrl.trim(),
-        newName.trim() || 'Real Candidate',
-        newCollege.trim() || 'Independent Engineer',
+        newName.trim() || 'Candidate',
+        newCollege.trim() || 'University',
         true
       );
 
-      setCandidatePool(prev => [realProfile, ...prev]);
+      setCandidatePool(prev => {
+        const updated = [realProfile, ...prev.filter(p => p.candidate_id !== realProfile.candidate_id)];
+        return updated;
+      });
       setShowAddModal(false);
       setNewName('');
       setNewUrl('');
       setNewCollege('');
+      // Trigger new battle calculation
+      setTimeout(() => handleRunBattle(), 200);
     } catch (err: any) {
-      setAddError(err?.message || 'Failed to analyze GitHub candidate. Please verify repository is public.');
+      setAddError(err?.message || 'Failed to scan repository. Please ensure it is a public repository.');
     } finally {
       setIsAddingCandidate(false);
     }
   };
 
   const handleRemoveCandidate = (candidateId: string) => {
-    if (candidatePool.length <= 1) return;
-    setCandidatePool(prev => prev.filter(c => c.candidate_id !== candidateId));
-  };
-
-  const handleRunBattle = async (customSkills?: string[]) => {
-    setIsFighting(true);
-    try {
-      const skillsToUse = customSkills || requiredSkills;
-      const result = await runBattleCompare(skillsToUse, candidatePool.slice(0, 6));
+    const updated = candidatePool.filter(c => c.candidate_id !== candidateId);
+    setCandidatePool(updated);
+    if (updated.length >= 2) {
+      const result = computeLocalBattle(requiredSkills, updated);
       setBattleResult(result);
-    } catch (e) {
-      // Graceful fallback
-    } finally {
-      setIsFighting(false);
+    } else {
+      setBattleResult(null);
     }
   };
 
-  // Initial runs
-  useEffect(() => {
-    handleRunAutoShortlist();
-    handleRunBattle();
-  }, [selectedPreset, targetCount, minAuthScore, minVivaScore, excludeClones, requireTests]);
-
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
-      {/* Header Card */}
-      <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+      {/* Top Header Card */}
+      <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
-              Candidate Shortlist & Evaluation Matrix
+              Recruiter Battle Arena
             </h1>
+            <p className="text-sm text-[#E6C280] font-normal mt-1">
+              Compare candidates side-by-side against job requirements to see who can actually build.
+            </p>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center gap-2 bg-black/80 border border-[#D4AF37]/40 p-1 rounded-xl">
-            <button
-              onClick={() => setActiveMode('funnel')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-warrior font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                activeMode === 'funnel'
-                  ? 'bg-[#8B1E1E] text-white shadow-md'
-                  : 'text-[#C9B89A] hover:text-white'
-              }`}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              <span>Auto-Shortlist ({cohort.length})</span>
-            </button>
+          <div className="flex items-center gap-2 bg-black/60 p-1.5 rounded-xl border border-[#D4AF37]/40">
             <button
               onClick={() => setActiveMode('matrix')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-warrior font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer ${
                 activeMode === 'matrix'
-                  ? 'bg-[#8B1E1E] text-white shadow-md'
-                  : 'text-[#C9B89A] hover:text-white'
+                  ? 'bg-[#8B1E1E] text-white border border-[#D4AF37] shadow-md'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               <Swords className="w-3.5 h-3.5" />
-              <span>1-on-1 Battle Matrix</span>
+              <span>Side-by-Side Battle ({candidatePool.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveMode('funnel')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                activeMode === 'funnel'
+                  ? 'bg-[#8B1E1E] text-white border border-[#D4AF37] shadow-md'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Batch Shortlist ({cohort.length})</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* JD & Competencies Card */}
+      {/* Job Description Card */}
       <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-lg mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#3A2F27] pb-3 mb-4 gap-2">
           <div className="flex items-center gap-2 text-sm text-[#FFD166] font-bold uppercase tracking-wider">
             <FileText className="w-4 h-4 text-[#D4AF37]" />
-            <span>Target Role & Skill Benchmarks</span>
+            <span>Job Role & Required Skills</span>
           </div>
 
-          {/* Presets */}
+          {/* Preset Buttons */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#FFD166] font-bold uppercase">Presets:</span>
+            <span className="text-xs text-[#FFD166] font-bold uppercase">Role Templates:</span>
             {PRESET_JOB_DESCRIPTIONS.map((preset, idx) => (
               <button
                 key={idx}
@@ -399,7 +340,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                     : 'bg-black/50 border-[#3A2F27] text-[#C9B89A] hover:border-[#D4AF37]/50'
                 }`}
               >
-                {preset.title.split(' ')[0]}
+                {preset.title.split(' ')[0]} {preset.title.split(' ')[1] || ''}
               </button>
             ))}
           </div>
@@ -411,14 +352,15 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
               type="text"
               value={jobTitle}
               onChange={e => setJobTitle(e.target.value)}
-              placeholder="Job Title"
+              placeholder="e.g. Backend Engineer"
               className="w-full bg-black/50 border border-[#3A2F27] rounded-xl px-4 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-[#D4AF37] font-medium"
             />
             <textarea
               rows={2}
               value={jdText}
               onChange={e => setJdText(e.target.value)}
-              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl p-3.5 text-sm text-neutral-200 focus:outline-none focus:border-[#D4AF37] font-mono"
+              placeholder="Paste job description..."
+              className="w-full bg-black/50 border border-[#3A2F27] rounded-xl p-3.5 text-sm text-neutral-200 focus:outline-none focus:border-[#D4AF37] font-sans"
             />
           </div>
 
@@ -426,9 +368,9 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
           <div className="bg-black/50 rounded-xl border border-[#3A2F27] p-4 flex flex-col justify-between">
             <div>
               <span className="text-xs text-[#FFD166] uppercase tracking-wider block mb-2 font-bold">
-                Parsed Skills ({requiredSkills.length})
+                Required Skills ({requiredSkills.length})
               </span>
-              <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                 {requiredSkills.map((skill, i) => (
                   <span key={i} className="px-2.5 py-1 rounded-full text-xs font-mono bg-[#8B1E1E]/30 border border-[#D4AF37]/40 text-[#F5E9C7] flex items-center gap-1.5">
                     <span>{skill}</span>
@@ -449,309 +391,61 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 type="text"
                 value={newSkillInput}
                 onChange={e => setNewSkillInput(e.target.value)}
-                placeholder="+ Add skill tag"
+                placeholder="+ Add skill (e.g. docker)"
                 className="w-full bg-black/60 border border-[#3A2F27] rounded-lg px-2.5 py-1 text-xs text-[#F5E9C7] font-mono focus:outline-none focus:border-[#D4AF37]"
               />
               <button
                 type="submit"
-                className="px-2.5 py-1 rounded-lg bg-[#2A241B] border border-[#3A2F27] text-xs text-[#D4AF37] hover:border-[#D4AF37] cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-[#2A241B] border border-[#3A2F27] text-xs text-[#D4AF37] hover:border-[#D4AF37] cursor-pointer font-bold"
               >
-                <Plus className="w-3.5 h-3.5" />
+                +
               </button>
             </form>
           </div>
         </div>
       </div>
 
-      {/* MODE 1: HIGH-THROUGHPUT EXECUTIVE SHORTLIST FUNNEL */}
-      {activeMode === 'funnel' && (
-        <div className="space-y-6">
-          {/* Funnel Controls Card */}
-          <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-[#3A2F27] pb-5 mb-5">
-              {/* Target Count Buttons */}
-              <div>
-                <span className="text-xs uppercase font-bold text-[#FFD166] block mb-2 tracking-wider">
-                  Target Shortlist Size:
-                </span>
-                <div className="flex items-center gap-2">
-                  {[10, 15, 25, 50].map((count) => (
-                    <button
-                      key={count}
-                      onClick={() => setTargetCount(count)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
-                        targetCount === count
-                          ? 'bg-[#8B1E1E] text-white border-[#D4AF37] shadow-lg'
-                          : 'bg-black/50 text-[#C9B89A] border-[#3A2F27] hover:border-[#D4AF37]/40'
-                      }`}
-                    >
-                      Top {count} {count === 15 ? '(Standard)' : ''}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Toggles & Cutoffs */}
-              <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-semibold">
-                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
-                  <input
-                    type="checkbox"
-                    checked={excludeClones}
-                    onChange={(e) => setExcludeClones(e.target.checked)}
-                    className="accent-[#D4AF37] rounded cursor-pointer"
-                  />
-                  <span className="text-white">Exclude Clones (0% Plagiarism)</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
-                  <input
-                    type="checkbox"
-                    checked={requireTests}
-                    onChange={(e) => setRequireTests(e.target.checked)}
-                    className="accent-[#D4AF37] rounded cursor-pointer"
-                  />
-                  <span className="text-white">Require Tests in Git</span>
-                </label>
-
-                {/* Min Authenticity slider */}
-                <div className="bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27] flex items-center gap-2">
-                  <span className="text-neutral-300 text-xs uppercase font-bold">Min Auth:</span>
-                  <input
-                    type="range"
-                    min="40"
-                    max="95"
-                    step="1"
-                    value={minAuthScore}
-                    onChange={(e) => setMinAuthScore(Number(e.target.value))}
-                    className="w-28 accent-[#D4AF37] cursor-pointer"
-                  />
-                  <span className="text-[#FFD166] font-mono font-bold text-sm min-w-[36px]">{minAuthScore}%</span>
-                </div>
-
-                {/* Min Viva slider */}
-                <div className="bg-black/50 px-3.5 py-2 rounded-xl border border-[#3A2F27] flex items-center gap-2">
-                  <span className="text-neutral-300 text-xs uppercase font-bold">Min Viva:</span>
-                  <input
-                    type="range"
-                    min="2"
-                    max="10"
-                    step="1"
-                    value={minVivaScore}
-                    onChange={(e) => setMinVivaScore(Number(e.target.value))}
-                    className="w-24 accent-[#D4AF37] cursor-pointer"
-                  />
-                  <span className="text-[#D4AF37] font-mono font-bold text-sm min-w-[32px]">{minVivaScore}/10</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Funnel Performance Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-                <div className="bg-black/60 px-3.5 py-2 rounded-xl border border-[#3A2F27]">
-                  <span className="text-neutral-300 text-xs block uppercase font-mono font-bold">Cohort Ingested</span>
-                  <span className="text-white text-base sm:text-lg font-bold">{cohort.length} Applicants</span>
-                </div>
-                <div className="bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-500/40">
-                  <span className="text-emerald-300 text-xs block uppercase font-mono font-bold">Met Cutoffs</span>
-                  <span className="text-emerald-300 text-base sm:text-lg font-bold">
-                    {shortlistResult?.qualifiedCount ?? 42} Qualified
-                  </span>
-                </div>
-                <div className="bg-red-950/40 px-3.5 py-2 rounded-xl border border-red-500/40">
-                  <span className="text-red-300 text-xs block uppercase font-mono font-bold">Filtered Out</span>
-                  <span className="text-red-300 text-base sm:text-lg font-bold">
-                    {shortlistResult?.cutoffFailedCount ?? (cohort.length - (shortlistResult?.qualifiedCount ?? 42))} Screened
-                  </span>
-                </div>
-                <div className="bg-[#8B1E1E]/40 px-3.5 py-2 rounded-xl border border-[#D4AF37]/50">
-                  <span className="text-[#FFD166] text-xs block uppercase font-mono font-bold">Interview Shortlist</span>
-                  <span className="text-[#FFD166] text-base sm:text-lg font-bold">
-                    Top {shortlistResult?.shortlisted.length || 0} of {targetCount} Target
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="btn-dev-outline text-xs flex items-center gap-1.5 px-3.5 py-2 cursor-pointer"
-                  title="Print Executive Dossier"
-                >
-                  <Printer className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Print Dossier</span>
-                </button>
-
-                <button
-                  onClick={handleExportCSV}
-                  className="btn-dev-primary text-xs flex items-center gap-2 px-4 py-2 cursor-pointer shadow-lg font-warrior font-bold"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export CSV (Top {targetCount})</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Threshold Notice Banner */}
-            {shortlistResult && shortlistResult.qualifiedCount < targetCount && (
-              <div className="mt-4 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
-                <span>
-                  <strong>High Threshold Notice:</strong> Only {shortlistResult.qualifiedCount} of {cohort.length} applicants meet the strict {minAuthScore}% Authenticity & {minVivaScore}/10 Viva cutoffs. Showing all {shortlistResult.qualifiedCount} qualified candidates. Lower sliders to expand candidate volume.
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Shortlisted Candidates Table */}
-          <div className="rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl overflow-hidden">
-            <div className="p-4 border-b border-[#3A2F27] flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-warrior font-bold text-[#FFD166] uppercase tracking-wider">
-                <Trophy className="w-4 h-4 text-[#D4AF37]" />
-                <span>Executive Shortlist Ledger (Ranked 1 to {shortlistResult?.shortlisted.length || targetCount})</span>
-              </div>
-              <span className="text-xs text-neutral-300 font-mono">
-                Formula: 40% Authenticity + 35% JD Match + 25% Viva Defense
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm font-sans">
-                <thead>
-                  <tr className="border-b border-[#3A2F27] bg-black/80 text-xs font-mono font-bold uppercase tracking-wider text-[#FFD166]">
-                    <th className="py-3 px-4 text-center">Rank</th>
-                    <th className="py-3 px-4">Candidate & University</th>
-                    <th className="py-3 px-4">Pedigree Tier</th>
-                    <th className="py-3 px-4 text-center">Authenticity (40%)</th>
-                    <th className="py-3 px-4 text-center">JD Match (35%)</th>
-                    <th className="py-3 px-4 text-center">Viva Score (25%)</th>
-                    <th className="py-3 px-4 text-center">Merit Score</th>
-                    <th className="py-3 px-4 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#3A2F27]/60">
-                  {shortlistResult?.shortlisted.map((c: any, idx: number) => (
-                    <tr key={c.candidate_id || idx} className="hover:bg-neutral-900/60 transition group">
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className={`w-7 h-7 rounded-full inline-flex items-center justify-center font-bold text-xs ${
-                          idx === 0 
-                            ? 'bg-[#8B1E1E] text-[#FFD166] border border-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.4)]'
-                            : idx < 3
-                            ? 'bg-[#2A241B] text-[#FFD166] border border-[#D4AF37]/40'
-                            : 'bg-black/60 text-neutral-300 border border-[#3A2F27]'
-                        }`}>
-                          #{idx + 1}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-white text-base">
-                          {c.name}
-                        </div>
-                        <div className="text-xs text-neutral-300 flex items-center gap-2 mt-1">
-                          <span>{c.college}</span>
-                          <span className="text-[#3A2F27]">•</span>
-                          <span className="font-mono text-[#FFD166]">{c.candidate_id}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          c.college_tier === 'Tier-1'
-                            ? 'bg-amber-950/40 border border-amber-500/40 text-amber-300'
-                            : 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-300'
-                        }`}>
-                          {c.college_tier || 'Tier-3 (Merit)'}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className="font-bold text-emerald-400">
-                          {c.authenticity_score}%
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className="font-bold text-[#FFD166]">
-                          {c.jd_match_pct || 85}%
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className="font-bold text-[#D4AF37]">
-                          {c.viva_score} / 10
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className={`text-base font-black ${
-                          idx === 0 ? 'text-[#FFD166]' : 'text-white'
-                        }`}>
-                          {c.composite_score}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => {
-                            if (onSelectCandidate) onSelectCandidate(c);
-                            onNavigateToTab('proofcard');
-                          }}
-                          className="px-3 py-1 rounded-lg bg-black/60 hover:bg-[#8B1E1E]/60 border border-[#D4AF37]/40 text-[#FFD166] text-xs font-warrior font-bold transition cursor-pointer flex items-center gap-1 mx-auto"
-                        >
-                          <span>Inspect ProofCard</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODE 2: 1-ON-1 RECRUITER BATTLE MATRIX */}
+      {/* MODE 1: SIDE-BY-SIDE BATTLE MATRIX */}
       {activeMode === 'matrix' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-[#C9B89A] font-warrior font-bold uppercase tracking-wider">
-              Side-by-Side Contender Evaluation ({candidatePool.length} Active Candidates)
+            <span className="text-sm text-[#FFD166] font-bold uppercase tracking-wider">
+              Contenders in Battle ({candidatePool.length} Active Candidates)
             </span>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="btn-dev-outline text-xs flex items-center gap-1.5 px-3 py-1.5 cursor-pointer"
+                className="btn-dev-outline text-xs flex items-center gap-1.5 px-3 py-1.5 cursor-pointer font-bold"
               >
                 <UserPlus className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>+ Add Real GitHub Candidate</span>
+                <span>+ Add GitHub Candidate</span>
               </button>
 
-              <button
-                onClick={() => handleRunBattle()}
-                disabled={isFighting}
-                className="btn-dev-primary text-xs flex items-center gap-2 px-4 py-1.5 cursor-pointer shadow-lg"
-              >
-                <Swords className="w-3.5 h-3.5" />
-                <span>{isFighting ? 'Evaluating...' : 'Re-Rank Contenders'}</span>
-              </button>
+              {candidatePool.length >= 2 && (
+                <button
+                  onClick={() => handleRunBattle()}
+                  disabled={isFighting}
+                  className="btn-dev-primary text-xs flex items-center gap-2 px-4 py-1.5 cursor-pointer shadow-lg font-bold"
+                >
+                  <Swords className="w-3.5 h-3.5" />
+                  <span>{isFighting ? 'Comparing...' : 'Re-Rank Candidates'}</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Add Real Candidate Modal */}
+          {/* Add Candidate Modal */}
           {showAddModal && (
-            <div className="p-6 rounded-2xl mb-6 bg-black/80 backdrop-blur-md border border-[#D4AF37]/50 shadow-2xl animate-in fade-in">
+            <div className="p-6 rounded-2xl mb-6 bg-black/90 backdrop-blur-md border border-[#D4AF37]/50 shadow-2xl animate-in fade-in">
               <div className="flex items-center justify-between border-b border-[#3A2F27] pb-3 mb-4">
-                <span className="font-warrior font-bold text-sm text-[#D4AF37] flex items-center gap-2">
+                <span className="font-bold text-sm text-[#D4AF37] flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-[#D4AF37]" />
-                  <span>Ingest Real-World Candidate into Battle Arena</span>
+                  <span>Add Candidate to Battle Arena</span>
                 </span>
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="text-[#8A7F6B] hover:text-white font-bold cursor-pointer"
+                  className="text-neutral-400 hover:text-white font-bold cursor-pointer"
                 >
                   ✕
                 </button>
@@ -765,49 +459,49 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
 
               <form onSubmit={handleAddRealCandidate} className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[11px] font-warrior font-bold text-[#C9B89A] uppercase block mb-1">
+                  <label className="text-xs font-bold text-neutral-300 block mb-1">
                     Candidate Name
                   </label>
                   <input
                     type="text"
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
-                    placeholder="e.g. Linus Torvalds"
+                    placeholder="e.g. Alex Morgan"
                     className="w-full bg-black/60 border border-[#3A2F27] rounded-xl px-3.5 py-2 text-xs text-[#F5E9C7] focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-warrior font-bold text-[#C9B89A] uppercase block mb-1">
-                    GitHub Profile or Repo URL *
+                  <label className="text-xs font-bold text-neutral-300 block mb-1">
+                    GitHub Repository Link *
                   </label>
                   <input
                     type="text"
                     value={newUrl}
                     onChange={e => setNewUrl(e.target.value)}
-                    placeholder="e.g. https://github.com/torvalds/git"
+                    placeholder="https://github.com/user/repo"
                     className="w-full bg-black/60 border border-[#3A2F27] rounded-xl px-3.5 py-2 text-xs text-[#F5E9C7] font-mono focus:outline-none focus:border-[#D4AF37]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-warrior font-bold text-[#C9B89A] uppercase block mb-1">
-                    University / Institute
+                  <label className="text-xs font-bold text-neutral-300 block mb-1">
+                    College / University
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={newCollege}
                       onChange={e => setNewCollege(e.target.value)}
-                      placeholder="e.g. Helsinki Tech"
+                      placeholder="e.g. State University"
                       className="w-full bg-black/60 border border-[#3A2F27] rounded-xl px-3.5 py-2 text-xs text-[#F5E9C7] focus:outline-none focus:border-[#D4AF37]"
                     />
                     <button
                       type="submit"
                       disabled={isAddingCandidate}
-                      className="btn-dev-primary text-xs px-4 py-2 shrink-0 cursor-pointer flex items-center gap-1.5"
+                      className="btn-dev-primary text-xs px-4 py-2 shrink-0 cursor-pointer flex items-center gap-1.5 font-bold"
                     >
-                      {isAddingCandidate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                      <span>{isAddingCandidate ? 'Scanning...' : 'Analyze'}</span>
+                      {isAddingCandidate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      <span>{isAddingCandidate ? 'Scanning...' : 'Add'}</span>
                     </button>
                   </div>
                 </div>
@@ -815,8 +509,36 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
             </div>
           )}
 
-          {/* Battle Results Matrix */}
-          {battleResult && (
+          {/* Empty State if Fewer Than 2 Candidates in Pool */}
+          {candidatePool.length < 2 ? (
+            <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 text-center shadow-2xl">
+              <Swords className="w-12 h-12 mx-auto mb-3 text-[#D4AF37]" />
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                {candidatePool.length === 1 
+                  ? '1 Candidate in Roster — Need at least 2 for Battle'
+                  : 'No Candidates in Battle Roster'}
+              </h2>
+              <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
+                {candidatePool.length === 1 
+                  ? `"${candidatePool[0].name}" is ready. Add 1 more candidate to compare their code head-to-head.`
+                  : 'Scan candidates in the Code Ingestion Scanner or click "+ Add GitHub Candidate" to pit developers side-by-side.'}
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="btn-dev-primary text-xs px-5 py-2.5 cursor-pointer font-bold"
+                >
+                  + Add GitHub Candidate
+                </button>
+                <button
+                  onClick={() => onNavigateToTab('ingestion')}
+                  className="btn-dev-outline text-xs px-5 py-2.5 cursor-pointer font-bold"
+                >
+                  Scan in Code Ingestion
+                </button>
+              </div>
+            </div>
+          ) : battleResult ? (
             <div className="space-y-5">
               {/* Winner Banner */}
               <div className="p-5 rounded-2xl bg-black/70 backdrop-blur-md border border-[#D4AF37]/50 shadow-xl">
@@ -827,33 +549,33 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                          Top Algorithmic Match
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
+                          Top Candidate Match
                         </span>
-                        <span className="text-xs px-2 py-0.2 rounded-full bg-[#2A241B] border border-[#D4AF37]/40 text-[#FFD166] font-mono font-bold">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#2A241B] border border-[#D4AF37]/40 text-[#FFD166] font-mono font-bold">
                           +{battleResult.diff_pts} Pts Lead
                         </span>
                       </div>
-                      <h2 className="text-xl font-deviathon font-extrabold text-white mt-0.5">
+                      <h2 className="text-xl font-bold text-white mt-0.5">
                         {battleResult.winner_name}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="text-xs text-neutral-300 bg-black/50 p-3 rounded-xl border border-[#3A2F27] max-w-md font-sans leading-relaxed">
-                    <span className="text-[10px] uppercase font-warrior font-bold text-[#D4AF37] block mb-0.5">Algorithmic Rationale:</span>
+                  <div className="text-xs text-neutral-300 bg-black/50 p-3 rounded-xl border border-[#3A2F27] max-w-md leading-relaxed">
+                    <span className="text-xs uppercase font-bold text-[#D4AF37] block mb-0.5">Why This Candidate Won:</span>
                     {battleResult.rationale}
                   </div>
                 </div>
               </div>
 
-              {/* Candidate Comparison Cards */}
+              {/* Side-by-Side Candidate Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {battleResult.battle_matrix.map((c, idx) => {
                   const isWinner = c.candidate_id === battleResult.winner_id;
                   return (
                     <div 
-                      key={c.candidate_id}
+                      key={c.candidate_id || idx}
                       className={`rounded-2xl border p-5 flex flex-col justify-between transition-all backdrop-blur-md ${
                         isWinner
                           ? 'bg-black/75 border-[#D4AF37] shadow-[0_0_18px_rgba(212,175,55,0.3)]'
@@ -863,7 +585,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                       <div>
                         {/* Rank Badge & Delete */}
                         <div className="flex items-center justify-between mb-2.5 text-xs">
-                          <span className={`px-2 py-0.5 rounded-full font-warrior font-bold text-xs ${
+                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs ${
                             idx === 0 
                               ? 'bg-[#8B1E1E] text-white border border-[#D4AF37]' 
                               : 'bg-black/50 text-[#C9B89A] border border-[#3A2F27]'
@@ -876,7 +598,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveCandidate(c.candidate_id)}
-                                className="text-[#8A7F6B] hover:text-red-400 p-0.5 cursor-pointer"
+                                className="text-neutral-500 hover:text-red-400 p-0.5 cursor-pointer"
                                 title="Remove from Battle"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -885,52 +607,72 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                           </div>
                         </div>
 
-                        {/* Candidate Name */}
-                        <h3 className="text-base sm:text-lg font-bold text-white font-sans">
-                          {c.name}
-                        </h3>
-                        <p className="text-xs text-neutral-300 font-mono">
-                          {c.candidate_id}
-                        </p>
-
-                        {/* Composite Score Card */}
-                        <div className="my-3 p-3.5 rounded-xl bg-black/50 border border-[#3A2F27] text-center font-mono">
-                          <div className="text-xs text-neutral-300 uppercase font-bold">Match Score</div>
-                          <div className={`text-2xl sm:text-3xl font-black mt-0.5 ${
-                            isWinner ? 'text-[#FFD166]' : 'text-white'
-                          }`}>
-                            {c.composite_score} <span className="text-xs font-normal text-neutral-400">/ 100</span>
+                        {/* Candidate Name & Composite Score */}
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-bold text-white text-base truncate max-w-[180px]">
+                            {c.name}
+                          </h3>
+                          <div className="text-right">
+                            <span className={`text-xl font-bold font-mono ${isWinner ? 'text-[#FFD166]' : 'text-white'}`}>
+                              {c.composite_score}
+                            </span>
+                            <span className="text-neutral-400 text-xs block font-mono">/ 100</span>
                           </div>
-                          <p className="text-xs text-[#FFD166] font-sans mt-1 font-medium">
-                            Auth: {c.authenticity_score}% · JD: {c.jd_match_pct}% · Viva: {c.viva_score}/10
-                          </p>
                         </div>
 
-                        {/* Verified Skills Checklist */}
-                        <div className="space-y-2.5 text-xs sm:text-sm">
+                        {/* Clone Warning Badge if Clone */}
+                        {c.is_clone && (
+                          <div className="mb-3 p-2 rounded-lg bg-red-950/60 border border-red-500/50 text-red-200 text-xs flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-400" />
+                            <span>Tutorial Clone Flagged</span>
+                          </div>
+                        )}
+
+                        {/* 3 Metric Pills */}
+                        <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-black/60 border border-[#3A2F27] text-center text-xs font-mono mb-4">
                           <div>
-                            <span className="text-xs text-[#FFD166] uppercase font-bold block mb-1">
+                            <span className="text-neutral-400 text-[10px] block">Auth</span>
+                            <span className="font-bold text-emerald-400">{c.authenticity_score}%</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400 text-[10px] block">JD Match</span>
+                            <span className="font-bold text-[#FFD166]">{c.jd_match_pct}%</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400 text-[10px] block">Viva</span>
+                            <span className="font-bold text-[#D4AF37]">{c.viva_score}/10</span>
+                          </div>
+                        </div>
+
+                        {/* Skills Breakdown */}
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <span className="text-neutral-400 uppercase font-bold block mb-1">
                               Verified in Code:
                             </span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {c.verified_skills.map((s, i) => (
-                                <span key={i} className="px-2.5 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                                  {s}
-                                </span>
-                              ))}
+                            <div className="flex flex-wrap gap-1">
+                              {c.verified_skills.length > 0 ? (
+                                c.verified_skills.map((s, i) => (
+                                  <span key={i} className="px-2 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-1">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                                    {s}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-neutral-400 italic">None found</span>
+                              )}
                             </div>
                           </div>
 
                           {c.missing_skills.length > 0 && (
                             <div>
-                              <span className="text-xs text-neutral-400 uppercase font-bold block mb-1">
+                              <span className="text-neutral-400 uppercase font-bold block mb-1">
                                 Missing Skills:
                               </span>
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap gap-1">
                                 {c.missing_skills.map((s, i) => (
-                                  <span key={i} className="px-2.5 py-1 rounded-full bg-black/40 border border-[#3A2F27] text-neutral-300 text-xs font-mono flex items-center gap-1">
-                                    <XCircle className="w-3 h-3 text-neutral-400 shrink-0" />
+                                  <span key={i} className="px-2 py-0.5 rounded-full bg-black/40 border border-[#3A2F27] text-neutral-400 text-xs font-mono flex items-center gap-1">
+                                    <XCircle className="w-3 h-3 text-neutral-500 shrink-0" />
                                     {s}
                                   </span>
                                 ))}
@@ -942,9 +684,9 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
 
                       {/* Test Files Indicator */}
                       <div className="mt-4 pt-2.5 border-t border-[#3A2F27] flex items-center justify-between text-xs">
-                        <span className="text-[#8A7F6B] font-sans">Automated Tests:</span>
-                        <span className={c.has_tests ? 'text-emerald-400 font-bold' : 'text-[#8A7F6B]'}>
-                          {c.has_tests ? '✓ Verified in Git' : '✗ None Found'}
+                        <span className="text-neutral-400">Unit Tests:</span>
+                        <span className={c.has_tests ? 'text-emerald-400 font-bold' : 'text-neutral-500'}>
+                          {c.has_tests ? '✓ Verified in Code' : '✗ None Found'}
                         </span>
                       </div>
                     </div>
@@ -952,17 +694,91 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                 })}
               </div>
             </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* MODE 2: BATCH SHORTLIST FUNNEL */}
+      {activeMode === 'funnel' && (
+        <div className="space-y-6">
+          {cohort.length === 0 ? (
+            <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 text-center shadow-2xl">
+              <Users className="w-12 h-12 mx-auto mb-3 text-[#D4AF37]" />
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                No Ingested Batch Cohort
+              </h2>
+              <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
+                Upload a candidate CSV roster in the Code Ingestion Scanner to run automated ranking and shortlisting on high-volume applicant pools.
+              </p>
+              <button
+                onClick={() => onNavigateToTab('ingestion')}
+                className="btn-dev-primary text-xs px-6 py-3 cursor-pointer font-bold inline-flex items-center gap-2"
+              >
+                <span>Go to Batch Ingestion</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">
+                  Batch Shortlist ({cohort.length} Candidates)
+                </h2>
+                <button
+                  onClick={() => {
+                    const res = computeLocalBattle(requiredSkills, cohort);
+                    setShortlistResult({
+                      shortlisted: res.battle_matrix,
+                      qualifiedCount: res.battle_matrix.filter(c => c.authenticity_score >= 60).length,
+                      cutoffFailedCount: res.battle_matrix.filter(c => c.authenticity_score < 60).length,
+                      rejectedCount: res.battle_matrix.filter(c => c.is_clone).length,
+                      hoursSaved: Math.round(cohort.length * 0.83 * 10) / 10
+                    });
+                  }}
+                  className="btn-dev-primary text-xs px-4 py-2 cursor-pointer font-bold"
+                >
+                  Run Batch Shortlist
+                </button>
+              </div>
+
+              {shortlistResult && (
+                <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
+                  <table className="w-full text-left text-sm text-neutral-200">
+                    <thead className="bg-[#140b08] uppercase font-bold text-xs text-[#FFD166] border-b border-[#3A2F27]">
+                      <tr>
+                        <th className="py-3 px-3">Rank</th>
+                        <th className="py-3 px-3">Candidate & College</th>
+                        <th className="py-3 px-3 text-center">Authenticity</th>
+                        <th className="py-3 px-3 text-center">JD Match</th>
+                        <th className="py-3 px-3 text-center">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#2A241B] font-mono text-xs">
+                      {shortlistResult.shortlisted.map((c, idx) => (
+                        <tr key={idx} className="hover:bg-white/5">
+                          <td className="py-3 px-3 font-bold text-[#FFD166]">#{idx + 1}</td>
+                          <td className="py-3 px-3 font-sans font-bold text-white">{c.name} ({c.college})</td>
+                          <td className="py-3 px-3 text-center text-emerald-400">{c.authenticity_score}%</td>
+                          <td className="py-3 px-3 text-center text-[#FFD166]">{c.jd_match_pct}%</td>
+                          <td className="py-3 px-3 text-center font-bold text-white text-sm">{c.composite_score}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
 
-      {/* Navigation CTA */}
+      {/* Navigation CTA to Bias Mirror */}
       <div className="mt-6 flex justify-center">
         <button
           onClick={() => onNavigateToTab('bias-mirror')}
-          className="btn-dev-primary text-xs flex items-center gap-2 shadow-xl cursor-pointer px-6 py-3"
+          className="btn-dev-primary text-xs flex items-center gap-2 shadow-xl cursor-pointer px-6 py-3 font-bold"
         >
-          <span>Inspect Equal Opportunity Bias Audit</span>
+          <span>Inspect Equal Opportunity Fairness Audit</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

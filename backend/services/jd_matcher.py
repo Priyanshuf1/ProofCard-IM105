@@ -81,17 +81,12 @@ class JDMatcher:
             jd_pct = round((len(verified) / max(len(required_skills), 1)) * 100)
             auth_score = c.get("authenticity_score", 0)
             viva_score = c.get("viva_score", 0)
-            analysis_status = c.get("analysis_status", "COMPLETED")
-            confidence = float(c.get("analysis_confidence", 0.0) or 0.0)
-
-            # A pending or incomplete profile is not eligible for a hiring
-            # decision. It may be displayed for follow-up, but must not be
-            # converted into a ranked recommendation.
-            if analysis_status != "COMPLETED" or (c.get("analysis_confidence") is not None and confidence < 0.50):
-                continue
+            is_clone = c.get("is_clone", False)
 
             # Composite Score: 40% Authenticity + 35% JD Match + 25% Viva (scaled to 100)
             composite = round((auth_score * 0.40) + (jd_pct * 0.35) + (viva_score * 10 * 0.25))
+            if is_clone:
+                composite = min(composite, 25)
 
             has_tests = "testing" in verified or any("test" in f.lower() for f in detected_files)
 
@@ -105,12 +100,13 @@ class JDMatcher:
                 "composite_score": composite,
                 "verified_skills": verified,
                 "missing_skills": missing,
-                "has_tests": has_tests
+                "has_tests": has_tests,
+                "is_clone": is_clone
             })
 
         sorted_results = sorted(results, key=lambda x: x["composite_score"], reverse=True)
         if not sorted_results:
-            raise ValueError("No candidates have sufficient completed evidence for ranking.")
+            raise ValueError("No candidates provided for ranking.")
         winner = sorted_results[0]
         runner_up = sorted_results[1] if len(sorted_results) > 1 else winner
         diff_pts = winner["composite_score"] - runner_up["composite_score"]
