@@ -52,6 +52,21 @@ interface SpeechRecognitionLike {
 
 type SpeechRecognitionConstructorLike = new () => SpeechRecognitionLike;
 
+
+export const calculateQuestionTime = (question: VivaQuestion | undefined): { seconds: number; rationale: string } => {
+  if (!question) return { seconds: 60, rationale: 'Standard 60s technical defense window.' };
+  const words = (question.question || '').split(/\s+/).filter(Boolean).length;
+  const readingSeconds = Math.max(10, Math.ceil((words / 180) * 60));
+  const conceptsCount = question.expected_concepts?.length || 2;
+  const conceptsSeconds = conceptsCount * 15;
+  const diff = (question.difficulty || '').toLowerCase();
+  const diffBonus = diff === 'hard' ? 25 : diff === 'medium' ? 15 : 5;
+  const rawTotal = readingSeconds + conceptsSeconds + diffBonus;
+  const seconds = Math.max(45, Math.min(120, rawTotal));
+  const rationale = `${seconds}s allocated: ${readingSeconds}s reading (${words} words) + ${conceptsSeconds}s formulation (${conceptsCount} concepts) + ${diffBonus}s ${question.difficulty || 'medium'} difficulty buffer.`;
+  return { seconds, rationale };
+};
+
 export const VivaArena: React.FC<VivaArenaProps> = ({
   candidate,
   onUpdateVivaScore,
@@ -133,7 +148,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     return () => stopVoiceDefense(true);
   }, []);
 
-  // Timer countdown
+  // Timer countdown and auto-submission on expiry
   useEffect(() => {
     let timer: any = null;
     if (isTimerRunning && timeLeft > 0) {
@@ -142,18 +157,21 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       }, 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
       setIsTimerRunning(false);
+      handleAutoSubmitOnExpiry();
     }
     return () => clearInterval(timer);
   }, [isTimerRunning, timeLeft]);
 
-  // Reset when question changes
+  // Dynamic timer reset when question changes
   useEffect(() => {
     stopVoiceDefense(true);
     setInterimTranscript('');
-    setTimeLeft(60);
+    const targetQ = questions[currentQuestionIndex];
+    const { seconds } = calculateQuestionTime(targetQ);
+    setTimeLeft(seconds);
     setIsTimerRunning(!evaluatedAnswers[currentQuestionIndex]);
     setUserAnswer('');
-  }, [currentQuestionIndex]);
+  }, [currentQuestionIndex, questions]);
 
   // Sync questions when candidate changes
   useEffect(() => {
@@ -280,6 +298,42 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     }
   };
 
+  const handleAutoSubmitOnExpiry = async () => {
+    stopVoiceDefense(true);
+    const ansText = userAnswer.trim();
+    if (!ansText) {
+      const evaluation = {
+        score: 0,
+        demonstrated: [],
+        missing: currentQ?.expected_concepts || [],
+        feedback: "Time expired without submission! Question auto-assigned 0/10 points.",
+        passed: false,
+        ai_detection: {
+          status: "analyzed",
+          classification: "insufficient_text" as const,
+          model_version: "hybrid-tfidf-burstiness-v1.2",
+          text_length: 0,
+          language_supported: true,
+          limitations: ["No answer text submitted within allocated time limit."]
+        },
+        adversarial_injection_detected: false
+      };
+      const updated = {
+        ...evaluatedAnswers,
+        [currentQuestionIndex]: evaluation
+      };
+      setEvaluatedAnswers(updated);
+      const keys = Object.keys(updated);
+      if (keys.length === questions.length) {
+        const total = Object.values(updated).reduce((acc: number, val: any) => acc + val.score, 0);
+        const avg = Math.round(total / questions.length);
+        onUpdateVivaScore(avg);
+      }
+      return;
+    }
+    await handleSubmitAnswer();
+  };
+
   const handleSubmitAnswer = async () => {
     if (!userAnswer.trim()) return;
     setIsEvaluating(true);
@@ -301,7 +355,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         feedback: res.feedback || (res.passed 
           ? 'Strong technical answer demonstrating genuine architectural ownership.' 
           : 'Answer was superficial, off-topic, or nonsensical; missed critical concepts.'),
-        passed: res.passed
+        passed: res.passed,
+        ai_detection: res.ai_detection,
+        adversarial_injection_detected: res.adversarial_injection_detected
       };
 
       const updated = {
@@ -512,14 +568,19 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           })}
         </div>
 
-        {/* 60s Countdown Timer */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${
-          timeLeft <= 10
-            ? 'bg-red-950/60 border-red-500 text-red-300 animate-pulse'
-            : 'bg-black/50 border-[#D4AF37]/40 text-[#FFD166]'
-        }`}>
-          <Clock className="w-3.5 h-3.5" />
-          <span>{timeLeft}s REMAINING</span>
+        {/* Dynamic Countdown Timer with Rationale */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-[#E6C280]/80 font-mono hidden md:inline">
+            {calculateQuestionTime(currentQ).rationale}
+          </span>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${
+            timeLeft <= 10
+              ? 'bg-red-950/60 border-red-500 text-red-300 animate-pulse'
+              : 'bg-black/50 border-[#D4AF37]/40 text-[#FFD166]'
+          }`}>
+            <Clock className="w-3.5 h-3.5" />
+            <span>{timeLeft}s REMAINING</span>
+          </div>
         </div>
       </div>
 
@@ -593,10 +654,18 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             rows={3}
             value={userAnswer}
             onChange={e => setUserAnswer(e.target.value)}
-            disabled={isCurrentEvaluated}
-            placeholder="Type your technical defense or click Voice Defense to speak..."
-            className="w-full bg-black/60 border border-[#3A2F27] rounded-xl p-3.5 text-xs sm:text-sm text-neutral-200 leading-relaxed focus:outline-none focus:border-[#D4AF37] font-mono transition"
+            disabled={isCurrentEvaluated || timeLeft === 0 || isEvaluating}
+            placeholder={timeLeft === 0 && !isCurrentEvaluated ? "Time expired! Input locked." : "Type your technical defense or click Voice Defense to speak..."}
+            className={`w-full bg-black/60 border rounded-xl p-3.5 text-xs sm:text-sm text-neutral-200 leading-relaxed focus:outline-none font-mono transition ${
+              timeLeft === 0 && !isCurrentEvaluated ? 'border-red-500/80 bg-red-950/20 opacity-75' : 'border-[#3A2F27] focus:border-[#D4AF37]'
+            }`}
           ></textarea>
+          {timeLeft === 0 && !isCurrentEvaluated && (
+            <p className="mt-1.5 text-xs text-red-400 font-mono flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Time has expired. Answer input is locked and auto-submitted.</span>
+            </p>
+          )}
         </div>
 
         {/* Evaluation Result Banner */}
@@ -626,6 +695,49 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             <p className="text-neutral-100 text-sm leading-relaxed font-sans font-medium">
               {evaluatedAnswers[currentQuestionIndex].feedback}
             </p>
+
+            {/* Prompt Injection Warning if detected */}
+            {evaluatedAnswers[currentQuestionIndex].adversarial_injection_detected && (
+              <div className="mt-3 p-2.5 rounded-lg bg-amber-950/60 border border-amber-500/60 text-amber-200 text-xs flex items-center gap-2 font-mono">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span><strong>Adversarial Injection Neutralized:</strong> Hostile system prompt overrides or HTML comments in candidate response were detected and sanitized.</span>
+              </div>
+            )}
+
+            {/* AI Text Pattern Detection Analysis */}
+            {evaluatedAnswers[currentQuestionIndex].ai_detection && (
+              <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <span className="text-neutral-400">AI Pattern Detection:</span>
+                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'ai_like' && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500 text-red-200 font-bold flex items-center gap-1">
+                      <span>🤖 AI-Generated Pattern ({Math.round((evaluatedAnswers[currentQuestionIndex].ai_detection.ai_probability || 0.8) * 100)}% prob) — Score Penalized</span>
+                    </span>
+                  )}
+                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'human_like' && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500 text-emerald-200 font-bold flex items-center gap-1">
+                      <span>👤 Verified Human Authorship ({Math.round((evaluatedAnswers[currentQuestionIndex].ai_detection.human_probability || 0.9) * 100)}% confidence)</span>
+                    </span>
+                  )}
+                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'mixed_or_uncertain' && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-500 text-amber-200 font-bold flex items-center gap-1">
+                      <span>⚖️ Mixed / Uncertain Style</span>
+                    </span>
+                  )}
+                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'insufficient_text' && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
+                      <span>ℹ️ Short Answer (AI check skipped)</span>
+                    </span>
+                  )}
+                  {evaluatedAnswers[currentQuestionIndex].ai_detection.classification === 'unsupported_language' && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-400 font-bold flex items-center gap-1">
+                      <span>🌐 Non-English Script</span>
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-neutral-400 font-mono">Model: {evaluatedAnswers[currentQuestionIndex].ai_detection.model_version}</span>
+              </div>
+            )}
           </div>
         )}
 

@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from backend.services.viva_engine import VivaEngine
+from backend.services.ai_detector import AIDetector
 
 router = APIRouter(prefix="/api/viva", tags=["Dynamic Code Viva"])
 
@@ -21,6 +22,9 @@ class BatchVivaSubmission(BaseModel):
 class GenerateMoreRequest(BaseModel):
     complex_functions: list
     count: int = 5
+
+class AIDetectRequest(BaseModel):
+    text: str
 
 @router.post("/generate-more")
 def generate_more_viva_questions(req: GenerateMoreRequest):
@@ -94,3 +98,8 @@ def submit_viva_session(
         "evaluations": evaluations,
         "overall_feedback": feedback
     }
+
+@router.post("/ai-detect")
+def detect_ai_text(req: AIDetectRequest):
+    detector = AIDetector()
+    return detector.detect(req.text)

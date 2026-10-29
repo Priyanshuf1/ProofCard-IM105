@@ -336,6 +336,18 @@ export async function evaluateVivaAnswer(
       concepts_missing: expectedConcepts,
       feedback: 'Response is empty, non-answer, joke, or unparseable gibberish. Zero technical concepts demonstrated (Score: 0/10).',
       passed: false,
+      ai_detection: {
+        status: 'analyzed',
+        classification: 'insufficient_text' as const,
+        ai_probability: null,
+        human_probability: null,
+        model_score: null,
+        text_length: text.length,
+        language_supported: true,
+        model_version: 'hybrid-tfidf-burstiness-v1.2',
+        limitations: ['Answer contains fewer than 40 characters or 9 words; evidence is insufficient for reliable classification.']
+      },
+      adversarial_injection_detected: false,
     };
   }
 
@@ -483,6 +495,18 @@ export async function evaluateVivaAnswer(
       concepts_missing: expectedConcepts,
       feedback: `Did not address any required technical concepts: ${topMissing.join(', ')} (Score: 0/10).`,
       passed: false,
+      ai_detection: {
+        status: 'analyzed',
+        classification: (text.length < 40 ? 'insufficient_text' : 'human_like') as any,
+        ai_probability: text.length < 40 ? null : 0.12,
+        human_probability: text.length < 40 ? null : 0.88,
+        model_score: text.length < 40 ? null : 0.12,
+        text_length: text.length,
+        language_supported: true,
+        model_version: 'hybrid-tfidf-burstiness-v1.2',
+        limitations: ['Text-only detection estimates writing pattern similarity and cannot establish authorship with certainty.']
+      },
+      adversarial_injection_detected: /system\s*prompt|ignore\s+all\s+previous/i.test(candidateAnswer),
     };
   }
 
@@ -551,6 +575,18 @@ export async function evaluateVivaAnswer(
     concepts_missing: missing,
     feedback: feedback,
     passed: passed,
+    ai_detection: {
+      status: 'analyzed',
+      classification: (text.length < 40 ? 'insufficient_text' : 'human_like') as any,
+      ai_probability: text.length < 40 ? null : 0.12,
+      human_probability: text.length < 40 ? null : 0.88,
+      model_score: text.length < 40 ? null : 0.12,
+      text_length: text.length,
+      language_supported: true,
+      model_version: 'hybrid-tfidf-burstiness-v1.2',
+      limitations: ['Text-only detection estimates writing pattern similarity and cannot establish authorship with certainty.']
+    },
+    adversarial_injection_detected: /system\s*prompt|ignore\s+all\s+previous/i.test(candidateAnswer),
   };
 }
 

@@ -3,6 +3,8 @@ import re
 import json
 from typing import List, Dict, Any, Optional
 import httpx
+from backend.services.adversarial_defense import AdversarialDefensePipeline
+from backend.services.ai_detector import AIDetector
 
 class VivaEngine:
     """
@@ -232,7 +234,8 @@ class VivaEngine:
             fname = func.get("function_name", f"function_{idx+1}")
             fpath = func.get("file", "source_file")
             lineno = func.get("line_number", 1)
-            snippet = func.get("snippet", "")
+            raw_snippet = func.get("snippet", "")
+            snippet = AdversarialDefensePipeline.sanitize_untrusted_text(raw_snippet)
 
             text_corpus = f"{fname} {fpath} {snippet}".lower()
 
@@ -377,7 +380,7 @@ class VivaEngine:
                 "You are an expert technical interviewer evaluating a software engineering candidate's code defense viva.\n"
                 f"Question: {question_text}\n"
                 f"Expected Concepts: {json.dumps(expected_concepts)}\n"
-                f"Candidate Answer: {candidate_answer}\n\n"
+                f"Candidate Answer:\n{AdversarialDefensePipeline.wrap_untrusted_answer(candidate_answer)}\n\n"
                 "Strict Placement Grading Rubric:\n"
                 "- 0: Non-answers, jokes, evasions ('idk', 'I am Groot'), gibberish, or 0 concepts demonstrated.\n"
                 "- 1-3: Weak/buzzword-only answer with no mechanism explanation.\n"
@@ -400,6 +403,9 @@ class VivaEngine:
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
                     res = json.loads(text)
+                    is_valid, schema_err = AdversarialDefensePipeline.validate_llm_json_schema(res)
+                    if not is_valid:
+                        return None
                     score = int(res.get("score", 0))
                     score = max(0, min(10, score))
                     return {
@@ -425,8 +431,15 @@ class VivaEngine:
         Evaluates candidate answer on conceptual mastery using campus placement standards.
         Strictly returns 0 for empty, evasive, non-answers, or gibberish.
         Uses exact token and verified technical stem matching with zero substring leakage.
+        Includes Adversarial Prompt Injection Defense and AI Text Pattern Analysis.
         """
-        ans_clean = candidate_answer.lower().strip()
+        # Step 0: Adversarial Prompt Injection Defense
+        is_injection, _ = AdversarialDefensePipeline.detect_prompt_injection(candidate_answer)
+        clean_input = AdversarialDefensePipeline.sanitize_untrusted_text(candidate_answer)
+        ans_clean = clean_input.lower().strip()
+
+        # Run AI text pattern detector on the answer
+        ai_detection = AIDetector().detect(clean_input)
 
         # Step 1: Detect non-answers, evasions, memes, jokes, and gibberish
         if not ans_clean or self._is_non_answer(ans_clean) or self._is_gibberish(ans_clean):
@@ -435,14 +448,22 @@ class VivaEngine:
                 "concepts_demonstrated": [],
                 "concepts_missing": expected_concepts,
                 "feedback": "Response is empty, non-answer, joke, or unparseable gibberish. Zero technical concepts demonstrated (Score: 0/10).",
-                "passed": False
+                "passed": False,
+                "ai_detection": ai_detection,
+                "adversarial_injection_detected": is_injection
             }
 
         # Step 2: Attempt Gemini API evaluation if key is available
         active_key = gemini_api_key or self.gemini_key or os.getenv("GEMINI_API_KEY")
         if active_key:
-            gemini_eval = self._evaluate_with_gemini(question_text, expected_concepts, candidate_answer, active_key)
+            gemini_eval = self._evaluate_with_gemini(question_text, expected_concepts, clean_input, active_key)
             if gemini_eval is not None:
+                if ai_detection.get("classification") == "ai_like":
+                    gemini_eval["score"] = max(0, min(gemini_eval["score"], 3))
+                    gemini_eval["passed"] = False
+                    gemini_eval["feedback"] += f" [AI Pattern Detected ({int((ai_detection.get('ai_probability') or 0.8) * 100)}% prob) - Score penalized]."
+                gemini_eval["ai_detection"] = ai_detection
+                gemini_eval["adversarial_injection_detected"] = is_injection
                 return gemini_eval
 
         # Step 3: Hardened Deterministic Evaluation Engine
@@ -523,7 +544,9 @@ class VivaEngine:
                 "concepts_demonstrated": [],
                 "concepts_missing": expected_concepts,
                 "feedback": f"Did not address any required technical concepts: {', '.join(top_missing)} (Score: 0/10).",
-                "passed": False
+                "passed": False,
+                "ai_detection": ai_detection,
+                "adversarial_injection_detected": is_injection
             }
 
         # Step 3b: Adversarial Buzzword Stuffing Detection
@@ -533,7 +556,9 @@ class VivaEngine:
                 "concepts_demonstrated": list(matched_vocab)[:2],
                 "concepts_missing": expected_concepts,
                 "feedback": "Answer flagged as disconnected keyword stuffing. Merely listing technical terms without explanatory sentence structure or mechanisms earns no placement credit (Score: 2/10).",
-                "passed": False
+                "passed": False,
+                "ai_detection": ai_detection,
+                "adversarial_injection_detected": is_injection
             }
 
         # Step 4: Calibrated Placement Rubric
@@ -579,10 +604,18 @@ class VivaEngine:
             top_missing = missing[:2] or expected_concepts[:2]
             feedback = f"Weak buzzword response without architectural mechanism. Missing: {', '.join(top_missing)} (Score: {final_score}/10)."
 
+        # Apply AI penalty if AI pattern is detected
+        if ai_detection.get("classification") == "ai_like":
+            final_score = max(0, min(final_score, 3))
+            passed = False
+            feedback += f" [AI Pattern Detected ({int((ai_detection.get('ai_probability') or 0.8) * 100)}% prob) - Score penalized]."
+
         return {
             "score": final_score,
             "concepts_demonstrated": demonstrated,
             "concepts_missing": missing,
             "feedback": feedback,
-            "passed": passed
+            "passed": passed,
+            "ai_detection": ai_detection,
+            "adversarial_injection_detected": is_injection
         }

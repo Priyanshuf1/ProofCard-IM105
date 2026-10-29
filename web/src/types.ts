@@ -46,6 +46,29 @@ export interface VivaQuestion {
   feedback?: string;
 }
 
+
+export interface VivaEvaluation {
+  candidate_id: string;
+  question_id: string;
+  score: number;
+  concepts_demonstrated: string[];
+  concepts_missing: string[];
+  feedback: string;
+  passed: boolean;
+  ai_detection?: {
+    status: string;
+    classification: 'ai_like' | 'human_like' | 'mixed_or_uncertain' | 'insufficient_text' | 'unsupported_language';
+    ai_probability?: number | null;
+    human_probability?: number | null;
+    model_score?: number | null;
+    text_length: number;
+    language_supported: boolean;
+    model_version: string;
+    limitations: string[];
+  };
+  adversarial_injection_detected?: boolean;
+}
+
 export interface ProofCardContent {
   status: string;
   headline: string;

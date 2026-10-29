@@ -1,0 +1,226 @@
+[
+  {
+    "id": "human_01",
+    "text": "We sort the dictionary keys and encode the string into utf-8 bytes before hashing with sha256. This guarantees deterministic canonical output across different OS platforms so state tampering can be detected immediately.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "cryptography",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_02",
+    "text": "To stop race conditions in the UI, we initialize an AbortController inside useEffect and cancel any pending fetch whenever the search term changes. Also added an isMounted flag to make sure setState isn't called after unmount.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "frontend_concurrency",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_03",
+    "text": "If the DB pool gets exhausted under load, incoming requests queue up until the 5000ms deadline triggers. Then we throw a custom PoolTimeoutError and let the retry middleware back off with jitter so the database doesn't crash from thundering herd.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "backend_resilience",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_04",
+    "text": "We wrapped the external API call in a circuit breaker. If 5 consecutive timeouts occur, the breaker trips to open state and returns cached fallback responses immediately without keeping worker threads hanging.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "architecture",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_05",
+    "text": "The outer loop runs n times and inside we do a binary search on the sorted slice, so total time is O(n log n). Space complexity is O(1) auxiliary because we mutate the slice in place without copying arrays.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "algorithms",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_06",
+    "text": "I used hmac.compare_digest instead of standard == comparison. Because string equality bails out on the first mismatched byte, attackers can measure timing variations to extract the signature byte by byte.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "security",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_07",
+    "text": "We store user tokens in an HTTP-only secure cookie rather than localStorage to prevent XSS exfiltration. For CSRF protection, we validate a double-submit CSRF header on state-changing endpoints.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "security",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_08",
+    "text": "In our Redis consumer, we use XREADGROUP with ACK and maintain a dead-letter queue. If a worker panics while processing an item, it remains in the PEL until the reaper reassigns it after 30 seconds.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "distributed_systems",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_09",
+    "text": "Basically we just normalize newlines from CRLF to LF before computing the hash. Windows git clones add CR which completely breaks cross platform verification if you don't strip it first.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "cryptography",
+    "length_type": "short"
+  },
+  {
+    "id": "human_10",
+    "text": "We isolated the payment processing into a separate module with strict interface boundaries so failure in payment retry won't bring down the checkout service or leak unhandled exceptions.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "architecture",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_11",
+    "text": "I noticed we had memory leaks with socket connections staying open. So I hooked into process exit and SIGINT to close the pool gracefully and drain any active connections within a 5s deadline.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "backend",
+    "length_type": "medium"
+  },
+  {
+    "id": "human_12",
+    "text": "We implemented pagination using cursor-based offsets with created_at timestamps. Offset-based limit/offset becomes very slow once the table hits millions of rows because Postgres still scans skipped rows.",
+    "label": "human",
+    "source": "student_viva_interview",
+    "subject": "databases",
+    "length_type": "medium"
+  },
+  {
+    "id": "ai_01",
+    "text": "To ensure that cryptographic verification remains robust, deterministic, and resistant to state tampering, several crucial mechanisms must be employed. First and foremost, canonical serialization of data structures is imperative. By sorting all keys lexicographically and normalizing whitespace and line endings across disparate operating environments, one guarantees byte-level equivalence. Furthermore, utilizing constant-time comparison algorithms mitigates timing side-channel attacks, thereby preserving data integrity.",
+    "label": "ai",
+    "source": "gpt-4o",
+    "subject": "cryptography",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_02",
+    "text": "In order to mitigate concurrency risks and prevent UI state desynchronization, modern web engineering paradigms recommend leveraging the AbortController primitive. Furthermore, implementing debouncing mechanisms ensures that high-frequency user actions do not trigger extraneous asynchronous executions. By maintaining defensive state isolation and verifying component mount status prior to state dispatch, developers can effectively eliminate race conditions and ensure optimal system responsiveness.",
+    "label": "ai",
+    "source": "claude-3-5-sonnet",
+    "subject": "frontend_concurrency",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_03",
+    "text": "When addressing potential connection pool starvation under high concurrent workloads, it is essential to implement comprehensive backpressure handling and resilient retry strategies. Crucially, employing an exponential backoff algorithm with jitter minimizes downstream saturation. Additionally, setting explicit acquisition timeouts guarantees that worker threads do not remain indefinitely blocked, thereby fostering graceful degradation and maintaining architectural stability.",
+    "label": "ai",
+    "source": "gpt-4o",
+    "subject": "backend_resilience",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_04",
+    "text": "The implementation leverages a circuit breaker pattern to prevent cascading failures throughout the microservice topology. By continuously monitoring error rates and response latencies, the mechanism transitions into an open state when predefined thresholds are exceeded. Furthermore, fallback routines are seamlessly executed to deliver degraded yet functional responses, thereby safeguarding overall system availability and fault tolerance.",
+    "label": "ai",
+    "source": "gemini-1-5-pro",
+    "subject": "architecture",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_05",
+    "text": "The algorithmic complexity of the data ingestion loop exhibits an O(n log n) temporal profile alongside an O(1) auxiliary spatial footprint. This efficiency is achieved through the utilization of in-place quicksort partitioning coupled with binary lookup mechanisms. Consequently, memory allocation overhead is significantly reduced, ensuring that performance scales seamlessly as input volume expands.",
+    "label": "ai",
+    "source": "claude-3-5-sonnet",
+    "subject": "algorithms",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_06",
+    "text": "To defend against subtle side-channel timing vulnerabilities, the verification routine incorporates constant-time cryptographic digest comparisons. Standard equality operators terminate evaluation upon encountering the initial disparate byte, which inherently leaks positional information to an adversary. By adopting a fixed-time evaluation paradigm, such telemetry leakage is completely neutralized.",
+    "label": "ai",
+    "source": "gpt-4o",
+    "subject": "security",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_07",
+    "text": "Ensuring zero-trust privilege boundaries requires rigorous input sanitization and schema assertion across all network entry points. By employing strict runtime type validators and sanitizing payloads before execution, the application prevents malformed injection attacks. Moreover, isolating execution environments into restricted sandboxes limits the blast radius of potential compromises.",
+    "label": "ai",
+    "source": "llama-3-70b",
+    "subject": "security",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_08",
+    "text": "In distributed stream processing, maintaining at-least-once processing semantics necessitates robust acknowledgment and dead-letter queue architectures. Furthermore, when unhandled exceptions occur during message consumption, messages are safely routed to secondary inspection pipelines, thereby preventing pipeline blockages and preserving throughput integrity.",
+    "label": "ai",
+    "source": "gemini-1-5-pro",
+    "subject": "distributed_systems",
+    "length_type": "long"
+  },
+  {
+    "id": "ai_09",
+    "text": "To achieve seamless cross-platform determinism, newline characters must be consistently converted from Windows-style CRLF sequences to POSIX-compliant LF representations. This foundational normalization step ensures that cryptographic hashes remain identical regardless of the underlying host operating environment.",
+    "label": "ai",
+    "source": "gpt-4o",
+    "subject": "cryptography",
+    "length_type": "medium"
+  },
+  {
+    "id": "ai_10",
+    "text": "Domain-specific failure isolation is achieved by encapsulating external communication layers within localized error-handling boundaries. This architectural approach guarantees that transient network anomalies do not cascade to upstream orchestrators, thereby maintaining system reliability and operational continuity.",
+    "label": "ai",
+    "source": "claude-3-5-sonnet",
+    "subject": "architecture",
+    "length_type": "medium"
+  },
+  {
+    "id": "mixed_01",
+    "text": "We sort the dictionary keys in python before hashing. Furthermore, utilizing constant-time comparison algorithms mitigates timing side-channel attacks, thereby preserving data integrity across all operating environments.",
+    "label": "mixed",
+    "source": "human_plus_gpt4",
+    "subject": "cryptography",
+    "length_type": "medium"
+  },
+  {
+    "id": "mixed_02",
+    "text": "I used AbortController in useEffect. In order to mitigate concurrency risks and prevent UI state desynchronization, modern web engineering paradigms recommend leveraging the AbortController primitive with defensive state isolation.",
+    "label": "mixed",
+    "source": "human_plus_claude",
+    "subject": "frontend_concurrency",
+    "length_type": "medium"
+  },
+  {
+    "id": "short_01",
+    "text": "we use sha256",
+    "label": "human",
+    "source": "student",
+    "subject": "short",
+    "length_type": "too_short"
+  },
+  {
+    "id": "short_02",
+    "text": "abortcontroller",
+    "label": "human",
+    "source": "student",
+    "subject": "short",
+    "length_type": "too_short"
+  },
+  {
+    "id": "unsupported_01",
+    "text": "Мы используем каноническую сериализацию байтов и постоянное сравнение по времени для защиты от атак по времени.",
+    "label": "human",
+    "source": "russian_translation",
+    "subject": "multilingual",
+    "length_type": "medium"
+  },
+  {
+    "id": "unsupported_02",
+    "text": "我们使用规范的字节序列化和常数时间比较算法来确保跨平台的确定性并防止时序攻击。",
+    "label": "human",
+    "source": "chinese_translation",
+    "subject": "multilingual",
+    "length_type": "medium"
+  }
+]

@@ -62,6 +62,8 @@ class VivaEvaluationResult(BaseModel):
     concepts_missing: List[str]
     feedback: str
     passed: bool
+    ai_detection: Optional[Dict[str, Any]] = None
+    adversarial_injection_detected: Optional[bool] = False
 
 class VivaSessionResult(BaseModel):
     candidate_id: str
