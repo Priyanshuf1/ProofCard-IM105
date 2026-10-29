@@ -96,6 +96,26 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     return candidatePool;
   }, [candidatePool, poolFilter]);
 
+  // Plain English constructive feedback generator for candidate rejection notices
+  const getRejectionReasonText = (reasonCode: string, candidate: CandidateProfile) => {
+    if (reasonCode === 'VIVA_INCOMPLETE') {
+      return `Your project repository is authentic and demonstrates good engineering structure. However, our technical evaluation process requires candidates to complete a brief 3-minute Technical Viva Defense to verify code authorship and system comprehension. Because your Technical Viva Defense was not completed prior to our screening review, we are unable to advance your application for this cycle.`;
+    }
+    if (reasonCode === 'JUNIOR_SCOPE') {
+      return `Your project is clean, authentic, and demonstrates strong fundamentals. However, for this particular opening, our team needs demonstrated hands-on experience with production-scale challenges, such as asynchronous worker queues, caching layers, database indexing, and automated testing suites.`;
+    }
+    if (reasonCode === 'JD_MISMATCH') {
+      return `We were very impressed by the craftsmanship of your submission. However, this specific opening requires deep hands-on depth in our core production stack. Your skills would be a much stronger match for openings tailored to your primary technologies.`;
+    }
+    if (reasonCode === 'CLONE_DETECTED') {
+      return `Our analysis found that this project closely mirrors an online tutorial template. While building along with tutorials is a wonderful way to learn, our hiring team is looking for original, self-directed code that demonstrates independent problem-solving and architectural decision-making.`;
+    }
+    if (reasonCode === 'PROMPT_INJECTION') {
+      return `During our automated code analysis, we identified adversarial prompt directives hidden within code comments or documentation. We maintain strict standards for code transparency and security, and require all submissions to be free of hidden automated directives.`;
+    }
+    return modalCustomNote || `After a thorough review of your technical project and code architecture, we have chosen to proceed with candidates whose immediate hands-on experience more closely matches the specific engineering challenges of our current opening.`;
+  };
+
   // Recruiter Manual Decisions State (candidate_id -> { status: 'SHORTLISTED' | 'REJECTED', reasonCode })
   const [manualDecisions, setManualDecisions] = useState<Record<string, CandidateDecisionState>>({});
 
@@ -116,6 +136,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   const [isDispatchingInvites, setIsDispatchingInvites] = useState<boolean>(false);
   const [showVivaExplanation, setShowVivaExplanation] = useState<boolean>(false);
   const [copiedVivaLink, setCopiedVivaLink] = useState<boolean>(false);
+  const [copiedVivaBody, setCopiedVivaBody] = useState<boolean>(false);
   const [customTopN, setCustomTopN] = useState<number>(5);
 
   // Helper to get effective shortlisted status
@@ -145,11 +166,10 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     const sorted = [...candidatePool].sort((a, b) => {
       const authA = a.is_clone ? 0 : (a.authenticity_score || 0);
       const authB = b.is_clone ? 0 : (b.authenticity_score || 0);
-      // For awaiting viva, use AST baseline 7.0 for ranking projection
-      const vivaA = (a.viva_score && a.viva_score > 0) ? a.viva_score * 10 : (a.viva_status === 'PENDING_DEFENSE' ? 70 : 0);
-      const vivaB = (b.viva_score && b.viva_score > 0) ? b.viva_score * 10 : (b.viva_status === 'PENDING_DEFENSE' ? 70 : 0);
-      const scoreA = (authA * 0.45) + (vivaA * 0.55);
-      const scoreB = (authB * 0.45) + (vivaB * 0.55);
+      const hasVivaA = isLiveDefended(a);
+      const hasVivaB = isLiveDefended(b);
+      const scoreA = hasVivaA ? (authA * 0.45 + (a.viva_score || 0) * 10 * 0.55) : authA;
+      const scoreB = hasVivaB ? (authB * 0.45 + (b.viva_score || 0) * 10 * 0.55) : authB;
       return scoreB - scoreA;
     });
 
@@ -173,10 +193,10 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     const viable = candidatePool.filter(c => !c.is_clone && (c.authenticity_score || 0) >= 50);
     
     const sorted = [...viable].sort((a, b) => {
-      const vivaA = (a.viva_score && a.viva_score > 0) ? a.viva_score * 10 : (a.viva_status === 'PENDING_DEFENSE' ? 70 : 0);
-      const vivaB = (b.viva_score && b.viva_score > 0) ? b.viva_score * 10 : (b.viva_status === 'PENDING_DEFENSE' ? 70 : 0);
-      const scoreA = ((a.authenticity_score || 0) * 0.5) + (vivaA * 0.5);
-      const scoreB = ((b.authenticity_score || 0) * 0.5) + (vivaB * 0.5);
+      const hasVivaA = isLiveDefended(a);
+      const hasVivaB = isLiveDefended(b);
+      const scoreA = hasVivaA ? (((a.authenticity_score || 0) * 0.5) + ((a.viva_score || 0) * 10 * 0.5)) : (a.authenticity_score || 0);
+      const scoreB = hasVivaB ? (((b.authenticity_score || 0) * 0.5) + ((b.viva_score || 0) * 10 * 0.5)) : (b.authenticity_score || 0);
       return scoreB - scoreA;
     });
 
@@ -709,6 +729,44 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
           </div>
         )}
 
+        {/* Permanent Evaluation Tracks & Candidate Differentiation Guide */}
+        <div className="mb-4 p-4 rounded-xl bg-black/60 border border-[#D4AF37]/30 text-xs font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+            <span className="font-bold text-[#FFD166] text-xs uppercase tracking-wider flex items-center gap-2 font-mono">
+              <span>📋 Candidate Evaluation Tracks & Workflow Guide</span>
+            </span>
+            <span className="text-[11px] text-neutral-400">
+              Clear differentiation between Live interactive testing and Batch CSV screening
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40">
+              <div className="flex items-center gap-1.5 text-emerald-300 font-bold mb-1">
+                <span>👤 Live In-Person Verified</span>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-snug">
+                Single applicant who pasted GitHub repo & completed live oral defense in Viva Arena. Full viva score certified.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40">
+              <div className="flex items-center gap-1.5 text-amber-300 font-bold mb-1">
+                <span>🌐 Async Remote (Batch Ingestion)</span>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-snug">
+                Uploaded via CSV. Code quality is verified; currently awaiting 3-min oral defense. Click <strong>"Send Link"</strong> to dispatch viva invitation.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/40">
+              <div className="flex items-center gap-1.5 text-red-300 font-bold mb-1">
+                <span>✕ Disqualified (Tutorial Clone)</span>
+              </div>
+              <p className="text-[11px] text-neutral-300 leading-snug">
+                Plagiarized video tutorial codebase or prompt injection detected. Blocked from viva defense to protect hiring integrity.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
           <table className="w-full text-left text-sm text-neutral-200">
             <thead className="bg-[#140b08] uppercase font-bold text-xs text-[#FFD166] border-b border-[#3A2F27]">
@@ -980,61 +1038,104 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-sm text-neutral-200">
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-neutral-200 font-sans">
               
-              {/* Candidate Info Card */}
+              {/* Candidate Info Banner */}
               <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27] flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-white font-bold text-base">{activeVivaInviteCandidate.name}</div>
-                  <div className="text-xs text-[#E6C280]">{activeVivaInviteCandidate.college} ({classifyCollegeTier(activeVivaInviteCandidate.college || activeVivaInviteCandidate.college_tier).label})</div>
-                  <div className="text-xs text-neutral-400 font-mono mt-0.5">Project: {activeVivaInviteCandidate.project_name || activeVivaInviteCandidate.project_type}</div>
+                  <div className="text-white font-bold text-base flex items-center gap-2">
+                    <span>{activeVivaInviteCandidate.name}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
+                      🌐 Remote Candidate
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#E6C280] mt-0.5">
+                    {activeVivaInviteCandidate.college} ({classifyCollegeTier(activeVivaInviteCandidate.college || activeVivaInviteCandidate.college_tier).label})
+                  </div>
+                  <div className="text-xs text-neutral-400 font-mono mt-0.5">
+                    Submission: {activeVivaInviteCandidate.project_name || activeVivaInviteCandidate.project_type}
+                  </div>
                 </div>
                 <div className="text-right">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
-                    ⏳ Defense Pending
-                  </span>
+                  <span className="text-xs text-amber-300 font-bold block">⏳ Viva Defense Pending</span>
+                  <span className="text-[10px] text-neutral-400 block">Awaiting 3-min oral screening</span>
                 </div>
+              </div>
+
+              {/* Delivery Channels Explanatory Box */}
+              <div className="p-3.5 rounded-xl bg-[#1b0f0a] border border-[#D4AF37]/40 text-xs space-y-2">
+                <div className="flex items-center gap-2 text-[#FFD166] font-bold uppercase tracking-wider text-[11px]">
+                  <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Multi-Channel Email Dispatch (No SMTP Setup Required)</span>
+                </div>
+                <p className="text-neutral-300 text-[11px] leading-relaxed">
+                  Choose how you want to invite the candidate. You can launch your native email app directly (Gmail / Outlook), copy the formatted invite text for WhatsApp/Slack, or dispatch via automated API/n8n webhook.
+                </p>
               </div>
 
               {/* Direct Viva Defense URL Box */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#FFD166] mb-1.5">
-                  Direct Candidate Viva Link:
-                </label>
-                {(() => {
-                  const vivaUrl = typeof window !== 'undefined'
-                    ? `${window.location.origin}/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`
-                    : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`;
-                  return (
-                    <div className="flex items-center gap-2 bg-black/80 border border-[#3A2F27] rounded-xl p-2.5">
-                      <input
-                        type="text"
-                        readOnly
-                        value={vivaUrl}
-                        className="bg-transparent text-xs text-emerald-300 font-mono flex-1 focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (navigator.clipboard) {
-                            navigator.clipboard.writeText(vivaUrl);
-                            setCopiedVivaLink(true);
-                            setTimeout(() => setCopiedVivaLink(false), 2500);
-                          }
-                        }}
-                        className="px-3 py-1 rounded-lg bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#FFD166] text-xs font-bold flex items-center gap-1 transition cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{copiedVivaLink ? 'Copied!' : 'Copy Link'}</span>
-                      </button>
+              {(() => {
+                const vivaUrl = typeof window !== 'undefined'
+                  ? `${window.location.origin}/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`
+                  : `https://proofcard.vercel.app/viva?cid=${encodeURIComponent(activeVivaInviteCandidate.candidate_id || '')}`;
+                const subject = `Invitation: 3-Minute Technical Defense Viva - ${activeVivaInviteCandidate.name}`;
+                const fullBody = `Hello ${activeVivaInviteCandidate.name},\n\nThank you for submitting your project (${activeVivaInviteCandidate.project_name || 'Software Project'}). As part of our merit-based technical screening process, you are invited to complete your 3-minute Technical Defense Viva.\n\nDirect Viva Link:\n${vivaUrl}\n\nWhat to Expect:\n- 3 targeted questions derived from key functions extracted from your code.\n- 3 minutes total via microphone or text in browser.\n- Instant verified credential issued upon completion.\n\n${customVivaNote ? `Recruiter Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
+
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-[#FFD166]">
+                          Candidate's Unique Viva Defense Link:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (navigator.clipboard) {
+                                navigator.clipboard.writeText(vivaUrl);
+                                setCopiedVivaLink(true);
+                                setTimeout(() => setCopiedVivaLink(false), 2500);
+                              }
+                            }}
+                            className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{copiedVivaLink ? 'Link Copied!' : 'Copy Link'}</span>
+                          </button>
+                          <span className="text-neutral-600">·</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (navigator.clipboard) {
+                                navigator.clipboard.writeText(fullBody);
+                                setCopiedVivaBody(true);
+                                setTimeout(() => setCopiedVivaBody(false), 2500);
+                              }
+                            }}
+                            className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{copiedVivaBody ? 'Full Invite Copied!' : 'Copy Full Email Text'}</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/80 border border-[#3A2F27] rounded-xl p-2.5">
+                        <input
+                          type="text"
+                          readOnly
+                          value={vivaUrl}
+                          className="bg-transparent text-xs text-emerald-300 font-mono flex-1 focus:outline-none"
+                        />
+                      </div>
                     </div>
-                  );
-                })()}
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* What Happens in the Defense Viva */}
-              <div className="p-3.5 rounded-xl bg-[#1b0f0a] border border-[#3A2F27] text-xs space-y-1.5">
-                <span className="font-bold text-[#FFD166] block">How Candidate Oral Defense Works:</span>
+              <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27] text-xs space-y-1.5">
+                <span className="font-bold text-[#FFD166] block">Candidate Viva Experience:</span>
                 <ul className="list-disc pl-4 space-y-1 text-neutral-300 text-[11px]">
                   <li><strong>3 Targeted Code Questions:</strong> Derived directly from key functions extracted from candidate's code.</li>
                   <li><strong>3 Minutes Total:</strong> Answer via microphone or browser text.</li>
@@ -1045,7 +1146,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               {/* Custom Optional Note */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
-                  Optional Note for Candidate (appended to invitation)
+                  Optional Custom Note for Candidate (appended to invitation)
                 </label>
                 <textarea
                   value={customVivaNote}
@@ -1056,7 +1157,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                 />
               </div>
 
-              {/* Recruiter Test Simulator Box */}
+              {/* Recruiter Sandbox Test Box */}
               <div className="p-3.5 rounded-xl bg-black/60 border border-emerald-500/30 flex items-center justify-between gap-3">
                 <div>
                   <span className="text-xs font-bold text-emerald-300 block">Recruiter Quick-Test:</span>
@@ -1292,7 +1393,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                       <div className="text-neutral-300 text-xs leading-relaxed">
                         {modalDecisionType === 'SHORTLISTED' 
                           ? `Congratulations ${activeModalCandidate.name}, your project submission has passed our merit-based technical screening threshold based on genuine code authorship and demonstrated engineering capability.`
-                          : `Thank you for your interest and submission, ${activeModalCandidate.name}. Following our technical review, we have chosen to proceed with other candidates whose current project scope aligns more closely with our production requirements. Your code quality score was evaluated at ${activeModalCandidate.authenticity_score ?? 0}%.`}
+                          : getRejectionReasonText(modalRejectionReason, activeModalCandidate)}
                       </div>
                       {modalCustomNote && (
                         <div className="p-2.5 rounded bg-black/50 border border-[#3A2F27] text-neutral-300 italic text-[11px]">
@@ -1320,7 +1421,7 @@ Status:         ${modalDecisionType === 'SHORTLISTED' ? 'CANDIDATE SHORTLISTED' 
 EVALUATION SUMMARY:
 ${modalDecisionType === 'SHORTLISTED'
   ? `Based on verified repository authorship, progressive development history, and demonstrated technical competency, your application has passed the merit-based screening threshold.`
-  : `Thank you for your submission. Following code review and verification, we have decided to proceed with other applicants whose current experience aligns more closely with our role requirements.`}
+  : getRejectionReasonText(modalRejectionReason, activeModalCandidate)}
 
 TECHNICAL SCORECARD:
 - Code Quality Score:   ${activeModalCandidate.authenticity_score ?? 0} / 100

@@ -87,11 +87,17 @@ class EmailFormatter:
                     "While building along with tutorials is a wonderful way to learn, our hiring team is looking for original, self-directed code "
                     "that demonstrates your independent problem-solving and architectural decision-making."
                 )
-            elif rejection_reason_code == "VIVA_INCOMPLETE" or viva_score < 6.0:
+            elif viva_score < 6.0 and viva_score > 0:
                 decision_statement = (
-                    f"Your codebase is original and cleanly written. However, during the Technical Defense Viva (Score: {viva_score}/10), "
+                    f"Your codebase is authentic and cleanly written. However, during the Technical Viva Defense (Score: {viva_score}/10), "
                     "you found it challenging to explain the internal design trade-offs, error-handling decisions, and how specific functions operate. "
                     "In this role, software engineers collaborate closely with team members and must be able to clearly communicate how their code works."
+                )
+            elif rejection_reason_code == "VIVA_INCOMPLETE" or (viva_score == 0 and not is_clone and not has_prompt_injection):
+                decision_statement = (
+                    "Your project repository is authentic and demonstrates good engineering structure. However, our technical evaluation "
+                    "process requires candidates to complete a brief 3-minute Technical Viva Defense to verify code authorship and system comprehension. "
+                    "Because your Technical Viva Defense was not completed prior to our screening review, we are unable to advance your application for this cycle."
                 )
             elif rejection_reason_code == "JUNIOR_SCOPE":
                 decision_statement = (
@@ -120,10 +126,16 @@ class EmailFormatter:
             badge_color = "#F59E0B"  # Amber
             badge_bg = "#78350F"
             headline = f"Technical Performance & Skill Growth Roadmap for {name}."
-            decision_statement = (
-                f"Your repository analysis is complete. Authenticity score is {auth_score}% and Viva defense is {viva_score}/10. "
-                "Review the actionable steps below to enhance your software engineering profile."
-            )
+            if viva_score > 0:
+                decision_statement = (
+                    f"Your repository analysis is complete. Authenticity score is {auth_score}% and Viva defense is {viva_score}/10. "
+                    "Review the actionable steps below to enhance your software engineering profile."
+                )
+            else:
+                decision_statement = (
+                    f"Your repository analysis is complete. Authenticity score is {auth_score}%. Technical viva defense is currently pending candidate completion. "
+                    "Review the actionable steps below to enhance your software engineering profile."
+                )
 
         if custom_note and custom_note.strip() and decision != "REJECTED":
             decision_statement += f"\n\nRecruiter Note: {custom_note.strip()}"
@@ -174,7 +186,7 @@ DECISION & EVALUATION SUMMARY
 VERIFIED TECHNICAL METRICS
 --------------------------------------------------------------------------------
 - Code Authenticity:     {auth_score} / 100 {("(Clone Flagged)" if is_clone else "(Verified Organic)")}
-- Viva Defense Score:    {viva_score} / 10.0
+- Viva Defense Status:   {f"{viva_score} / 10.0 (Live Defended)" if viva_score > 0 else ("Disqualified (Tutorial Clone)" if is_clone else "Pending Candidate Defense (3-Minute Oral Defense Required)")}
 - Git-DNA History:       {commits} commits over {timespan} days ({deletion_pct}% refactoring deletion)
 - AppSec Injection Scan: {("FLAGGED: Prompt Injection Payload" if has_prompt_injection else "PASSED: 0 Vulnerabilities Detected")}
 - Institutional Pedigree Bias: 0.0% (Evaluated strictly on code quality)
@@ -278,9 +290,11 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
               <div style="color: #8c7e72; font-size: 11px; margin-top: 4px;">{'(Tutorial Matched)' if is_clone else '(Verifiable Authorship)'}</div>
             </td>
             <td style="width: 50%; background-color: #140d09; border: 1px solid #332014; border-radius: 12px; padding: 16px; text-align: center;">
-              <div style="color: #8c7e72; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Viva Defense Score</div>
-              <div style="color: #D4AF37; font-size: 26px; font-weight: 900; font-family: monospace;">{viva_score} <span style="font-size: 14px; color: #8c7e72;">/ 10</span></div>
-              <div style="color: #8c7e72; font-size: 11px; margin-top: 4px;">Live Concept Mastery</div>
+              <div style="color: #8c7e72; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Viva Defense Status</div>
+              {f'''<div style="color: #D4AF37; font-size: 26px; font-weight: 900; font-family: monospace;">{viva_score} <span style="font-size: 14px; color: #8c7e72;">/ 10</span></div>
+              <div style="color: #10B981; font-size: 11px; margin-top: 4px; font-weight: 600;">✓ Live Concept Mastery</div>''' if viva_score > 0 else ('''<div style="color: #EF4444; font-size: 18px; font-weight: 800;">DISQUALIFIED</div>
+              <div style="color: #8c7e72; font-size: 11px; margin-top: 4px;">Tutorial Clone Match</div>''' if is_clone else '''<div style="color: #F59E0B; font-size: 18px; font-weight: 800;">PENDING DEFENSE</div>
+              <div style="color: #8c7e72; font-size: 11px; margin-top: 4px;">3-Minute Viva Required</div>''')}
             </td>
           </tr>
           <tr>
