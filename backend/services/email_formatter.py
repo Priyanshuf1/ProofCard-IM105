@@ -444,7 +444,8 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
   <div style="max-width: 620px; margin: 30px auto; background-color: #0c0604; border: 1px solid #D4AF37; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.85);">
     
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #180d09 0%, #0c0604 100%); border-bottom: 1px solid #331b12; padding: 32px 36px;">
+    <div style="background: linear-gradient(135deg, #180d09 0%, #0c0604 100%); border-bottom: 1px solid #331b12; padding: 32px 36px; text-align: center;">
+      <img src="https://proofcard.vercel.app/pariksha-logo.jpg" alt="Pariksha Intelligent Testing Platform" width="110" style="display: block; margin: 0 auto 16px auto; border-radius: 10px; border: 1px solid #D4AF37; box-shadow: 0 4px 16px rgba(255,140,0,0.35);" />
       <div style="display: inline-block; background-color: #064E3B; color: #34D399; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 6px 14px; border-radius: 20px; border: 1px solid #059669; margin-bottom: 14px;">
         VIVA DEFENSE INVITATION
       </div>
@@ -524,17 +525,37 @@ Pariksha Technical Evaluation Team
 ================================================================================
 """
 
+        clean_html = html_content.strip()
+        clean_text = text_content.strip()
         return {
             "candidate_id": cid,
             "candidate_name": name,
+            "name": name,
             "email": email,
+            "to": email,
+            "recipient": email,
             "college": college,
             "college_tier": college_tier,
             "subject": subject,
             "headline": headline,
             "body_message": body_message,
             "viva_url": viva_url,
+            "viva_link": viva_url,
+            "verification_url": viva_url,
             "mailto_link": mailto_link,
-            "formatted_email_html": html_content.strip(),
-            "formatted_email_text": text_content.strip()
+            "formatted_email_html": clean_html,
+            "formatted_email_text": clean_text,
+            "html": clean_html,
+            "text": clean_text,
+            "message": clean_text,
+            "body": clean_html,
+            "growth_area": "Oral defense of key repository functions",
+            "specific_action": f"Complete 3-minute viva defense at {viva_url}",
+            "action_plan": "1. Review your repository functions\n2. Open your 3-minute oral defense link\n3. Explain code trade-offs and receive your verified Pariksha credential",
+            "action_plan_steps": [
+                {"title": "1. Review Key Code Functions", "desc": "Be ready to explain key algorithms and trade-offs in your repository."},
+                {"title": "2. Access Direct Viva Link", "desc": f"Click your personal 3-minute viva link ({viva_url}) from any modern browser."},
+                {"title": "3. Receive Verified Credential", "desc": "Earn your verifiable ProofCard upon defense completion."}
+            ],
+            "logo_url": "https://proofcard.vercel.app/pariksha-logo.jpg"
         }

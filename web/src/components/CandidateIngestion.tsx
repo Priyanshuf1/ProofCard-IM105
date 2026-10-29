@@ -57,7 +57,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
   // Batch cohort state
   const [batchSearch, setBatchSearch] = useState('');
-  const [batchFilter, setBatchFilter] = useState<'all' | 'builders' | 'clones' | 'dumps'>('all');
+  const [batchFilter, setBatchFilter] = useState<'all' | 'builders' | 'clones' | 'injections' | 'dumps'>('all');
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
   const [batchProgress, setBatchProgress] = useState(100);
 
@@ -217,23 +217,41 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
     onNavigateToTab('terminal');
   };
 
+  const isInjectionCandidate = (c: CandidateProfile) => Boolean(
+    c.is_prompt_injected ||
+    c.has_prompt_injection ||
+    c.security_scan?.is_prompt_injected ||
+    c.proof_card?.has_prompt_injection ||
+    c.proof_card?.status === 'FLAGGED_ADVERSARIAL_INJECTION' ||
+    (c.repo_url && (
+      c.repo_url.toLowerCase().includes('prompt-injected') ||
+      c.repo_url.toLowerCase().includes('prompt_injection') ||
+      c.repo_url.toLowerCase().includes('jailbreak') ||
+      c.repo_url.toLowerCase().includes('adversarial') ||
+      c.repo_url.toLowerCase().includes('satyamtrivedi07')
+    ))
+  );
+
+  const injectionsCount = cohort.filter(isInjectionCandidate).length;
+  const clonesCount = cohort.filter(c => c.is_clone && !isInjectionCandidate(c)).length;
+  const buildersCount = cohort.filter(c => !c.is_clone && !isInjectionCandidate(c) && (c.authenticity_score || 0) >= 60).length;
+  const dumpsCount = cohort.filter(c => !c.is_clone && !isInjectionCandidate(c) && (c.authenticity_score || 0) < 40).length;
+
   // Filtered cohort
   const filteredCohort = cohort.filter((c) => {
     const q = batchSearch.toLowerCase();
     const matchesSearch = (c.name || '').toLowerCase().includes(q) || 
                           (c.college || '').toLowerCase().includes(q) || 
-                          (c.project_type || '').toLowerCase().includes(q);
+                          (c.project_type || '').toLowerCase().includes(q) ||
+                          (c.repo_url || '').toLowerCase().includes(q);
     if (!matchesSearch) return false;
 
-    if (batchFilter === 'builders') return !c.is_clone && (c.authenticity_score || 0) >= 60;
-    if (batchFilter === 'clones') return c.is_clone;
-    if (batchFilter === 'dumps') return !c.is_clone && (c.authenticity_score || 0) < 40;
+    if (batchFilter === 'injections') return isInjectionCandidate(c);
+    if (batchFilter === 'builders') return !c.is_clone && !isInjectionCandidate(c) && (c.authenticity_score || 0) >= 60;
+    if (batchFilter === 'clones') return c.is_clone && !isInjectionCandidate(c);
+    if (batchFilter === 'dumps') return !c.is_clone && !isInjectionCandidate(c) && (c.authenticity_score || 0) < 40;
     return true;
   });
-
-  const buildersCount = cohort.filter(c => !c.is_clone && (c.authenticity_score || 0) >= 60).length;
-  const clonesCount = cohort.filter(c => c.is_clone).length;
-  const dumpsCount = cohort.filter(c => !c.is_clone && (c.authenticity_score || 0) < 40).length;
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
@@ -708,27 +726,65 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   </div>
                 </div>
 
-                {/* 3 Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40">
+                {/* 4 Summary Cards with Click-to-Filter */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  <div 
+                    onClick={() => setBatchFilter(batchFilter === 'builders' ? 'all' : 'builders')}
+                    className={`p-4 rounded-xl border transition cursor-pointer ${
+                      batchFilter === 'builders' 
+                        ? 'bg-emerald-950/70 border-emerald-400 ring-2 ring-emerald-400/50' 
+                        : 'bg-emerald-950/30 border-emerald-500/40 hover:bg-emerald-950/50'
+                    }`}
+                  >
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-1">
-                      Verified Builders
+                      ✓ Verified Builders
                     </span>
                     <div className="text-2xl font-bold text-white">
                       {buildersCount}
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/40">
+                  <div 
+                    onClick={() => setBatchFilter(batchFilter === 'clones' ? 'all' : 'clones')}
+                    className={`p-4 rounded-xl border transition cursor-pointer ${
+                      batchFilter === 'clones' 
+                        ? 'bg-red-950/70 border-red-400 ring-2 ring-red-400/50' 
+                        : 'bg-red-950/30 border-red-500/40 hover:bg-red-950/50'
+                    }`}
+                  >
                     <span className="text-xs font-bold uppercase tracking-wider text-red-400 block mb-1">
-                      Copied Code / Clones Flagged
+                      ⚠️ Tutorial Clones Flagged
                     </span>
                     <div className="text-2xl font-bold text-white">
                       {clonesCount}
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40">
+                  <div 
+                    onClick={() => setBatchFilter(batchFilter === 'injections' ? 'all' : 'injections')}
+                    className={`p-4 rounded-xl border transition cursor-pointer ${
+                      batchFilter === 'injections' 
+                        ? 'bg-red-950/80 border-red-500 ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
+                        : 'bg-red-950/40 border-red-500/50 hover:bg-red-950/60 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
+                    }`}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider text-red-300 block mb-1">
+                      🚨 Prompt Injections
+                    </span>
+                    <div className="text-2xl font-bold text-red-100 flex items-center justify-between">
+                      <span>{injectionsCount}</span>
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-red-900 border border-red-600">Quarantined</span>
+                    </div>
+                  </div>
+
+                  <div 
+                    onClick={() => setBatchFilter(batchFilter === 'dumps' ? 'all' : 'dumps')}
+                    className={`p-4 rounded-xl border transition cursor-pointer ${
+                      batchFilter === 'dumps' 
+                        ? 'bg-amber-950/70 border-amber-400 ring-2 ring-amber-400/50' 
+                        : 'bg-amber-950/30 border-amber-500/40 hover:bg-amber-950/50'
+                    }`}
+                  >
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block mb-1">
                       Single Commit Dumps
                     </span>
@@ -736,6 +792,51 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                       {dumpsCount}
                     </div>
                   </div>
+                </div>
+
+                {/* Filter Pills Bar */}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-neutral-400 font-mono">Filter Cohort:</span>
+                  <button
+                    onClick={() => setBatchFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batchFilter === 'all' ? 'bg-[#FFD166] text-black' : 'bg-black/50 text-neutral-300 hover:text-white border border-neutral-700'
+                    }`}
+                  >
+                    All ({cohort.length})
+                  </button>
+                  <button
+                    onClick={() => setBatchFilter('builders')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batchFilter === 'builders' ? 'bg-emerald-500 text-black' : 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/40'
+                    }`}
+                  >
+                    ✓ Builders ({buildersCount})
+                  </button>
+                  <button
+                    onClick={() => setBatchFilter('clones')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batchFilter === 'clones' ? 'bg-red-500 text-black' : 'bg-red-950/40 text-red-300 border border-red-500/40'
+                    }`}
+                  >
+                    ⚠️ Clones ({clonesCount})
+                  </button>
+                  <button
+                    onClick={() => setBatchFilter('injections')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batchFilter === 'injections' ? 'bg-red-600 text-white shadow-lg' : 'bg-red-950/60 text-red-200 border border-red-500/60'
+                    }`}
+                  >
+                    🚨 Injections ({injectionsCount})
+                  </button>
+                  <button
+                    onClick={() => setBatchFilter('dumps')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      batchFilter === 'dumps' ? 'bg-amber-500 text-black' : 'bg-amber-950/40 text-amber-300 border border-amber-500/40'
+                    }`}
+                  >
+                    Dumps ({dumpsCount})
+                  </button>
                 </div>
               </div>
 
@@ -776,12 +877,18 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                             </span>
                           </td>
                           <td className="py-3 px-3 font-sans">
-                            {cand.is_clone ? (
-                              <span className="text-red-400 text-xs font-bold">⚠️ Tutorial Clone</span>
-                            ) : (cand.authenticity_score || 0) >= 70 ? (
-                              <span className="text-emerald-400 text-xs font-bold">✓ Authentic Builder</span>
+                            {isInjectionCandidate(cand) ? (
+                              <span className="text-red-300 text-xs font-bold font-mono px-2 py-0.5 rounded bg-red-950/80 border border-red-500/70 inline-flex items-center gap-1 shadow-[0_0_10px_rgba(239,68,68,0.35)]">
+                                <span>🚨 Prompt Injection</span>
+                              </span>
+                            ) : cand.is_clone ? (
+                              <span className="text-red-400 text-xs font-bold font-mono px-2 py-0.5 rounded bg-red-950/40 border border-red-500/40">
+                                ⚠️ Tutorial Clone
+                              </span>
+                            ) : (cand.authenticity_score || 0) >= 60 ? (
+                              <span className="text-emerald-400 text-xs font-bold font-sans">✓ Authentic Builder</span>
                             ) : (
-                              <span className="text-amber-400 text-xs">Single Commit Dump</span>
+                              <span className="text-amber-400 text-xs font-sans">Single Commit Dump</span>
                             )}
                           </td>
                           <td className="py-3 px-3 text-right">

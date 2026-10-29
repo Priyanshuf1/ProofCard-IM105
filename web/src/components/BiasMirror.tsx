@@ -144,6 +144,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
   // Dedicated Viva Invitation Modal State
   const [activeVivaInviteCandidate, setActiveVivaInviteCandidate] = useState<CandidateProfile | null>(null);
+  const [vivaCandidateEmail, setVivaCandidateEmail] = useState<string>('');
   const [customVivaNote, setCustomVivaNote] = useState<string>('');
   const [isDispatchingSingleViva, setIsDispatchingSingleViva] = useState<boolean>(false);
   const [isDispatchingInvites, setIsDispatchingInvites] = useState<boolean>(false);
@@ -311,6 +312,8 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   // Open Viva Invite Modal for an individual candidate
   const handleOpenVivaInviteModal = (candidate: CandidateProfile) => {
     setActiveVivaInviteCandidate(candidate);
+    const savedTestEmail = typeof window !== 'undefined' ? localStorage.getItem('test_recruiter_email') : null;
+    setVivaCandidateEmail(candidate.email || savedTestEmail || 'candidate@example.edu');
     setCustomVivaNote('');
     setCopiedVivaLink(false);
   };
@@ -320,8 +323,16 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     if (!activeVivaInviteCandidate) return;
     setIsDispatchingSingleViva(true);
     try {
-      await sendVivaInvitation(activeVivaInviteCandidate, customVivaNote);
-      setToastMessage(`✓ Viva Defense link successfully sent to ${activeVivaInviteCandidate.name}!`);
+      const emailToSend = vivaCandidateEmail.trim() || activeVivaInviteCandidate.email || 'candidate@example.edu';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('test_recruiter_email', emailToSend);
+      }
+      const candidateToSend = {
+        ...activeVivaInviteCandidate,
+        email: emailToSend
+      };
+      await sendVivaInvitation(candidateToSend, customVivaNote);
+      setToastMessage(`✓ Viva Defense link successfully sent to ${emailToSend}!`);
       setActiveVivaInviteCandidate(null);
     } catch (e) {
       setToastMessage(`Viva invitation link dispatched to delivery queue.`);
@@ -1081,6 +1092,20 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                   </div>
                   <div className="text-xs text-neutral-400 font-mono mt-0.5">
                     Submission: {activeVivaInviteCandidate.project_name || activeVivaInviteCandidate.project_type}
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="text-[11px] text-[#FFD166] font-bold uppercase font-mono">To Email:</span>
+                    <input
+                      type="email"
+                      value={vivaCandidateEmail}
+                      onChange={(e) => {
+                        setVivaCandidateEmail(e.target.value);
+                        try { localStorage.setItem('test_recruiter_email', e.target.value); } catch(_) {}
+                      }}
+                      placeholder="candidate@example.edu"
+                      className="bg-black/70 border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#D4AF37] w-64 shadow-inner"
+                      title="Editable: enter your test email address to test viva delivery"
+                    />
                   </div>
                 </div>
                 <div className="text-right">
