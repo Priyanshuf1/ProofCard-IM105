@@ -348,15 +348,18 @@ export const N8nAutomationModal: React.FC<N8nAutomationModalProps> = ({ isOpen, 
             {/* Tab: Gmail Node */}
             {activeGuideTab === 'email' && (
               <div className="space-y-3 text-xs font-sans text-neutral-200">
-                <h4 className="font-bold text-white text-sm">Step 3: Connect Gmail Node for Feedback & Credentials</h4>
+                <h4 className="font-bold text-white text-sm">Step 3: Connect Gmail Node for Luxury Branded Company Emails</h4>
                 <div className="space-y-2 text-neutral-300">
-                  <p>1. Add a <strong>Gmail</strong> node (or SMTP node) to your workflow.</p>
-                  <p>2. Set <strong>Resource</strong> to <strong>Message</strong> and <strong>Operation</strong> to <strong>Send</strong>.</p>
-                  <div className="p-3 rounded-xl bg-black/60 font-mono text-[11px] text-neutral-200 space-y-1.5">
-                    <div><strong>To:</strong> <code className="text-[#FFD166]">{`{{ $json.data.email }}`}</code></div>
-                    <div><strong>Subject:</strong> <code className="text-[#FFD166]">{`{{ $json.data.subject || 'Your ProofCard Verification Results' }}`}</code></div>
-                    <div><strong>Email Body:</strong> Use <code className="text-[#FFD166]">{`{{ $json.data.headline }}`}</code> and <code className="text-[#FFD166]">{`{{ $json.data.action_plan }}`}</code> to provide constructive feedback.</div>
+                  <p>To deliver the official high-end Pariksha company email (with official logo, gold theme, scorecards, and verifiable QR link):</p>
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-[#D4AF37]/40 font-mono text-[11px] text-neutral-200 space-y-2">
+                    <div><strong className="text-[#FFD166]">Email Type:</strong> <span className="text-emerald-400 font-bold">HTML</span> (in Gmail node toggle HTML: On)</div>
+                    <div><strong className="text-[#FFD166]">To:</strong> <code className="text-[#FFD166]">{`{{ $json.data.to || $json.data.email || $json.to || $json.email }}`}</code></div>
+                    <div><strong className="text-[#FFD166]">Subject:</strong> <code className="text-[#FFD166]">{`{{ $json.data.subject || $json.subject }}`}</code></div>
+                    <div><strong className="text-[#FFD166]">HTML (Body):</strong> <code className="text-emerald-300 font-bold">{`{{ $json.data.html || $json.html || $json.data.body || $json.body }}`}</code></div>
                   </div>
+                  <p className="text-[11px] text-[#C9B89A]">
+                    Tip: If your Gmail node uses Plain Text instead, set Message to <code className="text-[#FFD166]">{`{{ $json.data.text || $json.text }}`}</code> so it includes clean double line-breaks and never gets flagged as spam.
+                  </p>
                 </div>
               </div>
             )}

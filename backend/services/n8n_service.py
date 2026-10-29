@@ -158,23 +158,37 @@ class N8nService:
         proof_card = candidate.get("proof_card") or {}
         email = candidate.get("email") or proof_card.get("email")
 
+        auth_score = candidate.get("authenticity_score", 0)
+        is_clone = bool(candidate.get("is_clone", False))
+        decision = "SHORTLISTED" if (auth_score >= 70 and not is_clone) else "FEEDBACK"
+        
+        email_data = EmailFormatter.generate_email(
+            candidate=candidate,
+            decision=decision
+        )
+
         payload = {
+            **email_data,
             "candidate_id": cid,
             "name": candidate.get("name") or candidate.get("candidate_name") or "Anonymous Candidate",
             "email": email,
+            "to": email,
+            "recipient": email,
             "college": candidate.get("college") or "Affiliated Institution",
             "college_tier": candidate.get("college_tier", "Tier-3"),
             "repo_url": candidate.get("repo_url", ""),
             "project_name": candidate.get("project_name", "Software Project"),
             "project_type": candidate.get("project_type", "Fullstack Application"),
-            "authenticity_score": candidate.get("authenticity_score", 0),
+            "authenticity_score": auth_score,
             "viva_score": candidate.get("viva_score", 0),
-            "is_clone": bool(candidate.get("is_clone", False)),
+            "is_clone": is_clone,
             "matched_tutorial": candidate.get("matched_tutorial"),
             "status": proof_card.get("status") or candidate.get("analysis_status", "COMPLETED"),
             "headline": proof_card.get("headline", ""),
             "tamper_proof_hash": candidate.get("tamper_proof_hash") or proof_card.get("tamper_proof_hash", ""),
-            "qr_verification_url": qr_url
+            "qr_verification_url": email_data.get("verification_url", qr_url),
+            "verification_url": email_data.get("verification_url", qr_url),
+            "action_plan": "\n\n".join(f"{s['title']}\n{s['desc']}" for s in email_data.get("action_plan_steps", []))
         }
 
         result = await N8nService.dispatch("CANDIDATE_SCANNED", payload, webhook_url)

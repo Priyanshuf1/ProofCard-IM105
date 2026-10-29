@@ -196,8 +196,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
         profile = await analyzeGithubUrl(githubUrl.trim(), candidateName || 'GitHub Contributor', college || 'University', consentGranted, undefined, emailParam);
       }
 
-      // Background non-blocking n8n webhook dispatch
-      dispatchN8nEvent('CANDIDATE_SCANNED', profile);
+      // Authoritative n8n dispatch is handled by backend to provide luxury HTML payload
 
       clearInterval(stepInterval);
       setIsScanning(false);
