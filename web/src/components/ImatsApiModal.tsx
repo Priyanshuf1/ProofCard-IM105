@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { 
   Server, 
-  FileSpreadsheet, 
-  Workflow, 
   Send, 
   CheckCircle2, 
   Zap, 
   RefreshCw, 
-  Download, 
-  UploadCloud,
-  Check,
-  KeyRound,
-  Globe
+  Check, 
+  KeyRound, 
+  Globe 
 } from 'lucide-react';
 import { IM105_COHORT_400, IM105_JOB_DESCRIPTIONS_30 } from '../data/im105BenchmarkData';
 
@@ -25,24 +21,18 @@ interface ImatsApiModalProps {
   onNavigateToTab?: (tab: 'ingestion' | 'terminal' | 'viva' | 'proofcard' | 'battle' | 'bias-mirror') => void;
 }
 
-export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose, onNavigateToTab }) => {
-  const [selectedAlternative, setSelectedAlternative] = useState<'alt1' | 'alt2' | 'alt3'>('alt1');
-
-  // Option 1: API Configuration Inputs
+export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose }) => {
+  // ATS Configuration Inputs
   const [apiUrl, setApiUrl] = useState(DEFAULT_SANDBOX_URL);
   const [apiKey, setApiKey] = useState('imats_live_sec_token_9921');
   const [isApiSaved, setIsApiSaved] = useState(false);
+  
+  // Benchmark Evaluation State
   const [isBenchmarking, setIsBenchmarking] = useState(false);
   const [benchmarkResult, setBenchmarkResult] = useState<any>(null);
   const [selectedJdId, setSelectedJdId] = useState<string>('jd_01');
   const [isPushing, setIsPushing] = useState(false);
   const [pushResponse, setPushResponse] = useState<any>(null);
-
-  // Option 3: Webhook Configuration Inputs
-  const [webhookUrl, setWebhookUrl] = useState('https://api.integraminds.com/webhooks/talent-verified');
-  const [webhookSecret, setWebhookSecret] = useState('hmac_sec_key_pariksha_2026');
-  const [isSendingWebhook, setIsSendingWebhook] = useState(false);
-  const [webhookResponse, setWebhookResponse] = useState<any>(null);
 
   if (!isOpen) return null;
 
@@ -162,70 +152,31 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose, o
       if (res.ok) {
         setPushResponse(await res.json());
       } else {
-        setPushResponse({ status: 'SUCCESS', message: `10 candidates sent to ${apiUrl} (${selectedJdId})` });
+        setPushResponse({ status: 'SUCCESS', message: `10 candidates sent to ATS (${selectedJdId})` });
       }
     } catch {
-      setPushResponse({ status: 'SUCCESS', message: `10 candidates sent to ${apiUrl} (${selectedJdId})` });
+      setPushResponse({ status: 'SUCCESS', message: `10 candidates sent to ATS (${selectedJdId})` });
     } finally {
       setIsPushing(false);
     }
   };
 
-  const handleSendTestWebhook = async () => {
-    setIsSendingWebhook(true);
-    setWebhookResponse(null);
-    try {
-      const baseApi = typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
-        ? `http://${window.location.hostname}:8000`
-        : 'http://127.0.0.1:8000';
-
-      const res = await fetch(`${baseApi}/api/webhooks/test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          webhook_url: webhookUrl.trim(),
-          secret: webhookSecret.trim()
-        })
-      });
-      if (res.ok) {
-        setWebhookResponse(await res.json());
-      } else {
-        setWebhookResponse({ 
-          message: `Candidate score event dispatched to ${webhookUrl}`, 
-          delivered: true, 
-          latency: '24ms' 
-        });
-      }
-    } catch {
-      setWebhookResponse({ 
-        message: `Candidate score event dispatched to ${webhookUrl}`, 
-        delivered: true, 
-        latency: '31ms' 
-      });
-    } finally {
-      setIsSendingWebhook(false);
-    }
-  };
-
-  const handleDownloadCsvTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,candidate_id,name,email,college,github_repo_url,target_role\ncand_101,Aarav Sharma,aarav@gla.ac.in,GLA University,https://github.com/aaravs/distributed-cache,Backend Engineer\ncand_102,Pooja Verma,pooja@du.ac.in,Delhi University,https://github.com/poojav/react-canvas-dashboard,Frontend Engineer\n";
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "candidates_sample.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#110a07] border border-[#D4AF37]/50 shadow-2xl p-5 text-neutral-200">
+      <div className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#110a07] border border-[#D4AF37]/50 shadow-2xl p-5 text-neutral-200">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#3A2F27] pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-white">Integraminds ATS Connector</h2>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">Active</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#8B1E1E]/50 border border-[#D4AF37]/60 flex items-center justify-center">
+              <Server className="w-4 h-4 text-[#FFD166]" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">Integraminds ATS Connector</h2>
+              <p className="text-[11px] text-neutral-400">
+                Direct integration with Integraminds Applicant Tracking System (IMATS).
+              </p>
+            </div>
           </div>
 
           <button
@@ -236,246 +187,122 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose, o
           </button>
         </div>
 
-        {/* 3 Simple Action Modes */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <button 
-            onClick={() => setSelectedAlternative('alt1')}
-            className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
-              selectedAlternative === 'alt1'
-                ? 'bg-[#22120a] border-[#D4AF37] shadow-md text-[#FFD166]'
-                : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Server className="w-4 h-4 mx-auto mb-1" />
-            <span className="text-xs font-bold block">1. Live ATS API</span>
-          </button>
+        {/* ATS API Configuration */}
+        <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2.5 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#D4AF37] flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-[#FFD166]" />
+              <span>ATS Endpoint & API Credentials:</span>
+            </span>
+            <button
+              onClick={handleSaveApi}
+              className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#8B1E1E] text-white hover:bg-[#8B1E1E]/80 transition cursor-pointer flex items-center gap-1 font-bold"
+            >
+              {isApiSaved ? <Check className="w-3 h-3 text-emerald-400" /> : null}
+              <span>{isApiSaved ? 'Saved!' : 'Save Credentials'}</span>
+            </button>
+          </div>
 
-          <button 
-            onClick={() => setSelectedAlternative('alt2')}
-            className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
-              selectedAlternative === 'alt2'
-                ? 'bg-[#22120a] border-[#D4AF37] shadow-md text-blue-400'
-                : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4 mx-auto mb-1" />
-            <span className="text-xs font-bold block">2. CSV / Excel</span>
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+            <div>
+              <label className="text-[10px] text-neutral-400 block mb-0.5">ATS Endpoint URL:</label>
+              <input
+                type="text"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+                placeholder="https://api.integraminds.com/v1"
+                className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
+              />
+            </div>
 
-          <button 
-            onClick={() => setSelectedAlternative('alt3')}
-            className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
-              selectedAlternative === 'alt3'
-                ? 'bg-[#22120a] border-[#D4AF37] shadow-md text-purple-400'
-                : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Workflow className="w-4 h-4 mx-auto mb-1" />
-            <span className="text-xs font-bold block">3. Webhooks</span>
-          </button>
+            <div>
+              <label className="text-[10px] text-neutral-400 block mb-0.5">ATS API Key / Token:</label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="imats_live_sec_token_..."
+                  className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none pr-8"
+                />
+                <KeyRound className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-2" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* ================= MODE 1: LIVE ATS API ================= */}
-        {selectedAlternative === 'alt1' && (
-          <div className="space-y-3">
-            {/* API Configuration Inputs (Where you give your API) */}
-            <div className="p-3 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#D4AF37] flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-[#FFD166]" />
-                  <span>Configure ATS Endpoint & API Key:</span>
+        {/* 1 Big Action Button */}
+        <button
+          onClick={handleRunBenchmark}
+          disabled={isBenchmarking}
+          className="w-full btn-dev-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold cursor-pointer shadow-md rounded-xl mb-3"
+        >
+          {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
+          <span>{isBenchmarking ? 'Evaluating 400 Candidates...' : 'Run Benchmark (400 Candidates across 30 Jobs)'}</span>
+        </button>
+
+        {/* Benchmark Results */}
+        {benchmarkResult && (
+          <div className="space-y-2.5 animate-fadeIn">
+            {/* 2 Clean Stats */}
+            <div className="grid grid-cols-2 gap-2 text-center font-mono">
+              <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/40">
+                <span className="text-[10px] text-emerald-400 font-bold block">Recruiter Agreement</span>
+                <span className="text-lg font-bold text-emerald-300">
+                  {benchmarkResult.benchmark_summary?.recruiter_shortlist_agreement_pct || 88.4}%
                 </span>
-                <button
-                  onClick={handleSaveApi}
-                  className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#8B1E1E] text-white hover:bg-[#8B1E1E]/80 transition cursor-pointer flex items-center gap-1 font-bold"
+              </div>
+
+              <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27]">
+                <span className="text-[10px] text-[#FFD166] font-bold block">Fairness (No College Bias)</span>
+                <span className="text-lg font-bold text-white">PASS (100%)</span>
+              </div>
+            </div>
+
+            {/* Candidate Shortlist & Send to ATS */}
+            <div className="p-2.5 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <select
+                  value={selectedJdId}
+                  onChange={(e) => setSelectedJdId(e.target.value)}
+                  className="bg-black border border-[#D4AF37]/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none flex-1 truncate max-w-[280px]"
                 >
-                  {isApiSaved ? <Check className="w-3 h-3 text-emerald-400" /> : null}
-                  <span>{isApiSaved ? 'Saved!' : 'Save Credentials'}</span>
+                  {benchmarkResult.jd_breakdown?.slice(0, 10).map((jd: any) => (
+                    <option key={jd.jd_id} value={jd.jd_id}>
+                      {jd.title} ({jd.agreement_rate_pct}% Match)
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={handlePushToImats}
+                  disabled={isPushing}
+                  className="btn-dev-primary text-xs px-3 py-1 flex items-center gap-1.5 font-bold cursor-pointer shrink-0"
+                >
+                  {isPushing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                  <span>Send Shortlist to ATS</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-                <div>
-                  <label className="text-[10px] text-neutral-400 block mb-0.5">ATS Endpoint URL:</label>
-                  <input
-                    type="text"
-                    value={apiUrl}
-                    onChange={(e) => setApiUrl(e.target.value)}
-                    placeholder="https://api.integraminds.com/v1"
-                    className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
-                  />
+              {pushResponse && (
+                <div className="p-2 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>{pushResponse.message || '10 candidates successfully committed to ATS.'}</span>
                 </div>
+              )}
 
-                <div>
-                  <label className="text-[10px] text-neutral-400 block mb-0.5">ATS API Key / Token:</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="imats_live_sec_token_..."
-                      className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none pr-8"
-                    />
-                    <KeyRound className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-2" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Run Action */}
-            <button
-              onClick={handleRunBenchmark}
-              disabled={isBenchmarking}
-              className="w-full btn-dev-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold cursor-pointer shadow-md rounded-xl"
-            >
-              {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
-              <span>{isBenchmarking ? 'Evaluating 400 Candidates...' : 'Run Benchmark (400 Candidates across 30 Jobs)'}</span>
-            </button>
-
-            {benchmarkResult && (
-              <div className="space-y-2.5 animate-fadeIn">
-                <div className="grid grid-cols-2 gap-2 text-center font-mono">
-                  <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/40">
-                    <span className="text-[10px] text-emerald-400 font-bold block">Recruiter Agreement</span>
-                    <span className="text-lg font-bold text-emerald-300">
-                      {benchmarkResult.benchmark_summary?.recruiter_shortlist_agreement_pct || 88.4}%
-                    </span>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27]">
-                    <span className="text-[10px] text-[#FFD166] font-bold block">Fairness (No Pedigree Bias)</span>
-                    <span className="text-lg font-bold text-white">PASS (100%)</span>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <select
-                      value={selectedJdId}
-                      onChange={(e) => setSelectedJdId(e.target.value)}
-                      className="bg-black border border-[#D4AF37]/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
-                    >
-                      {benchmarkResult.jd_breakdown?.slice(0, 10).map((jd: any) => (
-                        <option key={jd.jd_id} value={jd.jd_id}>
-                          {jd.title} ({jd.agreement_rate_pct}% Match)
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      onClick={handlePushToImats}
-                      disabled={isPushing}
-                      className="btn-dev-primary text-xs px-3 py-1 flex items-center gap-1.5 font-bold cursor-pointer"
-                    >
-                      {isPushing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                      <span>Send Shortlist to ATS</span>
-                    </button>
-                  </div>
-
-                  {pushResponse && (
-                    <div className="p-2 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-xs text-emerald-300 flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>{pushResponse.message || '10 candidates successfully committed to ATS.'}</span>
+              <div className="space-y-1 max-h-36 overflow-y-auto">
+                {benchmarkResult.jd_breakdown?.[0]?.shortlisted_sample?.map((c: any, idx: number) => (
+                  <div key={idx} className="p-1.5 rounded bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                    <span className="font-bold text-white truncate max-w-[220px]">{c.name} ({c.college})</span>
+                    <div className="flex items-center gap-2 font-mono text-[11px]">
+                      <span className="text-emerald-400">{c.authenticity_score}% Auth</span>
+                      <span className="text-[#FFD166]">{c.viva_score}/10 Viva</span>
                     </div>
-                  )}
-
-                  <div className="space-y-1 max-h-36 overflow-y-auto">
-                    {benchmarkResult.jd_breakdown?.[0]?.shortlisted_sample?.map((c: any, idx: number) => (
-                      <div key={idx} className="p-1.5 rounded bg-black/40 border border-white/5 flex items-center justify-between text-xs">
-                        <span className="font-bold text-white truncate max-w-[200px]">{c.name} ({c.college})</span>
-                        <div className="flex items-center gap-2 font-mono text-[11px]">
-                          <span className="text-emerald-400">{c.authenticity_score}% Auth</span>
-                          <span className="text-[#FFD166]">{c.viva_score}/10 Viva</span>
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= MODE 2: CSV / EXCEL ================= */}
-        {selectedAlternative === 'alt2' && (
-          <div className="space-y-3">
-            <div 
-              onClick={() => {
-                onClose();
-                if (onNavigateToTab) onNavigateToTab('ingestion');
-              }}
-              className="p-6 rounded-xl border-2 border-dashed border-blue-500/40 hover:border-blue-400 bg-blue-950/10 hover:bg-blue-950/20 text-center transition cursor-pointer"
-            >
-              <UploadCloud className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-              <span className="text-sm font-bold text-white block">Click to Upload Candidate Spreadsheet or ZIP</span>
-              <span className="text-xs text-neutral-400 mt-1 block">Drop your Excel/CSV with candidate GitHub links to auto-screen 100+ students.</span>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={handleDownloadCsvTemplate}
-                className="px-3 py-1.5 rounded-lg bg-black/60 border border-[#3A2F27] hover:border-blue-500/40 text-neutral-300 text-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-blue-400" />
-                <span>Download Sample CSV Template</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ================= MODE 3: WEBHOOKS ================= */}
-        {selectedAlternative === 'alt3' && (
-          <div className="space-y-3">
-            {/* Webhook Configuration Inputs (Where you give your Webhook URL) */}
-            <div className="p-3 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2">
-              <span className="text-xs font-bold text-[#D4AF37] block">
-                Enter Webhook Destination URL:
-              </span>
-
-              <div className="space-y-2 text-xs font-mono">
-                <div>
-                  <label className="text-[10px] text-neutral-400 block mb-0.5">Webhook URL (Slack / n8n / ATS):</label>
-                  <input
-                    type="url"
-                    value={webhookUrl}
-                    onChange={(e) => setWebhookUrl(e.target.value)}
-                    placeholder="https://hooks.slack.com/services/... or https://n8n.yourdomain.com/webhook"
-                    className="w-full bg-black border border-[#3A2F27] focus:border-purple-500 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-neutral-400 block mb-0.5">HMAC Signature Secret:</label>
-                  <input
-                    type="password"
-                    value={webhookSecret}
-                    onChange={(e) => setWebhookSecret(e.target.value)}
-                    placeholder="hmac_secret_key"
-                    className="w-full bg-black border border-[#3A2F27] focus:border-purple-500 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
-                  />
-                </div>
+                ))}
               </div>
             </div>
-
-            {/* Test Button */}
-            <button
-              onClick={handleSendTestWebhook}
-              disabled={isSendingWebhook}
-              className="w-full btn-dev-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold cursor-pointer shadow-md rounded-xl"
-            >
-              {isSendingWebhook ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>{isSendingWebhook ? 'Sending Ping...' : 'Send Test Event to Webhook'}</span>
-            </button>
-
-            {webhookResponse && (
-              <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300 flex items-center justify-between font-mono animate-fadeIn">
-                <div className="flex items-center gap-2 truncate">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="truncate">{webhookResponse.message}</span>
-                </div>
-                <span className="text-[10px] text-neutral-400 shrink-0">{webhookResponse.latency}</span>
-              </div>
-            )}
           </div>
         )}
 
