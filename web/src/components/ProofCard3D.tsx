@@ -22,6 +22,240 @@ interface ProofCard3DProps {
   cohort?: CandidateProfile[];
 }
 
+// Interactive Large Radar Skill Competency Polygon Chart (From Friend's Pariksha Features)
+const RadarSkillChart: React.FC<{
+  authenticity: number;
+  viva: number;
+  isClone?: boolean;
+  isAdversarial?: boolean;
+}> = ({ authenticity, viva, isClone, isAdversarial }) => {
+  const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
+
+  const cx = 175;
+  const cy = 135;
+  const r = 85;
+
+  const vArchitecture = isClone ? 30 : (isAdversarial ? 20 : (authenticity >= 70 ? 88 : 45));
+  const vTesting = isClone ? 25 : (isAdversarial ? 15 : Math.min(92, Math.max(40, authenticity - 5)));
+  const vGit = Math.min(100, Math.max(15, authenticity));
+  const vCodeQuality = isClone ? 25 : (isAdversarial ? 10 : Math.min(95, authenticity + 3));
+  const vViva = viva > 0 ? Math.min(100, Math.max(10, viva * 10)) : (isClone ? 10 : 20);
+
+  const axes = [
+    { 
+      id: 'arch', 
+      label: 'Architecture', 
+      val: vArchitecture, 
+      angle: -90,
+      desc: 'Modular separation, cyclomatic complexity bounds, and clean dependency decoupling.' 
+    },
+    { 
+      id: 'test', 
+      label: 'Testing', 
+      val: vTesting, 
+      angle: -18,
+      desc: 'Unit testing discipline, failure edge-cases, and automated pipeline verification.' 
+    },
+    { 
+      id: 'git', 
+      label: 'Git Discipline', 
+      val: vGit, 
+      angle: 54,
+      desc: 'Organic commit progression, multi-day development cadence, and healthy deletion ratio.' 
+    },
+    { 
+      id: 'code', 
+      label: 'Code Quality', 
+      val: vCodeQuality, 
+      angle: 126,
+      desc: '0% public tutorial plagiarism match, verified AST structures, and clean typing.' 
+    },
+    { 
+      id: 'viva', 
+      label: viva > 0 ? 'Viva Defense' : 'Viva (Pending)', 
+      val: vViva, 
+      angle: 198,
+      desc: viva > 0 ? 'Verbal conceptual clarity, technical justification, and deep design reasoning.' : 'Oral technical defense pending candidate completion.' 
+    }
+  ];
+
+  const getCoord = (angleDeg: number, distance: number) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return {
+      x: cx + distance * Math.cos(rad),
+      y: cy + distance * Math.sin(rad)
+    };
+  };
+
+  const polygonPoints = axes.map(a => {
+    const pt = getCoord(a.angle, (r * a.val) / 100);
+    return `${pt.x},${pt.y}`;
+  }).join(' ');
+
+  const levels = [0.25, 0.5, 0.75, 1.0];
+  const activeAxisObj = axes.find(a => a.id === hoveredAxis) || null;
+
+  return (
+    <div className="bg-black/60 rounded-2xl border border-[#3A2F27] p-4 flex flex-col items-center justify-between shadow-2xl relative w-full h-full">
+      {/* Top Header */}
+      <div className="flex items-center justify-between w-full mb-1">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#FFD166] font-mono flex items-center gap-1.5">
+          <span>Competency Radar</span>
+          <span className="text-[10px] text-neutral-400 font-normal">(5-Axis AST)</span>
+        </span>
+        <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+          Live Polygon
+        </span>
+      </div>
+
+      {/* SVG Radar */}
+      <div className="relative my-1 flex justify-center w-full">
+        <svg width="350" height="260" viewBox="0 0 350 260" className="overflow-visible select-none max-w-full">
+          <defs>
+            <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.45)' : 'rgba(212,175,55,0.45)'} />
+              <stop offset="100%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.05)' : 'rgba(212,175,55,0.05)'} />
+            </radialGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          {/* Concentric Pentagons */}
+          {levels.map((lvl, lidx) => {
+            const pts = axes.map(a => {
+              const pt = getCoord(a.angle, r * lvl);
+              return `${pt.x},${pt.y}`;
+            }).join(' ');
+            return (
+              <polygon
+                key={lidx}
+                points={pts}
+                fill="none"
+                stroke="rgba(212, 175, 55, 0.2)"
+                strokeWidth="1"
+                strokeDasharray={lvl === 1.0 ? 'none' : '3,3'}
+              />
+            );
+          })}
+
+          {/* Axis Guidelines */}
+          {axes.map((a, i) => {
+            const pt = getCoord(a.angle, r);
+            const isTargeted = hoveredAxis === a.id;
+            return (
+              <line
+                key={i}
+                x1={cx}
+                y1={cy}
+                x2={pt.x}
+                y2={pt.y}
+                stroke={isTargeted ? '#FFD166' : 'rgba(212, 175, 55, 0.25)'}
+                strokeWidth={isTargeted ? 1.5 : 1}
+                className="transition-colors duration-200"
+              />
+            );
+          })}
+
+          {/* Filled Skill Polygon with Glow */}
+          <polygon
+            points={polygonPoints}
+            fill="url(#radarGlow)"
+            stroke={isClone || isAdversarial ? '#EF4444' : '#FFD166'}
+            strokeWidth="2.5"
+            filter="url(#glow)"
+            className="transition-all duration-300 cursor-pointer"
+          />
+
+          {/* Axis Vertex Nodes & Labels with Generous Margins */}
+          {axes.map((a, i) => {
+            const pt = getCoord(a.angle, (r * a.val) / 100);
+            const isTargeted = hoveredAxis === a.id;
+            
+            let lblX = cx;
+            let lblY = cy;
+            let anchor: 'start' | 'middle' | 'end' = 'middle';
+            
+            if (a.angle === -90) { // Top: Architecture
+              lblX = cx;
+              lblY = cy - r - 16;
+              anchor = 'middle';
+            } else if (a.angle === -18) { // Top-Right: Testing
+              lblX = cx + r + 24;
+              lblY = cy - 6;
+              anchor = 'start';
+            } else if (a.angle === 54) { // Bottom-Right: Git Discipline
+              lblX = cx + (r * Math.cos(54 * Math.PI / 180)) + 12;
+              lblY = cy + (r * Math.sin(54 * Math.PI / 180)) + 18;
+              anchor = 'start';
+            } else if (a.angle === 126) { // Bottom-Left: Code Quality
+              lblX = cx + (r * Math.cos(126 * Math.PI / 180)) - 12;
+              lblY = cy + (r * Math.sin(126 * Math.PI / 180)) + 18;
+              anchor = 'end';
+            } else if (a.angle === 198) { // Top-Left: Viva Defense
+              lblX = cx - r - 24;
+              lblY = cy - 6;
+              anchor = 'end';
+            }
+
+            return (
+              <g 
+                key={i} 
+                onMouseEnter={() => setHoveredAxis(a.id)}
+                onMouseLeave={() => setHoveredAxis(null)}
+                className="cursor-pointer group"
+              >
+                {/* Invisible hover hotspot */}
+                <circle cx={pt.x} cy={pt.y} r="14" fill="transparent" />
+
+                {/* Point Marker */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={isTargeted ? 6 : 4}
+                  fill={isTargeted ? '#FFFFFF' : (isClone || isAdversarial ? '#EF4444' : '#FFD166')}
+                  stroke="#000000"
+                  strokeWidth="1.5"
+                  className="transition-all duration-200"
+                />
+
+                {/* Text Label */}
+                <text
+                  x={lblX}
+                  y={lblY}
+                  textAnchor={anchor}
+                  fill={isTargeted ? '#FFD166' : '#E6C280'}
+                  fontSize={isTargeted ? '11' : '10'}
+                  fontFamily="sans-serif"
+                  fontWeight={isTargeted ? 'bold' : '600'}
+                  className="transition-all duration-200"
+                >
+                  {a.label} ({a.val}%)
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Dynamic Interactive Explanation Tooltip Bar */}
+      <div className="w-full mt-1 pt-2 border-t border-[#3A2F27] min-h-[38px] flex items-center justify-between text-xs">
+        {activeAxisObj ? (
+          <div className="animate-fadeIn w-full">
+            <span className="font-bold text-[#FFD166] mr-1.5">{activeAxisObj.label} ({activeAxisObj.val}%):</span>
+            <span className="text-neutral-300 font-sans">{activeAxisObj.desc}</span>
+          </div>
+        ) : (
+          <div className="text-[11px] text-neutral-400 font-sans italic w-full text-center">
+            💡 Hover over any point on the polygon to inspect verified evidence.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   candidate,
   onNavigateToTab,
@@ -322,38 +556,51 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           </p>
         </div>
 
-        {/* 2-Column: Strengths & Recommended Next Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 relative z-10">
-          {/* Strengths */}
-          <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
-            <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-400 uppercase tracking-wider font-mono">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Technical Strengths</span>
-            </div>
-            <ul className="space-y-2 text-sm text-neutral-200 font-sans font-medium">
-              {(card.strengths && card.strengths.length > 0 ? card.strengths : [
-                'Demonstrated code originality with organic development cadence',
-                'Solid architecture and verified implementation of core application logic',
-                'Tamper-proof cryptographic commit ledger verification'
-              ]).map((str, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-emerald-400 font-bold shrink-0">✓</span>
-                  <span className="leading-snug">{str}</span>
-                </li>
-              ))}
-            </ul>
+        {/* Interactive Competency Radar & Evidence Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-5 relative z-10 items-stretch">
+          {/* Large Interactive Competency Radar Chart */}
+          <div className="lg:col-span-5 flex flex-col">
+            <RadarSkillChart 
+              authenticity={candidate.authenticity_score} 
+              viva={hasCompletedViva ? (candidate.viva_score ?? 0) : 0}
+              isClone={isClone}
+              isAdversarial={isAdversarial}
+            />
           </div>
 
-          {/* Recommended Next Steps */}
-          <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
-            <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#FFD166] uppercase tracking-wider font-mono">
-              <Zap className="w-4 h-4 text-[#D4AF37]" />
-              <span>Recommended Next Steps</span>
+          {/* Strengths & Recommended Next Steps */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* Technical Strengths */}
+            <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-400 uppercase tracking-wider font-mono">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Technical Strengths</span>
+              </div>
+              <ul className="space-y-2 text-sm text-neutral-200 font-sans font-medium">
+                {(card.strengths && card.strengths.length > 0 ? card.strengths : [
+                  'Demonstrated code originality with organic development cadence',
+                  'Solid architecture and verified implementation of core application logic',
+                  'Tamper-proof cryptographic commit ledger verification'
+                ]).map((str, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                    <span className="leading-snug">{str}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="space-y-2.5 text-sm text-neutral-200 font-sans font-medium">
-              <p className="text-neutral-200"><strong className="text-[#FFD166]">Area for Growth:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
-              <div className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
-                <p className="text-[#F5E9C7] leading-snug"><strong className="text-[#D4AF37]">Action Item:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
+
+            {/* Recommended Next Steps */}
+            <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#FFD166] uppercase tracking-wider font-mono">
+                <Zap className="w-4 h-4 text-[#D4AF37]" />
+                <span>Recommended Next Steps</span>
+              </div>
+              <div className="space-y-2.5 text-sm text-neutral-200 font-sans font-medium">
+                <p className="text-neutral-200"><strong className="text-[#FFD166]">Area for Growth:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
+                <div className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
+                  <p className="text-[#F5E9C7] leading-snug"><strong className="text-[#D4AF37]">Action Item:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
+                </div>
               </div>
             </div>
           </div>

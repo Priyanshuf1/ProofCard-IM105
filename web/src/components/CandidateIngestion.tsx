@@ -80,8 +80,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
     setIsBatchProcessing(true);
     setErrorMessage(null);
     try {
-      const text = await file.text();
+      let text = await file.text();
       if (!text.trim()) throw new Error('Uploaded CSV file is empty.');
+      // Auto-sanitize http:// to https:// and clean whitespace around github URLs
+      text = text.replace(/http:\/\/github\.com/gi, 'https://github.com');
       const data = await ingestBatchCsv(text);
       let cohortCandidates = (data.cohort || []) as CandidateProfile[];
       

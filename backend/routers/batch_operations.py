@@ -15,14 +15,24 @@ COHORT_FILE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__fil
 
 
 def _normalize_github_repo_url(value: str) -> str:
-    """Validate a repository URL without claiming that the repository was analyzed."""
-    parsed = urlparse((value or "").strip())
-    if parsed.scheme != "https" or parsed.netloc.lower() not in {"github.com", "www.github.com"}:
-        raise HTTPException(status_code=422, detail="Each applicant must provide an HTTPS GitHub repository URL.")
+    """Validate a repository URL and normalize to https://github.com/owner/repository."""
+    raw = (value or "").strip().strip("\'\"<>")
+    if raw.startswith("git@github.com:"):
+        raw = "https://github.com/" + raw[len("git@github.com:"):]
+    elif raw.startswith("http://"):
+        raw = "https://" + raw[7:]
+    elif not raw.startswith("https://") and not raw.startswith("http://"):
+        raw = "https://" + raw
+
+    parsed = urlparse(raw)
+    netloc = parsed.netloc.lower()
+    if netloc not in {"github.com", "www.github.com"}:
+        raise HTTPException(status_code=422, detail="Each applicant must provide a valid GitHub repository URL.")
     parts = [part for part in parsed.path.split("/") if part]
-    if len(parts) != 2 or parts[0].lower() in {"api", "search"} or parts[1] in {".", ".."}:
+    if len(parts) < 2 or parts[0].lower() in {"api", "search"} or parts[1] in {".", ".."}:
         raise HTTPException(status_code=422, detail="Each applicant must provide a GitHub repository URL in the form https://github.com/owner/repository.")
-    return f"https://github.com/{parts[0]}/{parts[1].removesuffix('.git')}"
+    repo = parts[1].removesuffix('.git')
+    return f"https://github.com/{parts[0]}/{repo}"
 
 class BatchApplicantItem(BaseModel):
     name: str
