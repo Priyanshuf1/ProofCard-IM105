@@ -98,30 +98,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </p>
           </div>
         </div>
-
-        {/* Enterprise API & Automations Modal Triggers */}
-        <div className="flex items-center gap-2">
-          {onOpenN8nModal && (
-            <button
-              onClick={onOpenN8nModal}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#200e07] border border-[#E85D04]/70 text-[#FFD166] hover:bg-[#E85D04]/20 transition text-xs sm:text-sm font-bold cursor-pointer shadow-sm"
-              title="Configure n8n Webhook, Google Sheets ATS Sync & Email Dispatch"
-            >
-              <Zap className="w-4 h-4 text-[#ff9f1c]" />
-              <span>⚡ Automations & n8n</span>
-            </button>
-          )}
-
-          {onOpenImatsModal && (
-            <button
-              onClick={onOpenImatsModal}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/60 text-[#FFD166] hover:bg-[#D4AF37]/30 transition text-xs sm:text-sm font-bold cursor-pointer shadow-sm"
-            >
-              <span className="text-[#D4AF37] font-mono text-xs">IM</span>
-              <span>IMATS Enterprise API</span>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Sleek Navigation Tabs */}
