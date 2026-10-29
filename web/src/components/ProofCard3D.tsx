@@ -24,6 +24,126 @@ interface ProofCard3DProps {
   cohort?: CandidateProfile[];
 }
 
+
+// Radar Skill Competency Polygon Chart Component
+const RadarSkillChart: React.FC<{
+  authenticity: number;
+  viva: number;
+  isClone?: boolean;
+  isAdversarial?: boolean;
+}> = ({ authenticity, viva, isClone, isAdversarial }) => {
+  const cx = 110;
+  const cy = 95;
+  const r = 65;
+
+  const vArchitecture = isClone ? 30 : (isAdversarial ? 20 : (authenticity >= 70 ? 88 : 45));
+  const vTesting = isClone ? 25 : (isAdversarial ? 15 : Math.min(92, Math.max(40, authenticity - 5)));
+  const vGit = Math.min(100, Math.max(15, authenticity));
+  const vCodeQuality = isClone ? 25 : (isAdversarial ? 10 : Math.min(95, authenticity + 3));
+  const vViva = Math.min(100, Math.max(10, (viva || 7) * 10));
+
+  const axes = [
+    { label: 'Architecture', val: vArchitecture, angle: -90 },
+    { label: 'Testing', val: vTesting, angle: -18 },
+    { label: 'Git Discipline', val: vGit, angle: 54 },
+    { label: 'Code Quality', val: vCodeQuality, angle: 126 },
+    { label: 'Viva Defense', val: vViva, angle: 198 }
+  ];
+
+  const getCoord = (angleDeg: number, distance: number) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return {
+      x: cx + distance * Math.cos(rad),
+      y: cy + distance * Math.sin(rad)
+    };
+  };
+
+  const polygonPoints = axes.map(a => {
+    const pt = getCoord(a.angle, (r * a.val) / 100);
+    return `${pt.x},${pt.y}`;
+  }).join(' ');
+
+  const levels = [0.25, 0.5, 0.75, 1.0];
+
+  return (
+    <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-3 flex flex-col items-center justify-center shrink-0 shadow-inner">
+      <div className="flex items-center justify-between w-full mb-1 text-[10px] font-bold uppercase tracking-wider text-[#FFD166] font-mono">
+        <span>Competency Radar</span>
+        <span className="text-neutral-400">5-Axis Polygon</span>
+      </div>
+      <svg width="220" height="185" className="overflow-visible">
+        {levels.map((lvl, lidx) => {
+          const pts = axes.map(a => {
+            const pt = getCoord(a.angle, r * lvl);
+            return `${pt.x},${pt.y}`;
+          }).join(' ');
+          return (
+            <polygon
+              key={lidx}
+              points={pts}
+              fill="none"
+              stroke="rgba(212, 175, 55, 0.18)"
+              strokeWidth="1"
+              strokeDasharray={lvl === 1.0 ? 'none' : '2,2'}
+            />
+          );
+        })}
+
+        {axes.map((a, i) => {
+          const pt = getCoord(a.angle, r);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={pt.x}
+              y2={pt.y}
+              stroke="rgba(212, 175, 55, 0.25)"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        <polygon
+          points={polygonPoints}
+          fill={isClone || isAdversarial ? 'rgba(239, 68, 68, 0.35)' : 'rgba(212, 175, 55, 0.35)'}
+          stroke={isClone || isAdversarial ? '#EF4444' : '#FFD166'}
+          strokeWidth="2"
+          className="transition-all duration-500"
+        />
+
+        {axes.map((a, i) => {
+          const pt = getCoord(a.angle, (r * a.val) / 100);
+          const lblPt = getCoord(a.angle, r + 15);
+          return (
+            <g key={i}>
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r="3"
+                fill={isClone || isAdversarial ? '#EF4444' : '#FFD166'}
+                stroke="#000"
+                strokeWidth="1"
+              />
+              <text
+                x={lblPt.x}
+                y={lblPt.y + (a.angle === -90 ? -3 : a.angle > 0 ? 5 : 2)}
+                textAnchor={a.angle === -90 ? 'middle' : a.angle > -90 && a.angle < 90 ? 'start' : 'end'}
+                fill="#C9B89A"
+                fontSize="8"
+                fontFamily="sans-serif"
+                fontWeight="600"
+              >
+                {a.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+};
+
 export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   candidate,
   onNavigateToTab,
@@ -85,6 +205,26 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   const isClone = candidate.is_clone;
   const isAdversarial = Boolean(candidate.has_prompt_injection || card.has_prompt_injection || card.status === 'FLAGGED_ADVERSARIAL_INJECTION' || candidate.is_prompt_injected || card.status === 'FLAGGED_PROMPT_INJECTION' || candidate.security_scan?.is_prompt_injected);
   const isPromptInjected = isAdversarial;
+    // Three.js Interactive 3D Tilt Physics & Dynamic Glare
+  const [tilt, setTilt] = useState({ x: 0, y: 0, glareX: 50, glareY: 50, isHovered: false });
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -6;
+    const rotateY = ((x - centerX) / centerX) * 6;
+    const glareX = (x / rect.width) * 100;
+    const glareY = (y / rect.height) * 100;
+    setTilt({ x: rotateX, y: rotateY, glareX, glareY, isHovered: true });
+  };
+
+  const handleCardMouseLeave = () => {
+    setTilt({ x: 0, y: 0, glareX: 50, glareY: 50, isHovered: false });
+  };
+
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
@@ -189,7 +329,25 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       </div>
 
       {/* The 3D ProofCard Container */}
-      <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
+      <div 
+        onMouseMove={handleCardMouseMove}
+        onMouseLeave={handleCardMouseLeave}
+        style={{
+          transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          transition: tilt.isHovered ? 'transform 0.08s ease-out' : 'transform 0.5s ease-out',
+          transformStyle: 'preserve-3d'
+        }}
+        className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/40 backdrop-blur-xl border border-[#D4AF37]/35 shadow-[0_15px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(212,175,55,0.15)] relative overflow-hidden transition-all duration-300"
+      >
+        {/* Dynamic Light Glare Reflection */}
+        {tilt.isHovered && (
+          <div 
+            className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-200"
+            style={{
+              background: `radial-gradient(circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(212, 175, 55, 0.22) 0%, rgba(255, 255, 255, 0.08) 25%, transparent 65%)`,
+            }}
+          />
+        )}
         {/* Amber Ambient Vignette */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -244,8 +402,15 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </div>
           </div>
 
-          {/* Scores Overview */}
-          <div className="flex items-center gap-4 font-mono bg-black/60 px-5 py-3 rounded-xl border border-[#3A2F27]">
+          {/* Scores Overview with Competency Radar Chart */}
+          <div className="flex flex-wrap items-center gap-3">
+            <RadarSkillChart 
+              authenticity={candidate.authenticity_score} 
+              viva={candidate.viva_score ?? 0}
+              isClone={isClone}
+              isAdversarial={isAdversarial}
+            />
+            <div className="flex items-center gap-4 font-mono bg-black/60 px-5 py-3 rounded-xl border border-[#3A2F27]">
             <div className="text-right">
               <div className="text-xs text-neutral-300 uppercase font-bold">Authenticity</div>
               <div className={`text-2xl font-black ${isAdversarial || isClone ? 'text-red-400' : 'text-[#FFD166]'}`}>
@@ -259,6 +424,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                 {candidate.viva_score !== undefined ? candidate.viva_score : '--'} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
               </div>
             </div>
+          </div>
           </div>
         </div>
 
