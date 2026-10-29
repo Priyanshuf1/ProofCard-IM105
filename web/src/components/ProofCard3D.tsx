@@ -272,15 +272,9 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         }`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${
-<<<<<<< HEAD
-              isAdversarial ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
+              isPromptInjected ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
             }`}>
-              {isAdversarial ? '🚨 Security Alert: Prompt Injection Neutralized' : (isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:')}
-=======
-              isPromptInjected ? 'text-red-300' : isClone ? 'text-red-400' : 'text-[#FFD166]'
-            }`}>
-              {isPromptInjected ? '🚨 Adversarial Prompt Injection Security Verdict:' : isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:'}
->>>>>>> friend/pariksha-features
+              {isPromptInjected ? '🚨 Security Alert: Adversarial Prompt Injection Neutralized' : (isClone ? '🚨 Forensic Plagiarism Audit Verdict:' : 'Forensic Verdict:')}
             </span>
             {isClone && candidate.matched_tutorial && (
               <div className="flex items-center gap-2">

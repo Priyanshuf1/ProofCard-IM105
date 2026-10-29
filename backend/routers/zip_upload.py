@@ -338,8 +338,8 @@ async def upload_project_zip(
 
         # Generate Explainable ProofCard
         if is_prompt_injected or has_prompt_injection:
-            card_status = "FLAGGED_PROMPT_INJECTION"
-            card_headline = "SECURITY ALERT: Adversarial Prompt Injection Detected. Uploaded archive attempted prompt injection against AI evaluator."
+            card_status = "FLAGGED_ADVERSARIAL_INJECTION"
+            card_headline = "Security Alert: Adversarial Prompt Injection Detected. Uploaded archive attempted prompt injection against AI evaluator."
             card_strengths = [
                 f"Security Isolation Shield intercepted {security_report.get('findings_count', 1)} adversarial directive(s)",
                 f"Quarantined vectors in {', '.join(security_report.get('files_affected', ['source'])[:3])}",

@@ -1082,8 +1082,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
     if is_prompt_injected or has_prompt_injection:
         findings_summary = f"{security_report.get('findings_count', 1)} adversarial directive(s) detected across {len(security_report.get('files_affected', ['README.md']))} file(s)"
         proof_card = {
-            "status": "FLAGGED_PROMPT_INJECTION",
-            "headline": "SECURITY ALERT: Adversarial Prompt Injection Detected. Repository attempted indirect prompt injection against AI evaluator.",
+            "status": "FLAGGED_ADVERSARIAL_INJECTION",
+            "headline": "Security Alert: Adversarial Prompt Injection Detected. Repository attempted indirect prompt injection against AI evaluator.",
             "strengths": [
                 f"Security Isolation Shield intercepted {findings_summary}",
                 f"Detected vectors in {', '.join(security_report.get('files_affected', ['README.md'])[:3])}",
@@ -1094,7 +1094,6 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "tamper_proof_hash": tamper_proof_hash,
             "has_prompt_injection": True,
             "email": req.email
-        }
         }
     elif is_clone and matched_tut:
         sim_pct = int(matched_tut.get("similarity_score", 0.0) * 100)

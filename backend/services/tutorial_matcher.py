@@ -88,7 +88,7 @@ class TutorialMatcher:
         """
         candidate_tokens = cls.normalize_tokens(candidate)
         source_tokens = cls.normalize_tokens(source)
-        if len(candidate_tokens) < 30 or len(source_tokens) < 30:
+        if len(candidate_tokens) < 12 or len(source_tokens) < 12:
             return {
                 "similarity": 0.0,
                 "candidate_coverage": 0.0,
@@ -213,8 +213,6 @@ class TutorialMatcher:
                 and best_pair
                 and best_pair["metrics"]["candidate_coverage"] >= 0.65
                 and best_pair["metrics"]["similarity"] >= 0.58
-                and best_pair["metrics"].get("intersection_count", 0) >= 25
-                and best_pair["metrics"].get("candidate_tokens", 0) >= 45
             ):
                 candidate_loc = sum(
                     len(v.splitlines())

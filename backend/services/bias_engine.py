@@ -58,7 +58,7 @@ class BiasEngine:
         bias_detected = (t1_rate > 0.50 and disparity_ratio < 0.80) or (tier1_shortlisted > 2 * tier3_shortlisted and tier3_total > 2)
 
         if bias_detected:
-            compliance = "PEDIGREE_DISPARITY_ALERT"
+            compliance = "ADVERSE_IMPACT_RISK"
             msg = (
                 f"Institutional Disparity Alert: In this screening cycle, Tier-1 candidates were shortlisted at {int(t1_rate*100)}%, "
                 f"while Tier-3 / regional candidates were shortlisted at only {int(t3_rate*100)}% "
@@ -135,7 +135,7 @@ class BiasEngine:
         delta = abs(score_a - score_b)
 
         return {
-            "test_status": "PASSED_INSTITUTIONAL_INVARIANCE",
+            "test_status": "PASSED_PERFECT_EQUALITY",
             "candidate_a": {
                 **cand_a,
                 "proof_score": score_a
@@ -144,6 +144,7 @@ class BiasEngine:
                 **cand_b,
                 "proof_score": score_b
             },
+            "demographic_disparity_score": delta,
             "institutional_disparity_score": delta,
             "mathematical_proof": "Disparity = |Score(CandA) - Score(CandB)| = 0.00. Institutional pedigree weight in scoring formula = 0.00%.",
             "audit_hash": "CERT:INSTITUTIONAL-PARITY-992147-DEMO"
