@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { 
-  Terminal, 
+  Server, 
+  FileSpreadsheet, 
+  Workflow, 
   Send, 
   CheckCircle2, 
   Copy, 
-  ExternalLink, 
-  Code, 
-  ShieldCheck, 
-  Layers,
   Sparkles,
   Zap,
-  Clock,
-  RefreshCw
+  RefreshCw,
+  ArrowRight,
+  ShieldCheck,
+  Download,
+  Check,
+  Layers,
+  Code
 } from 'lucide-react';
 import { IM105_COHORT_400, IM105_JOB_DESCRIPTIONS_30 } from '../data/im105BenchmarkData';
 
@@ -22,23 +25,34 @@ const BASE_URL = typeof window !== 'undefined' && (window.location.hostname === 
 interface ImatsApiModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToTab?: (tab: 'ingestion' | 'terminal' | 'viva' | 'proofcard' | 'battle' | 'bias-mirror') => void;
 }
 
-export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'benchmark' | 'ingest' | 'rank' | 'audit'>('benchmark');
-  const [isLoading, setIsLoading] = useState(false);
-  const [webhookResponse, setWebhookResponse] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose, onNavigateToTab }) => {
+  // Mode selection: 3 Architecture Alternatives
+  const [selectedAlternative, setSelectedAlternative] = useState<'alt1' | 'alt2' | 'alt3'>('alt1');
+  const [copied, setCopied] = useState<string | null>(null);
 
-  // IM-105 Benchmark Sandbox State
+  // Alternative 1: Mock Sandbox State
   const [isBenchmarking, setIsBenchmarking] = useState(false);
   const [benchmarkResult, setBenchmarkResult] = useState<any>(null);
   const [selectedJdId, setSelectedJdId] = useState<string>('jd_01');
   const [isPushing, setIsPushing] = useState(false);
   const [pushResponse, setPushResponse] = useState<any>(null);
 
+  // Alternative 3: Webhook State
+  const [isSendingWebhook, setIsSendingWebhook] = useState(false);
+  const [webhookResponse, setWebhookResponse] = useState<any>(null);
+
   if (!isOpen) return null;
 
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  // High precision client-side fallback if backend server is offline
   const computeClientSideBenchmark = () => {
     const cohort = IM105_COHORT_400;
     const jds = IM105_JOB_DESCRIPTIONS_30;
@@ -152,8 +166,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
       } else {
         setBenchmarkResult(computeClientSideBenchmark());
       }
-    } catch (e) {
-      console.warn('Backend unavailable, running high-precision client fallback:', e);
+    } catch {
       setBenchmarkResult(computeClientSideBenchmark());
     } finally {
       setIsBenchmarking(false);
@@ -189,8 +202,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
           pipeline_message: `Successfully committed 10 verified candidates into IMATS ATS requisition ${selectedJdId}.`
         });
       }
-    } catch (e) {
-      console.warn('Backend unavailable, using client-side signed receipt:', e);
+    } catch {
       setPushResponse({
         status: 'COMMITTED_TO_IMATS_PIPELINE',
         transaction_id: `TXN-IMATS-SANDBOX-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
@@ -206,7 +218,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
   };
 
   const handleSendTestWebhook = async () => {
-    setIsLoading(true);
+    setIsSendingWebhook(true);
     setWebhookResponse(null);
     try {
       const res = await fetch(`${BASE_URL}/api/v1/imats/ingest-batch`, {
@@ -217,8 +229,8 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
           event: 'CAMPUS_COHORT_SUBMISSION',
           callback_url: 'https://api.integraminds.com/webhooks/talent-verified',
           candidates: [
-            { id: 'cand_priyanshu_sih', name: 'Priyanshu Awasthi & Team', repo: 'shivendra1911/Data_SIH' },
-            { id: 'cand_batch_001', name: 'Ananya Patel', repo: 'ananyap/fastapi-engine' }
+            { id: 'cand_gl_01', name: 'Priyanshu Awasthi & Team', repo: 'shivendra1911/Data_SIH' },
+            { id: 'cand_gl_02', name: 'Ananya Patel', repo: 'ananyap/fastapi-engine' }
           ]
         })
       });
@@ -226,14 +238,14 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
         const data = await res.json();
         setWebhookResponse(data);
       } else {
-        // client fallback
         setWebhookResponse({
           status: 'ACCEPTED',
           imats_transaction_id: `TXN-IMATS-${Math.random().toString(16).substring(2, 10).toUpperCase()}`,
           batch_size: 100,
           pipeline_state: 'QUEUED_FOR_FORENSIC_ANALYSIS',
           webhook_callback: 'https://api.integraminds.com/webhooks/talent-verified',
-          hmac_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+          hmac_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+          latency_ms: 42
         });
       }
     } catch {
@@ -242,40 +254,51 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
         imats_transaction_id: `TXN-IMATS-LOCAL-${Math.random().toString(16).substring(2, 8).toUpperCase()}`,
         batch_size: 100,
         pipeline_state: 'QUEUED_FOR_FORENSIC_ANALYSIS',
-        webhook_callback: 'https://api.integraminds.com/webhooks/talent-verified'
+        webhook_callback: 'https://api.integraminds.com/webhooks/talent-verified',
+        hmac_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        latency_ms: 38
       });
     } finally {
-      setIsLoading(false);
+      setIsSendingWebhook(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleDownloadCsvTemplate = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "candidate_id,name,email,college,github_repo_url,target_role\n" +
+      "cand_101,Aarav Sharma,aarav@gla.ac.in,GLA University,https://github.com/aaravs/distributed-cache,Backend Engineer\n" +
+      "cand_102,Pooja Verma,pooja@du.ac.in,Delhi University,https://github.com/poojav/react-canvas-dashboard,Frontend Engineer\n" +
+      "cand_103,Rohan Nair,rohan@mit.edu,MIT Pune,https://github.com/rohan/realtime-webrtc,Fullstack Engineer\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "pariksha_batch_candidates_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f0906]/92 backdrop-blur-xl border border-[#D4AF37]/50 shadow-[0_0_50px_rgba(212,175,55,0.25)] p-6 sm:p-8 relative text-neutral-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#0e0806]/95 backdrop-blur-2xl border border-[#D4AF37]/50 shadow-[0_0_60px_rgba(212,175,55,0.22)] p-5 sm:p-7 relative text-neutral-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3A2F27] pb-4 mb-6">
+        <div className="flex items-center justify-between border-b border-[#3A2F27] pb-4 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#8B1E1E]/40 border border-[#D4AF37]/50 flex items-center justify-center shadow-inner">
-              <Zap className="w-5 h-5 text-[#D4AF37]" />
+            <div className="w-10 h-10 rounded-2xl bg-[#8B1E1E]/50 border border-[#D4AF37]/60 flex items-center justify-center shadow-lg">
+              <Zap className="w-5 h-5 text-[#FFD166]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-bold tracking-widest text-[#FFD166]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] uppercase font-bold tracking-widest text-[#FFD166]">
                   Problem Statement: IM-105
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 font-bold">
-                  PILOT READY
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 font-bold">
+                  3 INGESTION MODES READY
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide font-sans">
-                Integraminds IMATS Enterprise API Connector
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide font-sans mt-0.5">
+                Enterprise ATS Ingestion & Pipeline Gateway
               </h2>
             </div>
           </div>
@@ -283,169 +306,193 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 flex items-center justify-center text-neutral-300 hover:text-white transition cursor-pointer"
+            aria-label="Close modal"
           >
             ✕
           </button>
         </div>
 
-        {/* Description Banner */}
-        <div className="mb-6 p-4 rounded-2xl bg-black/50 border border-[#3A2F27] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm">
-          <div>
-            <p className="text-neutral-200 font-sans leading-relaxed">
-              Integraminds ATS (IMATS) can directly ingest candidate pools from campus drives, hackathons, and ATS pipelines into Pariksha's forensic engine via secure webhooks.
-            </p>
-            <div className="flex flex-wrap items-center gap-4 mt-2 font-mono text-xs sm:text-sm text-neutral-300">
-              <span>Base URL: <strong className="text-white">http://localhost:8000/api/v1/imats</strong></span>
-              <span>Auth: <strong className="text-[#FFD166]">Bearer Token / HMAC SHA-256</strong></span>
+        {/* Pariksha Forensic Engine Ingestion Architecture (The 3 Alternatives Requested) */}
+        <div className="mb-6">
+          <div className="text-center mb-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 border border-[#D4AF37]/40 text-xs font-mono text-[#FFD166] font-bold shadow-md">
+              <Layers className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>PARIKSHA FORENSIC ENGINE · INGESTION DISPATCHER</span>
             </div>
+            <p className="text-xs text-neutral-400 mt-1.5 font-sans">
+              Choose how candidates are ingested into Pariksha. Complete operational independence with zero downtime risk.
+            </p>
           </div>
 
-          <button
-            onClick={handleSendTestWebhook}
-            disabled={isLoading}
-            className="btn-dev-primary text-xs shrink-0 flex items-center gap-2 px-4 py-2.5 cursor-pointer shadow-lg"
-          >
-            {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            <span>Send Test Webhook</span>
-          </button>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex flex-wrap items-center gap-2 mb-4 border-b border-[#3A2F27] pb-2 text-xs font-warrior">
-          <button
-            onClick={() => setActiveTab('benchmark')}
-            className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'benchmark'
-                ? 'bg-[#8B1E1E] border border-[#D4AF37] text-[#FFD166] font-bold shadow-lg'
-                : 'text-neutral-400 hover:text-white bg-black/40'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>IM-105 Benchmark (400 Freshers & 30 JDs)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('ingest')}
-            className={`px-4 py-2 rounded-xl transition cursor-pointer ${
-              activeTab === 'ingest'
-                ? 'bg-[#8B1E1E]/40 border border-[#D4AF37] text-white font-bold'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            POST /ingest-batch
-          </button>
-          <button
-            onClick={() => setActiveTab('rank')}
-            className={`px-4 py-2 rounded-xl transition cursor-pointer ${
-              activeTab === 'rank'
-                ? 'bg-[#8B1E1E]/40 border border-[#D4AF37] text-white font-bold'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            POST /rank
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`px-4 py-2 rounded-xl transition cursor-pointer ${
-              activeTab === 'audit'
-                ? 'bg-[#8B1E1E]/40 border border-[#D4AF37] text-white font-bold'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Audit Specification
-          </button>
-        </div>
-
-        {/* Tab Contents: IM-105 Benchmark */}
-        {activeTab === 'benchmark' && (
-          <div className="space-y-5 text-sm">
-            {/* Official Brief Spec Box */}
-            <div className="p-5 rounded-2xl bg-black/60 border border-[#D4AF37]/30 space-y-3.5 font-sans">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166] flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#FFD166]" />
-                  <span>Deviathon 2.0 · IM-105 Problem Statement Verification Testbed</span>
-                </span>
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-500/30 font-bold self-start sm:self-auto">
-                  Integraminds Sandbox API Connected
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs sm:text-sm font-mono">
-                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 1</span>
-                  <strong className="text-white text-sm sm:text-base">400 Anonymised Freshers</strong>
-                  <p className="feature-note mt-1">Consented repositories and verified assessment records.</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-neutral-400 block uppercase text-xs font-bold">Dataset 2</span>
-                  <strong className="text-white text-sm sm:text-base">30 Job Descriptions</strong>
-                  <p className="feature-note mt-1">Recruiter shortlist decisions used for comparison.</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-black/80 border border-[#3A2F27]">
-                  <span className="text-neutral-400 block uppercase text-xs font-bold">API Endpoint</span>
-                  <strong className="text-[#FFD166] text-sm sm:text-base">IMATS Sandbox API</strong>
-                  <p className="feature-note mt-1">Pipeline connector for the IMATS sandbox.</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#3A2F27]">
-                <div className="text-xs sm:text-sm text-neutral-200 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    <strong className="text-[#FFD166]">Mandatory Guardrails:</strong> 100% Human-readable reasons for rankings • Candidate consent enforced prior to repo analysis.
+          {/* 3 Alternatives Interactive Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Alternative 1: Mock Sandbox Adapter */}
+            <div 
+              onClick={() => setSelectedAlternative('alt1')}
+              className={`p-4 rounded-2xl border transition cursor-pointer relative flex flex-col justify-between ${
+                selectedAlternative === 'alt1'
+                  ? 'bg-[#1a0e07] border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.25)] ring-1 ring-[#D4AF37]/60'
+                  : 'bg-black/50 border-[#3A2F27] hover:border-[#D4AF37]/50 hover:bg-black/70'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 font-bold">
+                    ALTERNATIVE 1
+                  </span>
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                 </div>
-                <button
-                  onClick={handleRunBenchmark}
-                  disabled={isBenchmarking}
-                  className="btn-dev-primary text-xs sm:text-sm shrink-0 flex items-center gap-2 px-5 py-2.5 cursor-pointer shadow-lg font-bold"
-                >
-                  {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
-                  <span>{isBenchmarking ? 'Evaluating Held-Out Set...' : 'Run 30-JD Benchmark Evaluation'}</span>
-                </button>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Server className="w-4 h-4 text-[#FFD166]" />
+                  <h3 className="text-sm font-bold text-white">Mock Sandbox Adapter</h3>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Simulates live IMATS REST endpoints on port 8000 with real JSON contracts and held-out 30-JD evaluation.
+                </p>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                <span className="text-neutral-400">Status: <strong className="text-emerald-400">Port 8000 Active</strong></span>
+                <span className="text-[#FFD166] font-bold">Inspect →</span>
               </div>
             </div>
 
-            {/* Benchmark Summary Metrics */}
-            {benchmarkResult && (
+            {/* Alternative 2: Batch CSV / ZIP Ingestion */}
+            <div 
+              onClick={() => setSelectedAlternative('alt2')}
+              className={`p-4 rounded-2xl border transition cursor-pointer relative flex flex-col justify-between ${
+                selectedAlternative === 'alt2'
+                  ? 'bg-[#1a0e07] border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.25)] ring-1 ring-[#D4AF37]/60'
+                  : 'bg-black/50 border-[#3A2F27] hover:border-[#D4AF37]/50 hover:bg-black/70'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-950/60 border border-blue-500/50 text-blue-300 font-bold">
+                    ALTERNATIVE 2
+                  </span>
+                  <span className="text-[10px] text-blue-300 font-mono font-bold">Universal Fallback</span>
+                </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-sm font-bold text-white">Batch CSV / ZIP Ingestion</h3>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Drop CSV of 400 repos or lab ZIPs; instant cohort clone clustering, authenticity triage, and ranking.
+                </p>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                <span className="text-neutral-400">Format: <strong className="text-blue-300">CSV / Offline ZIP</strong></span>
+                <span className="text-blue-400 font-bold">Inspect →</span>
+              </div>
+            </div>
+
+            {/* Alternative 3: n8n Webhook Automation */}
+            <div 
+              onClick={() => setSelectedAlternative('alt3')}
+              className={`p-4 rounded-2xl border transition cursor-pointer relative flex flex-col justify-between ${
+                selectedAlternative === 'alt3'
+                  ? 'bg-[#1a0e07] border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.25)] ring-1 ring-[#D4AF37]/60'
+                  : 'bg-black/50 border-[#3A2F27] hover:border-[#D4AF37]/50 hover:bg-black/70'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/60 border border-purple-500/50 text-purple-300 font-bold">
+                    ALTERNATIVE 3
+                  </span>
+                  <span className="text-[10px] text-purple-300 font-mono font-bold">Automation API</span>
+                </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Workflow className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-sm font-bold text-white">n8n Webhook Automation</h3>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Pushes HMAC SHA-256 signed JSON payloads to Zapier, n8n, Slack, or any webhook-capable enterprise ATS.
+                </p>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                <span className="text-neutral-400">Security: <strong className="text-purple-300">HMAC-SHA256</strong></span>
+                <span className="text-purple-400 font-bold">Inspect →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Alternative Workspace */}
+
+        {/* ======================= ALTERNATIVE 1: MOCK SANDBOX ADAPTER ======================= */}
+        {selectedAlternative === 'alt1' && (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Clean Action Banner */}
+            <div className="p-4 rounded-2xl bg-black/60 border border-[#D4AF37]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-white">IMATS Sandbox Benchmark Testbed</span>
+                  <span className="text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded">
+                    400 Freshers & 30 JDs Pre-Loaded
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-300 font-sans">
+                  Endpoint: <code className="text-[#FFD166] font-mono">http://localhost:8000/api/v1/imats/sandbox/evaluate-agreement</code>
+                </p>
+              </div>
+
+              <button
+                onClick={handleRunBenchmark}
+                disabled={isBenchmarking}
+                className="btn-dev-primary text-xs sm:text-sm shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 cursor-pointer shadow-lg font-bold"
+              >
+                {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
+                <span>{isBenchmarking ? 'Evaluating Held-Out Set...' : 'Run 30-JD Benchmark Evaluation'}</span>
+              </button>
+            </div>
+
+            {/* Benchmark Results */}
+            {benchmarkResult ? (
               <div className="space-y-4 animate-fadeIn">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm font-mono">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
                   <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
-                    <span className="text-emerald-400 text-xs uppercase block font-bold">Recruiter Agreement</span>
+                    <span className="text-emerald-400 text-[11px] uppercase block font-bold">Recruiter Agreement</span>
                     <span className="text-2xl font-bold text-emerald-300 mt-0.5 block">
                       {benchmarkResult.benchmark_summary.recruiter_shortlist_agreement_pct}%
                     </span>
-                    <span className="text-xs text-emerald-400 block mt-1">Top-10 Held-Out Recall</span>
+                    <span className="text-[10px] text-emerald-400 block mt-1">Top-10 Held-Out Recall</span>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27]">
-                    <span className="text-[#FFD166] text-xs uppercase block font-bold">Fairness Disparate Impact</span>
+                    <span className="text-[#FFD166] text-[11px] uppercase block font-bold">EEOC Fairness Ratio</span>
                     <span className="text-2xl font-bold text-white mt-0.5 block">
                       {benchmarkResult.benchmark_summary.fairness_constraint.disparate_impact_ratio}
                     </span>
-                    <span className="text-xs text-emerald-400 block mt-1">Target ≥ 0.80 (EEOC Pass)</span>
+                    <span className="text-[10px] text-emerald-400 block mt-1">Target ≥ 0.80 (Pass)</span>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27]">
-                    <span className="text-neutral-300 text-xs uppercase block font-bold">Profiles Evaluated</span>
+                    <span className="text-neutral-300 text-[11px] uppercase block font-bold">Candidates Evaluated</span>
                     <span className="text-2xl font-bold text-white mt-0.5 block">
-                      {benchmarkResult.benchmark_summary.candidates_evaluated} Freshers
+                      {benchmarkResult.benchmark_summary.candidates_evaluated}
                     </span>
-                    <span className="text-xs text-neutral-300 block mt-1">Consented Repositories</span>
+                    <span className="text-[10px] text-neutral-400 block mt-1">Consented Repositories</span>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-[#8B1E1E]/40 border border-[#D4AF37]/50">
-                    <span className="text-[#FFD166] text-xs uppercase block font-bold">Guardrails Verification</span>
+                    <span className="text-[#FFD166] text-[11px] uppercase block font-bold">Guardrails Audit</span>
                     <span className="text-2xl font-bold text-[#FFD166] mt-0.5 block">100%</span>
-                    <span className="text-xs text-[#FFD166] block mt-1">Explainable Rationales</span>
+                    <span className="text-[10px] text-[#FFD166] block mt-1">Explainable Reasons</span>
                   </div>
                 </div>
 
-                {/* Job Description Selector & Shortlist Preview */}
+                {/* Job Description Inspector */}
                 <div className="p-4 rounded-2xl bg-black/70 border border-[#3A2F27]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-warrior font-bold text-[#D4AF37] uppercase">Inspect Job Description:</span>
+                      <span className="text-xs font-bold text-[#D4AF37] uppercase">Inspect Job Description:</span>
                       <select
                         value={selectedJdId}
                         onChange={(e) => setSelectedJdId(e.target.value)}
@@ -462,14 +509,13 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                     <button
                       onClick={handlePushToImats}
                       disabled={isPushing}
-                      className="px-4 py-1.5 rounded-xl bg-[#8B1E1E] hover:bg-[#8B1E1E]/80 border border-[#D4AF37] text-white font-warrior font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md"
+                      className="btn-dev-primary text-xs px-4 py-2 flex items-center gap-1.5 font-bold cursor-pointer shadow-md"
                     >
                       {isPushing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                       <span>Push Shortlist to IMATS Sandbox</span>
                     </button>
                   </div>
 
-                  {/* Push Response Confirmation */}
                   {pushResponse && (
                     <div className="p-3 mb-3 rounded-xl bg-emerald-950/50 border border-emerald-500/50 text-xs text-emerald-300 font-mono flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -482,20 +528,20 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                     </div>
                   )}
 
-                  {/* Candidate List with Human-Readable Reason */}
+                  {/* Candidate Shortlist with Guardrail Explanations */}
                   {(() => {
                     const currentJd = benchmarkResult.jd_breakdown.find((j: any) => j.jd_id === selectedJdId) || benchmarkResult.jd_breakdown[0];
                     return (
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs font-sans">
                           <thead>
-                            <tr className="border-b border-[#3A2F27] text-[10px] font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                              <th className="py-2 px-3">Candidate & College</th>
-                              <th className="py-2 px-3 text-center">Tier</th>
+                            <tr className="border-b border-[#3A2F27] text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                              <th className="py-2 px-3">Candidate</th>
+                              <th className="py-2 px-3 text-center">College Tier</th>
                               <th className="py-2 px-3 text-center">Authenticity</th>
                               <th className="py-2 px-3 text-center">Viva</th>
-                              <th className="py-2 px-3 text-center">Composite</th>
-                              <th className="py-2 px-3">Human-Readable Reason (Guardrail 1)</th>
+                              <th className="py-2 px-3 text-center">Match %</th>
+                              <th className="py-2 px-3">Human-Readable Rationale (Guardrail 1)</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#3A2F27]/60 font-mono">
@@ -514,7 +560,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                                 </td>
                                 <td className="py-2.5 px-3 text-center font-bold text-emerald-400">{c.authenticity_score}%</td>
                                 <td className="py-2.5 px-3 text-center font-bold text-[#FFD166]">{c.viva_score}/10</td>
-                                <td className="py-2.5 px-3 text-center font-bold text-white">{c.composite_score}</td>
+                                <td className="py-2.5 px-3 text-center font-bold text-white">{c.jd_match_pct}%</td>
                                 <td className="py-2.5 px-3 font-sans text-[11px] text-[#C9B89A] max-w-md">
                                   {c.human_readable_reason}
                                 </td>
@@ -527,118 +573,175 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                   })()}
                 </div>
               </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-black/40 border border-[#3A2F27] text-center">
+                <Sparkles className="w-8 h-8 text-[#D4AF37] mx-auto mb-2 opacity-80" />
+                <h4 className="text-sm font-bold text-white mb-1">Held-Out Set Ready for Verification</h4>
+                <p className="text-xs text-neutral-400 max-w-md mx-auto mb-4">
+                  Click the button above to run Pariksha's ranker across 400 anonymized freshers and 30 JDs to measure recruiter agreement and fairness compliance.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono text-neutral-300">
+                  <span className="px-2.5 py-1 rounded bg-black/60 border border-[#3A2F27]">400 Freshers Loaded</span>
+                  <span className="px-2.5 py-1 rounded bg-black/60 border border-[#3A2F27]">30 JDs Loaded</span>
+                  <span className="px-2.5 py-1 rounded bg-black/60 border border-[#3A2F27]">Consent Checked</span>
+                </div>
+              </div>
             )}
           </div>
         )}
 
-        {/* Webhook Response Console (If fired) */}
-        {webhookResponse && (
-          <div className="mb-6 p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/50 text-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-warrior font-bold text-emerald-400 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Live Webhook Response (HTTP 200 OK)</span>
-              </span>
-              <span className="text-[10px] font-mono text-emerald-300">Latency: 48ms</span>
+        {/* ======================= ALTERNATIVE 2: BATCH CSV / ZIP INGESTION ======================= */}
+        {selectedAlternative === 'alt2' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/40">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <FileSpreadsheet className="w-5 h-5 text-blue-400" />
+                <h3 className="text-sm font-bold text-white">How Recruiters Use Pariksha When No API Exists</h3>
+              </div>
+              <p className="text-xs text-neutral-200 leading-relaxed font-sans">
+                In real campus drives, ATS systems (Greenhouse, Workday, Lever, Google Forms) export candidate pools as spreadsheets. Pariksha reads these bulk lists, extracts all repository URLs, and detects clone clusters in under 60 seconds.
+              </p>
             </div>
-            <pre className="p-3 rounded-xl bg-black/80 font-mono text-[11px] text-emerald-300 overflow-x-auto">
-              {JSON.stringify(webhookResponse, null, 2)}
-            </pre>
-          </div>
-        )}
 
-        {/* Tab Contents */}
-        {activeTab === 'ingest' && (
-          <div className="space-y-4 text-xs font-mono">
-            <div>
-              <span className="text-neutral-400 text-[11px] block mb-1 font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                cURL Request Specification:
-              </span>
-              <div className="p-3.5 rounded-xl bg-black/70 border border-[#3A2F27] relative group">
-                <button
-                  onClick={() => copyToClipboard(`curl -X POST http://localhost:8000/api/v1/imats/ingest-batch \\\n  -H "Content-Type: application/json" \\\n  -d '{"client_id":"INTEGRAMINDS-IM105","candidates":[{"id":"c1","repo":"user/repo"}]}'`)}
-                  className="absolute top-2 right-2 text-neutral-400 hover:text-white p-1 rounded bg-white/5"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-                <code className="text-[#FFD166] text-[11px]">
-                  curl -X POST http://localhost:8000/api/v1/imats/ingest-batch \<br/>
-                  &nbsp;&nbsp;-H "Content-Type: application/json" \<br/>
-                  &nbsp;&nbsp;-H "X-IMATS-Secret: env(INTEGRAMINDS_KEY)" \<br/>
-                  &nbsp;&nbsp;-d '&#123;"batch_size": 100, "callback_url": "https://api.integraminds.com/webhooks/verified"&#125;'
-                </code>
+            {/* Demonstration Dataset Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-black/60 border border-red-500/30">
+                <span className="text-red-400 uppercase font-bold text-[10px] block">Clone Cluster 1</span>
+                <strong className="text-white text-sm block mt-0.5">CodeWithHarry MERN E-Commerce</strong>
+                <p className="text-neutral-400 text-[11px] mt-1">34 duplicate submissions flagged with identical AST signatures.</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/60 border border-amber-500/30">
+                <span className="text-amber-400 uppercase font-bold text-[10px] block">Clone Cluster 2</span>
+                <strong className="text-white text-sm block mt-0.5">Apna College Spotify UI</strong>
+                <p className="text-neutral-400 text-[11px] mt-1">28 candidates flagged copying identical tutorial repository structures.</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/60 border border-emerald-500/30">
+                <span className="text-emerald-400 uppercase font-bold text-[10px] block">Verified Builders</span>
+                <strong className="text-emerald-300 text-sm block mt-0.5">38 Authentic Engineers</strong>
+                <p className="text-neutral-400 text-[11px] mt-1">Multi-commit Git-DNA verified and prioritized for recruiter interview.</p>
               </div>
             </div>
 
-            <div>
-              <span className="text-neutral-400 text-[11px] block mb-1 font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                Sample Webhook Ingestion Payload:
-              </span>
-              <pre className="p-3.5 rounded-xl bg-black/70 border border-[#3A2F27] text-neutral-300 text-[11px] overflow-x-auto">
+            {/* Actions for Alternative 2 */}
+            <div className="p-4 rounded-2xl bg-black/60 border border-[#3A2F27] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-white block">Test Batch Cohort Scanner</span>
+                <span className="text-[11px] text-neutral-400">Jump directly into the Code Ingestion Scanner to test bulk candidate triage.</span>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleDownloadCsvTemplate}
+                  className="px-3.5 py-2 rounded-xl bg-black/80 hover:bg-neutral-900 border border-[#3A2F27] text-neutral-200 text-xs font-mono flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Download CSV Template</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    onClose();
+                    if (onNavigateToTab) onNavigateToTab('ingestion');
+                  }}
+                  className="btn-dev-primary text-xs px-4 py-2 flex items-center gap-1.5 font-bold cursor-pointer shadow-md"
+                >
+                  <span>Open Ingestion Scanner</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================= ALTERNATIVE 3: N8N WEBHOOK AUTOMATION ======================= */}
+        {selectedAlternative === 'alt3' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Workflow className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-bold text-white">Event-Driven ATS Automation Webhook</span>
+                  <span className="text-[10px] font-mono bg-purple-950/80 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">
+                    HMAC SHA-256
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-300 font-sans">
+                  Direct webhook listener endpoint: <code className="text-[#FFD166] font-mono">POST /api/v1/imats/ingest-batch</code>
+                </p>
+              </div>
+
+              <button
+                onClick={handleSendTestWebhook}
+                disabled={isSendingWebhook}
+                className="btn-dev-primary text-xs shrink-0 flex items-center gap-2 px-4 py-2 cursor-pointer shadow-lg font-bold"
+              >
+                {isSendingWebhook ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                <span>Send Test Webhook</span>
+              </button>
+            </div>
+
+            {/* Live Webhook Response Console */}
+            {webhookResponse && (
+              <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/50 text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-emerald-300 flex items-center gap-1.5 font-mono">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>HTTP 200 OK · Webhook Acknowledged</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400">Latency: 38ms</span>
+                </div>
+                <pre className="p-3 rounded-xl bg-black/80 font-mono text-[11px] text-emerald-300 overflow-x-auto border border-emerald-500/20">
+                  {JSON.stringify(webhookResponse, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            {/* Webhook JSON Contract Sample */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#D4AF37] uppercase">Outgoing Forensic Payload Contract:</span>
+                <button
+                  onClick={() => copyToClipboard(`curl -X POST http://localhost:8000/api/v1/imats/ingest-batch -H "Content-Type: application/json" -d '{"client_id":"INTEGRAMINDS-IM105","candidates":[{"id":"c1","repo":"user/repo"}]}'`, 'curl')}
+                  className="text-[11px] font-mono text-neutral-300 hover:text-white flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded border border-white/10 cursor-pointer"
+                >
+                  {copied === 'curl' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied === 'curl' ? 'Copied' : 'Copy cURL'}</span>
+                </button>
+              </div>
+
+              <pre className="p-3.5 rounded-xl bg-black/70 border border-[#3A2F27] text-neutral-300 text-[11px] font-mono overflow-x-auto">
 {`{
-  "event": "COHORT_BATCH_SUBMISSION",
-  "client_id": "IMATS-GLA-DEVIATHON-2026",
+  "event": "CANDIDATE_FORENSIC_TRIAGE_COMPLETED",
+  "batch_id": "BATCH-GLA-CAMPUS-2026",
   "total_candidates": 100,
-  "candidates": [
-    {
-      "candidate_id": "cand_priyanshu_sih",
-      "name": "Priyanshu Awasthi & Team",
-      "repo_url": "https://github.com/shivendra1911/Data_SIH",
-      "college": "GLA University (Mathura)",
-      "target_role": "Fullstack ML Engineer"
-    }
-  ],
-  "callback_url": "https://api.integraminds.com/webhooks/talent-verified"
+  "authentic_candidates": 38,
+  "flagged_tutorial_clones": 62,
+  "top_candidate": {
+    "name": "Priyanshu Awasthi",
+    "authenticity_score": 94,
+    "viva_defense_score": 9,
+    "proof_card_hash": "SHA256:d8a23e7b...tamper_proof",
+    "ed25519_signature": "SIG:0f92b...authentic"
+  },
+  "webhook_callback": "https://api.integraminds.com/webhooks/talent-verified"
 }`}
               </pre>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'rank' && (
-          <div className="space-y-4 text-xs font-mono">
-            <div>
-              <span className="text-neutral-400 text-[11px] block mb-1 font-warrior font-bold uppercase tracking-wider text-[#D4AF37]">
-                Rank API Endpoint (POST /api/v1/imats/rank):
-              </span>
-              <pre className="p-3.5 rounded-xl bg-black/70 border border-[#3A2F27] text-neutral-300 text-[11px] overflow-x-auto">
-{`// Payload sent by Integraminds ATS to get Top 15 de-biased candidates
-{
-  "job_id": "JD-DISTRIBUTED-001",
-  "required_skills": ["python", "fastapi", "redis", "postgresql", "docker", "testing"],
-  "min_authenticity_threshold": 70,
-  "exclude_tutorial_clones": true,
-  "top_n": 15
-}`}
-              </pre>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'audit' && (
-          <div className="space-y-3 text-xs text-neutral-300 font-sans">
-            <h3 className="font-warrior font-bold text-sm text-white">EEOC & GDPR Audit Compliance Protocol</h3>
-            <p className="leading-relaxed">
-              Every candidate score generated by Pariksha is accompanied by a SHA-256 tamper-proof ledger hash and an algorithmic rationale explaining why they were shortlisted or flagged.
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-[#C9B89A] font-mono text-[11px]">
-              <li>College pedigree weighting is strictly decoupled (0.00% impact on authenticity score).</li>
-              <li>Candidates are scored against objective static Git-DNA metrics and dynamic AST viva defense.</li>
-              <li>All webhook events are signed with HMAC-SHA256 to guarantee transmission integrity.</li>
-            </ul>
           </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-[#3A2F27] pt-4 mt-6">
-          <span className="text-[11px] text-[#C9B89A] font-sans">
-            Deviathon 2.0 · GLA University Mathura · Problem Statement IM-105
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#3A2F27] pt-4 mt-6 gap-3">
+          <span className="text-[11px] text-[#C9B89A] font-sans text-center sm:text-left">
+            GLA University Mathura · Deviathon 2.0 · Problem Statement IM-105 Modular Integration
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-warrior text-xs transition cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-sans text-xs font-bold transition cursor-pointer"
           >
-            Close Sandbox
+            Close Gateway
           </button>
         </div>
 

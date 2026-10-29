@@ -144,6 +144,10 @@ export const App: React.FC = () => {
       <ImatsApiModal 
         isOpen={isImatsOpen} 
         onClose={() => setIsImatsOpen(false)} 
+        onNavigateToTab={(tab) => {
+          setIsImatsOpen(false);
+          setActiveTab(tab);
+        }}
       />
 
       {/* n8n Automations & Live ATS Integration Modal */}
