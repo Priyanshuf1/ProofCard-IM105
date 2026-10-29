@@ -597,19 +597,19 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           </div>
         </div>
 
-        {/* Evaluation Summary */}
-        <div className={`rounded-xl border p-4 sm:p-5 mb-5 relative z-10 ${
+        {/* Forensic Verdict / Evaluation Summary */}
+        <div className={`rounded-xl border p-5 sm:p-6 mb-5 relative z-10 transition-all ${
           isPromptInjected
-            ? 'bg-red-950/60 border-2 border-red-500 shadow-lg' 
+            ? 'bg-red-950/70 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] border-l-8 border-l-red-500' 
             : isClone
-            ? 'bg-red-950/40 border-red-500/50'
-            : 'bg-black/50 border-[#3A2F27]'
+            ? 'bg-red-950/50 border-red-500/60 border-l-8 border-l-red-500 shadow-md'
+            : 'bg-black/70 border-[#D4AF37]/40 border-l-8 border-l-[#FFD166] shadow-[0_4px_24px_rgba(0,0,0,0.6)]'
         }`}>
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider block ${
-              isPromptInjected ? 'text-red-300 font-mono' : isClone ? 'text-red-400' : 'text-[#FFD166]'
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <span className={`text-sm sm:text-base font-bold font-mono uppercase tracking-wider flex items-center gap-2 ${
+              isPromptInjected ? 'text-red-300' : isClone ? 'text-red-400' : 'text-[#FFD166]'
             }`}>
-              {isPromptInjected ? 'Security Notice: Prompt Injection Directive Detected' : 'Evaluation Summary'}
+              {isPromptInjected ? '🚨 SECURITY NOTICE: PROMPT INJECTION DIRECTIVE DETECTED' : 'FORENSIC VERDICT:'}
             </span>
             {isClone && candidate.matched_tutorial && (
               <div className="flex items-center gap-2">
@@ -630,7 +630,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               </div>
             )}
           </div>
-          <p className="text-base sm:text-lg text-neutral-100 font-semibold leading-relaxed font-sans">
+          <p className="text-lg sm:text-xl text-white font-semibold leading-relaxed font-sans tracking-wide">
             "{cleanHeadline}"
           </p>
         </div>
