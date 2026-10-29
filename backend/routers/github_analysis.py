@@ -14,6 +14,7 @@ from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
+from backend.services.n8n_service import N8nService
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -1044,17 +1045,19 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "strengths": verification_strengths,
             "growth_area": "Expand automated boundary mocking for external third-party dependencies.",
             "specific_action": "Add integration test fixtures verifying failure isolation under network latency.",
-            "tamper_proof_hash": tamper_proof_hash
+            "tamper_proof_hash": tamper_proof_hash,
+            "email": req.email
         }
 
 
-    return {
+    result_profile = {
         "status": "success",
         "live_analyzed": True,
         "is_cached_profile": False,
         "candidate_id": cid,
         "name": candidate_name or owner,
         "candidate_name": candidate_name or owner,
+        "email": req.email,
         "college": college_name,
         "repo_url": raw_url,
         "project_name": resolved_repo_name,
@@ -1099,3 +1102,10 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "available_repos": available_repos or ([resolved_repo] if resolved_repo else []),
         "consent_recorded": True
     }
+
+    try:
+        asyncio.create_task(N8nService.dispatch_candidate_scanned(result_profile))
+    except Exception:
+        pass
+
+    return result_profile

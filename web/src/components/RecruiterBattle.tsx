@@ -19,7 +19,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { PRESET_JOB_DESCRIPTIONS } from '../data/offlineDemoData';
-import { runBattleCompare, parseJobDescription, analyzeGithubUrl, autoShortlistCohort } from '../services/api';
+import { runBattleCompare, parseJobDescription, analyzeGithubUrl, autoShortlistCohort, dispatchN8nEvent } from '../services/api';
 import { BattleResponse, CandidateProfile } from '../types';
 
 interface RecruiterBattleProps {
@@ -127,6 +127,7 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       return {
         candidate_id: c.candidate_id,
         name: c.name,
+        email: c.email,
         college: c.college || 'Engineering Institute',
         authenticity_score: auth,
         jd_match_pct: jdPct,
@@ -165,6 +166,14 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
       if (result && result.battle_matrix && result.battle_matrix.length > 0) {
         setBattleResult(result);
         setIsFighting(false);
+        dispatchN8nEvent('CANDIDATE_SHORTLISTED', {
+          job_title: jobTitle,
+          winner_id: result.winner_id,
+          winner_name: result.winner_name,
+          diff_pts: result.diff_pts,
+          rationale: result.rationale,
+          battle_matrix: result.battle_matrix
+        });
         return;
       }
     } catch (e) {
@@ -174,6 +183,14 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
     const fallbackResult = computeLocalBattle(skillsToUse, candidatePool.slice(0, 6));
     setBattleResult(fallbackResult);
     setIsFighting(false);
+    dispatchN8nEvent('CANDIDATE_SHORTLISTED', {
+      job_title: jobTitle,
+      winner_id: fallbackResult.winner_id,
+      winner_name: fallbackResult.winner_name,
+      diff_pts: fallbackResult.diff_pts,
+      rationale: fallbackResult.rationale,
+      battle_matrix: fallbackResult.battle_matrix
+    });
   };
 
   // Auto-run battle whenever candidatePool has 2 or more candidates and battleResult is null
@@ -733,6 +750,14 @@ export const RecruiterBattle: React.FC<RecruiterBattleProps> = ({
                       cutoffFailedCount: res.battle_matrix.filter(c => c.authenticity_score < 60).length,
                       rejectedCount: res.battle_matrix.filter(c => c.is_clone).length,
                       hoursSaved: Math.round(cohort.length * 0.83 * 10) / 10
+                    });
+                    dispatchN8nEvent('CANDIDATE_SHORTLISTED', {
+                      job_title: jobTitle,
+                      winner_id: res.winner_id,
+                      winner_name: res.winner_name,
+                      diff_pts: res.diff_pts,
+                      rationale: res.rationale,
+                      battle_matrix: res.battle_matrix
                     });
                   }}
                   className="btn-dev-primary text-xs px-4 py-2 cursor-pointer font-bold"

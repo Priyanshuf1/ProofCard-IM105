@@ -1,0 +1,8 @@
+{
+  "webhook_url": "",
+  "sync_sheets": true,
+  "feedback_emails": true,
+  "last_test_status": null,
+  "last_test_timestamp": null,
+  "last_error": null
+}

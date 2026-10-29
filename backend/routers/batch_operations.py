@@ -29,6 +29,7 @@ class BatchApplicantItem(BaseModel):
     github_url: str
     role: Optional[str] = "Software Engineer"
     college_tier: Optional[str] = "Tier-3"
+    email: Optional[str] = None
 
 class BatchIngestRequest(BaseModel):
     applicants: Optional[List[BatchApplicantItem]] = None
@@ -55,33 +56,87 @@ def ingest_batch_candidates(req: BatchIngestRequest):
     applicants = []
     
     if req.csv_text:
+        lines = [line.strip() for line in req.csv_text.strip().splitlines() if line.strip()]
+        if not lines:
+            raise HTTPException(status_code=400, detail="Uploaded CSV file is empty.")
+
         f = io.StringIO(req.csv_text.strip())
         reader = csv.DictReader(f)
-        for row in reader:
-            normalized_row = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k is not None and v is not None}
-            name = normalized_row.get("name") or normalized_row.get("candidate name") or normalized_row.get("candidate")
-            college = normalized_row.get("college") or normalized_row.get("university") or normalized_row.get("institution")
-            github_url = normalized_row.get("github_url") or normalized_row.get("github repo") or normalized_row.get("repo_url") or normalized_row.get("github") or normalized_row.get("url")
-            if not name or not college or not github_url:
+        fieldnames = [str(fn).strip().lower().replace(" ", "_").replace("-", "_") for fn in (reader.fieldnames or [])]
+        has_header = any(h in fieldnames for h in ["name", "candidate_name", "candidate", "github_url", "repo_url", "college", "university"])
+
+        if has_header:
+            for row in reader:
+                normalized_row = {str(k).strip().lower().replace(" ", "_").replace("-", "_"): str(v).strip() for k, v in row.items() if k is not None and v is not None}
+                name = normalized_row.get("name") or normalized_row.get("candidate_name") or normalized_row.get("candidate")
+                college = normalized_row.get("college") or normalized_row.get("university") or normalized_row.get("institution")
+                github_url = (
+                    normalized_row.get("github_url") or 
+                    normalized_row.get("github_repo") or 
+                    normalized_row.get("repo_url") or 
+                    normalized_row.get("github") or 
+                    normalized_row.get("url") or
+                    normalized_row.get("repo")
+                )
+                if not name or not college or not github_url:
+                    raise HTTPException(status_code=422, detail="CSV rows must include candidate name, college, and GitHub repository URL.")
+                role = (
+                    normalized_row.get("role") or 
+                    normalized_row.get("project_type") or 
+                    normalized_row.get("project") or 
+                    "Backend Engineer"
+                )
+                tier = (
+                    normalized_row.get("college_tier") or 
+                    normalized_row.get("tier") or 
+                    ("Tier-1" if any(t in college.lower() for t in ["iit", "nit", "bits"]) else "Tier-3")
+                )
+                email = (
+                    normalized_row.get("email") or 
+                    normalized_row.get("student_email") or 
+                    normalized_row.get("candidate_email") or 
+                    normalized_row.get("mail")
+                )
+                applicants.append({
+                    "name": name,
+                    "email": email,
+                    "college": college,
+                    "github_url": _normalize_github_repo_url(github_url),
+                    "role": role,
+                    "college_tier": tier
+                })
+        else:
+            # Positional parsing for headerless CSV rows
+            f_raw = io.StringIO(req.csv_text.strip())
+            raw_reader = csv.reader(f_raw)
+            for row in raw_reader:
+                cols = [c.strip() for c in row if c is not None and c.strip()]
+                if len(cols) >= 3:
+                    name = cols[0]
+                    if "@" in cols[1]:
+                        email = cols[1]
+                        college = cols[2]
+                        github_url = cols[3] if len(cols) > 3 else ""
+                    else:
+                        email = None
+                        college = cols[1]
+                        github_url = cols[2]
+                    if not github_url or "github.com" not in github_url.lower():
+                        gh_match = next((c for c in cols if "github.com" in c.lower()), None)
+                        if gh_match:
+                            github_url = gh_match
+                    if name and college and github_url:
+                        tier = "Tier-1" if any(t in college.lower() for t in ["iit", "nit", "bits"]) else "Tier-3"
+                        applicants.append({
+                            "name": name,
+                            "email": email,
+                            "college": college,
+                            "github_url": _normalize_github_repo_url(github_url),
+                            "role": "Backend Engineer",
+                            "college_tier": tier
+                        })
+            if not applicants:
                 raise HTTPException(status_code=422, detail="CSV rows must include candidate name, college, and GitHub repository URL.")
-            role = (
-                normalized_row.get("role") or 
-                normalized_row.get("project_type") or 
-                normalized_row.get("project") or 
-                "Backend Engineer"
-            )
-            tier = (
-                normalized_row.get("college_tier") or 
-                normalized_row.get("tier") or 
-                ("Tier-1" if any(t in college.lower() for t in ["iit", "nit", "bits"]) else "Tier-3")
-            )
-            applicants.append({
-                "name": name,
-                "college": college,
-                "github_url": _normalize_github_repo_url(github_url),
-                "role": role,
-                "college_tier": tier
-            })
     elif req.applicants:
         applicants = [a.model_dump() for a in req.applicants]
         for applicant in applicants:
@@ -164,6 +219,7 @@ def ingest_batch_candidates(req: BatchIngestRequest):
         analyzed_candidates.append({
             "candidate_id": candidate_id,
             "name": a["name"],
+            "email": a.get("email"),
             "college": a["college"],
             "college_tier": a.get("college_tier", "Tier-3"),
             "repo_url": repo_url,

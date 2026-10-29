@@ -8,6 +8,7 @@ import { RecruiterBattle } from './components/RecruiterBattle';
 import { BiasMirror } from './components/BiasMirror';
 import { Devithation3DCanvas } from './components/Devithation3DCanvas';
 import { ImatsApiModal } from './components/ImatsApiModal';
+import { N8nAutomationModal } from './components/N8nAutomationModal';
 import { CandidateProfile } from './types';
 
 export const App: React.FC = () => {
@@ -16,6 +17,7 @@ export const App: React.FC = () => {
   const [currentCandidate, setCurrentCandidate] = useState<CandidateProfile | null>(null);
   const [cohort, setCohort] = useState<CandidateProfile[]>([]);
   const [isImatsOpen, setIsImatsOpen] = useState<boolean>(false);
+  const [isN8nOpen, setIsN8nOpen] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -80,6 +82,12 @@ export const App: React.FC = () => {
         onClose={() => setIsImatsOpen(false)} 
       />
 
+      {/* n8n Automations & Live ATS Integration Modal */}
+      <N8nAutomationModal
+        isOpen={isN8nOpen}
+        onClose={() => setIsN8nOpen(false)}
+      />
+
       <div className="relative z-10 flex flex-col flex-1">
         {/* Navbar with Authentic Deviathon Hackathon branding and 6-Feature Showcase */}
         <Navbar
@@ -89,6 +97,7 @@ export const App: React.FC = () => {
           setIsDemoMode={setIsDemoMode}
           onSelectDemoProfile={handleSelectDemoProfile}
           onOpenImatsModal={() => setIsImatsOpen(true)}
+          onOpenN8nModal={() => setIsN8nOpen(true)}
         />
       {/* Main Content View Switcher */}
       <main className="flex-1">

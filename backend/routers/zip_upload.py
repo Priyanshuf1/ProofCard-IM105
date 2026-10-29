@@ -4,7 +4,8 @@ import tempfile
 import shutil
 import hashlib
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+import asyncio
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from backend.services.ast_analyzer import ASTAnalyzer
@@ -13,6 +14,7 @@ from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
+from backend.services.n8n_service import N8nService
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -31,7 +33,8 @@ async def upload_project_zip(
     file: UploadFile = File(...),
     candidate_name: str = Form("Independent Builder"),
     college: str = Form("Affiliated Engineering Institute"),
-    consent_granted: bool = Form(True)
+    consent_granted: bool = Form(True),
+    email: Optional[str] = Form(None)
 ):
     if not consent_granted:
         raise HTTPException(status_code=403, detail="Candidate consent must be granted before code analysis can proceed.")
@@ -349,13 +352,15 @@ async def upload_project_zip(
             "strengths": card_strengths,
             "growth_area": card_growth,
             "specific_action": card_action,
-            "tamper_proof_hash": tamper_proof_hash
+            "tamper_proof_hash": tamper_proof_hash,
+            "email": email
         }
 
         first_seq = list(structural_tokens.values())[0] if structural_tokens else ""
 
-        return {
+        result_profile = {
             "status": "success",
+            "email": email,
             "candidate_id": f"cand_zip_{hashlib.md5(candidate_name.encode()).hexdigest()[:8]}",
             "name": candidate_name,
             "candidate_name": candidate_name,
@@ -397,5 +402,12 @@ async def upload_project_zip(
             "tamper_proof_hash": tamper_proof_hash,
             "consent_recorded": True
         }
+
+        try:
+            asyncio.create_task(N8nService.dispatch_candidate_scanned(result_profile))
+        except Exception:
+            pass
+
+        return result_profile
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)

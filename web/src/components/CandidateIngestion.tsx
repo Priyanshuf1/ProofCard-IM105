@@ -18,7 +18,7 @@ import {
   ExternalLink,
   Trash2
 } from 'lucide-react';
-import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv } from '../services/api';
+import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, dispatchN8nEvent } from '../services/api';
 import { CandidateProfile } from '../types';
 
 interface CandidateIngestionProps {
@@ -40,6 +40,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   const [ingestMode, setIngestMode] = useState<'github' | 'zip'>('github');
   const [githubUrl, setGithubUrl] = useState('');
   const [candidateName, setCandidateName] = useState('');
+  const [candidateEmail, setCandidateEmail] = useState('');
   const [college, setCollege] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [consentGranted, setConsentGranted] = useState(true);
@@ -89,10 +90,10 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   };
 
   const handleDownloadTemplate = () => {
-    const csvContent = "name,github_url,college,project_type\n" +
-      "Priyanshu Awasthi,https://github.com/Priyanshuf1/rabto,GLA University,Interactive 3D Web App\n" +
-      "Tutorial Clone Example,https://github.com/DJKalathiya/code-with-harry-projects,Public Archive,Spotify Web Clone\n" +
-      "Priyanshu Awasthi,https://github.com/Priyanshuf1/SD-garments,GLA University,E-Commerce Web Portal\n";
+    const csvContent = "name,email,college,github_url,project_type\n" +
+      "Priyanshu Awasthi,priyanshu@example.edu,GLA University,https://github.com/Priyanshuf1/rabto,Interactive 3D Web App\n" +
+      "Tutorial Clone Example,student@example.edu,Public Archive,https://github.com/DJKalathiya/code-with-harry-projects,Spotify Web Clone\n" +
+      "Priyanshu Awasthi,priyanshu@example.edu,GLA University,https://github.com/Priyanshuf1/SD-garments,E-Commerce Web Portal\n";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -150,11 +151,15 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
     try {
       let profile: CandidateProfile;
+      const emailParam = candidateEmail.trim() || undefined;
       if (ingestMode === 'zip') {
-        profile = await uploadZipFile(selectedFile!, candidateName || 'Project Author', college || 'College', consentGranted);
+        profile = await uploadZipFile(selectedFile!, candidateName || 'Project Author', college || 'College', consentGranted, emailParam);
       } else {
-        profile = await analyzeGithubUrl(githubUrl.trim(), candidateName || 'GitHub Contributor', college || 'University', consentGranted);
+        profile = await analyzeGithubUrl(githubUrl.trim(), candidateName || 'GitHub Contributor', college || 'University', consentGranted, undefined, emailParam);
       }
+
+      // Background non-blocking n8n webhook dispatch
+      dispatchN8nEvent('CANDIDATE_SCANNED', profile);
 
       clearInterval(stepInterval);
       setIsScanning(false);
@@ -290,7 +295,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
           {/* Form Inputs */}
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
                   Candidate Name
@@ -300,6 +305,19 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   value={candidateName}
                   onChange={(e) => setCandidateName(e.target.value)}
                   placeholder="e.g. Priyanshu Awasthi"
+                  className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
+                  Student Email (for feedback & credential delivery)
+                </label>
+                <input
+                  type="email"
+                  value={candidateEmail}
+                  onChange={(e) => setCandidateEmail(e.target.value)}
+                  placeholder="student@example.edu"
                   className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
                 />
               </div>
@@ -340,6 +358,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     onClick={() => {
                       setGithubUrl('https://github.com/Priyanshuf1/rabto');
                       setCandidateName('Priyanshu Awasthi');
+                      setCandidateEmail('priyanshu@example.edu');
                       setCollege('GLA University');
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-[#200e07]/80 border border-[#E85D04]/40 text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer font-mono"
@@ -352,6 +371,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     onClick={() => {
                       setGithubUrl('https://github.com/DJKalathiya/code-with-harry-projects');
                       setCandidateName('Tutorial Clone Example');
+                      setCandidateEmail('student.clone@example.edu');
                       setCollege('Public Archive');
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-red-950/40 border border-red-500/40 text-red-200 hover:bg-red-900/40 transition cursor-pointer font-mono"
@@ -364,6 +384,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     onClick={() => {
                       setGithubUrl('https://github.com/Priyanshuf1/SD-garments');
                       setCandidateName('Priyanshu Awasthi');
+                      setCandidateEmail('priyanshu@example.edu');
                       setCollege('GLA University');
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-black/60 border border-[#E6C280]/30 text-[#E6C280] hover:border-[#E85D04] transition cursor-pointer font-mono"
@@ -607,6 +628,9 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                           <td className="py-3 px-3">
                             <strong className="text-white block font-sans">{cand.name}</strong>
                             <span className="text-xs text-[#E6C280]">{cand.college}</span>
+                            {cand.email && (
+                              <span className="text-[11px] text-neutral-400 block font-mono mt-0.5">{cand.email}</span>
+                            )}
                           </td>
                           <td className="py-3 px-3 text-neutral-300 font-sans">{cand.project_type || 'Software Repository'}</td>
                           <td className="py-3 px-3">

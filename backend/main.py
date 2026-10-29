@@ -75,7 +75,8 @@ from backend.routers import (
     batch_operations,
     imats_sandbox,
     readiness,
-    deployment
+    deployment,
+    webhooks
 )
 
 app = FastAPI(
@@ -115,6 +116,7 @@ app.include_router(batch_operations.imats_router)
 app.include_router(imats_sandbox.router)
 app.include_router(readiness.router)
 app.include_router(deployment.router)
+app.include_router(webhooks.router)
 
 @app.get("/")
 def root():
@@ -134,6 +136,7 @@ def root():
             "Recruiter JD Battle Matrix",
             "Recruiter Bias Mirror & Equal Opportunity Audit",
             "Deployment Readiness Contract",
+            "n8n Automation & Continuous Webhooks",
             "Offline 100% Demo Survival Mode"
         ]
     }

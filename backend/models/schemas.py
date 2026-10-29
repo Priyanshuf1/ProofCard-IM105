@@ -14,6 +14,7 @@ class IngestionURLRequest(BaseModel):
     consent_granted: bool = True
     github_token: Optional[str] = None
     target_subpath: Optional[str] = None
+    email: Optional[str] = None
 
 class ComplexFunction(BaseModel):
     file: str
@@ -84,6 +85,7 @@ class ProofCardData(BaseModel):
     qr_verification_url: str
     is_clone: bool
     matched_tutorial: Optional[MatchedTutorial] = None
+    email: Optional[str] = None
 
 class JDParsingRequest(BaseModel):
     job_title: str
@@ -101,6 +103,7 @@ class CandidateBattleProfile(BaseModel):
     analysis_status: Optional[str] = "COMPLETED"
     analysis_confidence: Optional[float] = None
     skill_evidence: Dict[str, List[str]] = Field(default_factory=dict)
+    email: Optional[str] = None
 
 class BattleRequest(BaseModel):
     job_requirements: List[str]
@@ -118,6 +121,7 @@ class BattleCandidateResult(BaseModel):
     missing_skills: List[str]
     has_tests: bool
     is_clone: Optional[bool] = False
+    email: Optional[str] = None
 
 class BattleResponse(BaseModel):
     status: str

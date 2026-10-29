@@ -115,13 +115,15 @@ export async function uploadZipFile(
   file: File,
   candidateName: string,
   college: string,
-  consentGranted: boolean
+  consentGranted: boolean,
+  email?: string
 ): Promise<CandidateProfile> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('candidate_name', candidateName);
   formData.append('college', college);
   formData.append('consent_granted', String(consentGranted));
+  if (email) formData.append('email', email.trim());
 
   const res = await fetch(`${BASE_URL}/api/upload/zip`, {
     method: 'POST',
@@ -138,6 +140,7 @@ export async function uploadZipFile(
   return {
     ...data,
     name: data.name || data.candidate_name || candidateName,
+    email: data.email || email,
     project_type: data.project_type || data.detected_stack || 'Fullstack Application',
     detected_files: data.detected_files || data.metrics?.manifest_sample || [],
     complex_functions: data.complex_functions || data.complex_functions_for_viva || [],
@@ -167,7 +170,8 @@ export async function analyzeGithubUrl(
   candidateName: string,
   college: string,
   consentGranted: boolean,
-  githubToken?: string
+  githubToken?: string,
+  email?: string
 ): Promise<CandidateProfile> {
   const res = await fetch(`${BASE_URL}/api/github/analyze`, {
     method: 'POST',
@@ -177,7 +181,8 @@ export async function analyzeGithubUrl(
       candidate_name: candidateName,
       college: college,
       consent_granted: consentGranted,
-      github_token: githubToken ? githubToken.trim() : undefined
+      github_token: githubToken ? githubToken.trim() : undefined,
+      email: email ? email.trim() : undefined
     })
   });
 
@@ -191,6 +196,7 @@ export async function analyzeGithubUrl(
   return {
     ...data,
     name: data.name || data.candidate_name || candidateName,
+    email: data.email || email,
     project_type: data.project_type || data.detected_stack || 'Fullstack Application',
     detected_files: data.detected_files || [],
     complex_functions: data.complex_functions || data.complex_functions_for_viva || [],
@@ -814,4 +820,91 @@ export async function autoShortlistCohort(
   }
   return null;
 }
+
+export interface N8nConfig {
+  webhook_url: string;
+  sync_sheets: boolean;
+  feedback_emails: boolean;
+  last_test_status?: string | null;
+  last_test_timestamp?: string | null;
+  last_error?: string | null;
+}
+
+export async function fetchN8nConfig(): Promise<N8nConfig> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/n8n-config`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Failed to fetch backend n8n config, fallback to localStorage', e);
+  }
+  return {
+    webhook_url: localStorage.getItem('n8n_webhook_url') || '',
+    sync_sheets: localStorage.getItem('n8n_sync_sheets') !== 'false',
+    feedback_emails: localStorage.getItem('n8n_feedback_emails') !== 'false',
+  };
+}
+
+export async function saveN8nConfig(config: Partial<N8nConfig>): Promise<N8nConfig> {
+  if (config.webhook_url !== undefined) localStorage.setItem('n8n_webhook_url', config.webhook_url);
+  if (config.sync_sheets !== undefined) localStorage.setItem('n8n_sync_sheets', String(config.sync_sheets));
+  if (config.feedback_emails !== undefined) localStorage.setItem('n8n_feedback_emails', String(config.feedback_emails));
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/n8n-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.config || config;
+    }
+  } catch (e) {
+    console.warn('Failed to save n8n config to backend, kept in localStorage', e);
+  }
+  return {
+    webhook_url: localStorage.getItem('n8n_webhook_url') || '',
+    sync_sheets: localStorage.getItem('n8n_sync_sheets') !== 'false',
+    feedback_emails: localStorage.getItem('n8n_feedback_emails') !== 'false',
+  };
+}
+
+export async function testN8nConnection(webhookUrl?: string): Promise<{ status: string; delivered: boolean; error?: string; message?: string }> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhook_url: webhookUrl }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e: any) {
+    return { status: 'error', delivered: false, error: e?.message || 'Network error reaching backend test route' };
+  }
+  return { status: 'failed', delivered: false, error: 'Test request failed' };
+}
+
+export async function dispatchN8nEvent(eventType: string, payload: any, webhookUrl?: string): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/dispatch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type: eventType,
+        payload,
+        webhook_url: webhookUrl || localStorage.getItem('n8n_webhook_url') || undefined
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Background n8n dispatch caught error:', e);
+  }
+  return { status: 'skipped', delivered: false };
+}
+
 

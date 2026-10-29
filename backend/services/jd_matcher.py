@@ -93,6 +93,7 @@ class JDMatcher:
             results.append({
                 "candidate_id": c.get("candidate_id"),
                 "name": c.get("name"),
+                "email": c.get("email"),
                 "college": c.get("college", "Engineering Institute"),
                 "authenticity_score": auth_score,
                 "jd_match_pct": jd_pct,

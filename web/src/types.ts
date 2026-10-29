@@ -54,6 +54,7 @@ export interface ProofCardContent {
   specific_action?: string;
   tamper_proof_hash: string;
   human_readable_reason?: string;
+  email?: string;
 }
 
 export interface AssessmentResults {
@@ -67,6 +68,7 @@ export interface AssessmentResults {
 export interface CandidateProfile {
   candidate_id: string;
   name: string;
+  email?: string;
   anonymised_name?: string;
   college: string;
   college_tier?: string;
@@ -155,6 +157,7 @@ export interface DeploymentContract {
 export interface BattleCandidateResult {
   candidate_id: string;
   name: string;
+  email?: string;
   college: string;
   authenticity_score: number;
   jd_match_pct: number;
