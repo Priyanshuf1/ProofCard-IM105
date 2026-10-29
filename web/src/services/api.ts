@@ -1,9 +1,10 @@
 import { CandidateProfile, BattleResponse, BiasMirrorResponse, RecruiterDecision, VivaQuestion, DeploymentContract } from '../types';
 import { OFFLINE_DEMO_PROFILES, SAMPLE_RECRUITER_DECISIONS } from '../data/offlineDemoData';
 
-const BASE_URL = typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
-  ? `http://${window.location.hostname}:8000`
-  : 'http://127.0.0.1:8000';
+const BASE_URL = (import.meta as any).env?.VITE_API_URL 
+  || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      ? window.location.origin
+      : 'http://127.0.0.1:8000');
 
 function slug(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'competency';

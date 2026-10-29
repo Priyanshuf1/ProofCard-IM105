@@ -90,8 +90,8 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   const [deploymentContract, setDeploymentContract] = useState<DeploymentContract | null>(candidate.deployment_contract || null);
 
   const publicVerifyUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?verify=${candidate.candidate_id}`
-    : `http://localhost:5173/?verify=${candidate.candidate_id}`;
+    ? `${window.location.origin}/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}`
+    : `http://localhost:5173/?verify=${encodeURIComponent(candidate.candidate_id)}&name=${encodeURIComponent(candidate.name)}&auth=${candidate.authenticity_score}&viva=${candidate.viva_score ?? 0}&status=${encodeURIComponent(card.status)}`;
 
   useEffect(() => {
     // Generate real, high-resolution scannable QR code
