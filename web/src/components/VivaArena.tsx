@@ -650,7 +650,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 onClick={handleNext}
                 className="btn-dev-primary text-xs flex items-center gap-2 shadow-lg cursor-pointer px-5 py-2.5 font-bold"
               >
-                <span>{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Verified ProofCard'}</span>
+                <span>{currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'View Verified Pariksha Card'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}

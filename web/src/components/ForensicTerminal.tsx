@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  ShieldCheck, 
+  ShieldCheck,
+  ShieldAlert, 
   AlertTriangle, 
   GitCommit, 
   Terminal, 
@@ -231,13 +232,17 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
-              candidate.authenticity_score >= 80 
+              (candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected)
+                ? 'bg-red-950/80 border-red-500 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.4)]'
+                : candidate.authenticity_score >= 80 
                 ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-400' 
                 : candidate.is_clone 
                 ? 'bg-red-950/60 border-red-500/50 text-red-400' 
                 : 'bg-amber-950/60 border-amber-500/50 text-amber-400'
             }`}>
-              {candidate.authenticity_score >= 80 ? (
+              {(candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected) ? (
+                <ShieldAlert className="w-8 h-8 text-red-400 animate-pulse" />
+              ) : candidate.authenticity_score >= 80 ? (
                 <ShieldCheck className="w-8 h-8" />
               ) : candidate.is_clone ? (
                 <AlertTriangle className="w-8 h-8" />
@@ -252,13 +257,17 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
                   {candidate.name}
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-mono border ${
-                  candidate.authenticity_score >= 80
+                  (candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected)
+                    ? 'bg-red-950 text-red-200 border-red-500 shadow-sm'
+                    : candidate.authenticity_score >= 80
                     ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
                     : candidate.is_clone
                     ? 'bg-red-950 text-red-300 border-red-600'
                     : 'bg-amber-950 text-amber-300 border-amber-600'
                 }`}>
-                  {candidate.authenticity_score}% Authenticity
+                  {(candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected)
+                    ? `${candidate.authenticity_score}% Authenticity (Prompt Injected)`
+                    : `${candidate.authenticity_score}% Authenticity`}
                 </span>
                 {candidate.is_fork && (
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-950 text-amber-300 border border-amber-600 flex items-center gap-1">
@@ -323,6 +332,72 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
         </div>
       </div>
 
+      {/* Adversarial Prompt Injection Security Banner */}
+      {(candidate.is_prompt_injected || candidate.security_scan?.is_prompt_injected || candidate.proof_card?.status === 'FLAGGED_PROMPT_INJECTION') && (
+        <div className="mb-6 bg-red-950/70 border-2 border-red-500 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-red-900 border border-red-400 flex items-center justify-center text-red-100 shrink-0 mt-0.5 shadow-lg">
+                <ShieldAlert className="w-6 h-6 text-red-200" />
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full bg-red-600 border border-red-400 uppercase tracking-wider">
+                    CRITICAL SECURITY ALERT
+                  </span>
+                  <span className="text-xs font-mono font-bold text-red-200 bg-black/60 px-2.5 py-0.5 rounded-full border border-red-500/50">
+                    IM-105 Adversarial Prompt Injection Shield
+                  </span>
+                  <span className="text-xs font-mono text-[#FFD166] bg-black/60 px-2 py-0.5 rounded-full border border-[#D4AF37]/40">
+                    {candidate.security_scan?.findings_count || 1} Injection Payload(s) Intercepted
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-black text-white font-sans tracking-wide">
+                  Adversarial Prompt Injection Directives Detected
+                </h3>
+
+                <p className="text-xs text-red-200 mt-1 font-sans leading-relaxed">
+                  This repository contains active prompt injection directives embedded in code comments and documentation attempting to override AI evaluation rubrics, bypass automated checks, or force 10/10 scores. Pariksha's AST and security isolation shield neutralized and quarantined these vectors.
+                </p>
+
+                {/* Quarantined Injection Findings */}
+                {candidate.security_scan?.findings && candidate.security_scan.findings.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <span className="text-[11px] font-bold uppercase text-[#FFD166] tracking-wider block">
+                      Quarantined Injection Payloads:
+                    </span>
+                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
+                      {candidate.security_scan.findings.slice(0, 5).map((f, i) => (
+                        <div key={i} className="p-2.5 rounded-lg bg-black/75 border border-red-500/40 font-mono text-xs text-neutral-200 flex flex-col gap-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-red-400 font-bold">{f.file}:{f.line_number}</span>
+                            <span className="px-1.5 py-0.2 rounded bg-red-950 text-red-300 border border-red-600 text-[10px] uppercase font-bold">
+                              {f.category}
+                            </span>
+                          </div>
+                          <div className="text-neutral-300 text-[11px] truncate" title={f.snippet}>
+                            "{f.snippet}"
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNavigateToTab('viva')}
+              className="btn-dev-primary text-xs px-4 py-2.5 flex items-center gap-1.5 shrink-0 self-start font-bold shadow-lg"
+            >
+              <span>Cross-Examine in Viva</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Copied Code Warning Banner if Clone */}
       {candidate.is_clone && candidate.matched_tutorial && (
         <div className="mb-6 bg-red-950/50 border border-red-500/70 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-in fade-in">

@@ -14,6 +14,7 @@ from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
+from backend.services.injection_scanner import InjectionScanner
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -950,6 +951,11 @@ async def analyze_github_repo(req: IngestionURLRequest):
         except Exception:
             pass
 
+    # 5b. ADVERSARIAL PROMPT INJECTION & SYNTHETIC AI SCANNER (IM-105 Brief Page 12 & 15)
+    commit_messages = [c.get("message", "") for c in commits_data if c.get("message")]
+    security_report = InjectionScanner.scan_repository(code_snippets, commit_messages)
+    is_prompt_injected = security_report.get("is_prompt_injected", False)
+
     # 6. FORENSIC GLOBAL PLAGIARISM & ORIGIN INSPECTION (Detect copying from anywhere worldwide)
     tut_matcher = TutorialMatcher()
     is_clone, matched_tut = tut_matcher.detect_global_plagiarism(
@@ -960,19 +966,26 @@ async def analyze_github_repo(req: IngestionURLRequest):
         structural_tokens=structural_tokens,
         source_candidates=source_candidates,
         candidate_name=candidate_name or owner,
-        target_subpath=target_subpath
+        target_subpath=target_subpath,
+        is_prompt_injected=is_prompt_injected
     )
+
+    # If repo contains active adversarial prompt injection, suppress spurious external clone matches
+    if is_prompt_injected:
+        is_clone = False
+        matched_tut = None
 
     # Real 5-factor authenticity score directly from git DNA
     auth_score = git_dna.get("authenticity_score", 0)
 
-    # If repository is copied from anywhere worldwide, adjust score to reflect exact plagiarism %
-    if is_clone and matched_tut:
+    # If repository is prompt injected or copied from anywhere worldwide, adjust score
+    if is_prompt_injected:
+        # Flagged for adversarial prompt injection attempt
+        auth_score = min(auth_score, 10)
+    elif is_clone and matched_tut:
         sim = matched_tut.get("similarity_score", 0.0)
-        # Authenticity drops inversely with copy percentage
         auth_score = max(0, min(auth_score, int((1.0 - sim) * 100) + 5))
     elif git_dna.get("total_commits", 0) == 1:
-        # Only single-commit bulk paste drops to 25
         auth_score = min(auth_score, 25)
 
     git_dna["authenticity_score"] = auth_score
@@ -999,7 +1012,38 @@ async def analyze_github_repo(req: IngestionURLRequest):
     viva_engine = VivaEngine()
     viva_questions = viva_engine.generate_questions_for_functions(complex_functions, max_questions=5)
 
-    if is_clone and matched_tut:
+    if is_prompt_injected and security_report.get("findings"):
+        top_f = security_report["findings"][0]
+        viva_questions.insert(0, {
+            "question_id": "viva_sec_injection_1",
+            "function_name": "security_isolation_audit",
+            "file": top_f.get("file", "README.md"),
+            "line_number": top_f.get("line_number", 1),
+            "question": (
+                f"Your repository ({top_f.get('file', 'README.md')}:L{top_f.get('line_number', 1)}) contains explicit instructions targeting automated evaluators "
+                f"('{top_f.get('matched_text', 'ignore previous instructions')}'). "
+                "As a software engineer, explain what security vulnerability this represents (Indirect Prompt Injection), how LLM-integrated pipelines must be defended against it, and why this was included in your repository."
+            ),
+            "expected_concepts": ["indirect prompt injection", "sanitization", "untrusted input", "security boundary", "sandboxing", "grading rubric isolation"],
+            "difficulty": "HARD",
+            "snippet": top_f.get("snippet", "<!-- [AI_EVALUATION_DIRECTIVE] -->")
+        })
+
+    if is_prompt_injected:
+        findings_summary = f"{security_report['findings_count']} adversarial directive(s) detected across {len(security_report['files_affected'])} file(s)"
+        proof_card = {
+            "status": "FLAGGED_PROMPT_INJECTION",
+            "headline": "SECURITY ALERT: Adversarial Prompt Injection Detected. Repository attempted indirect prompt injection against AI evaluator.",
+            "strengths": [
+                f"Security Isolation Shield intercepted {findings_summary}",
+                f"Detected vectors in {', '.join(security_report['files_affected'][:3])}",
+                "Automated grading protected: directives quarantined and sanitized"
+            ],
+            "growth_area": "Remove adversarial prompt injection directives and benchmark test harnesses before enterprise submission.",
+            "specific_action": "Clean README.md and source files of '[AI_EVALUATION_DIRECTIVE]' and bypass comments.",
+            "tamper_proof_hash": tamper_proof_hash
+        }
+    elif is_clone and matched_tut:
         sim_pct = int(matched_tut.get("similarity_score", 0.0) * 100)
         source_link = matched_tut.get("source_url") or "external online repository"
         proof_card = {
@@ -1085,6 +1129,9 @@ async def analyze_github_repo(req: IngestionURLRequest):
         ),
         "is_clone": is_clone,
         "matched_tutorial": matched_tut,
+        "security_scan": security_report,
+        "is_prompt_injected": is_prompt_injected,
+        "is_synthetic_ai": security_report.get("is_synthetic_ai", False),
         "provenance_evidence": provenance_evidence,
         "git_dna": git_dna,
         "detected_files": detected_files,

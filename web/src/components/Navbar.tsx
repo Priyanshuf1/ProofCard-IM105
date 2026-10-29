@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     {
       id: 'proofcard',
       step: '04',
-      name: 'Verified ProofCard',
+      name: 'Verified Pariksha Card',
       desc: 'Digital skill card with QR verification link.',
       icon: Award,
     },
@@ -77,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Main Branding Bar */}
       <div className="px-4 sm:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
-          {/* ProofCard Emblem */}
+          {/* Pariksha Emblem */}
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B1E1E] to-black border border-[#D4AF37]/50 flex items-center justify-center shadow-[0_0_14px_rgba(212,175,55,0.3)] shrink-0">
             <span className="text-lg font-black text-[#D4AF37]">Ω</span>
           </div>
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center gap-2.5">
               <span className="text-2xl sm:text-3xl font-extrabold text-[#f7f3ee] tracking-tight font-sans">
-                ProofCard
+                Pariksha
               </span>
               <span className="text-xs font-mono uppercase bg-[#8B1E1E]/60 border border-[#D4AF37]/50 px-2.5 py-0.5 rounded-full text-[#FFD166] font-bold">
                 IM-105

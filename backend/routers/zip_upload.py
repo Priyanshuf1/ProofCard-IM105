@@ -13,6 +13,7 @@ from backend.services.commit_forensics import CommitForensics
 from backend.services.viva_engine import VivaEngine
 from backend.services.jd_matcher import JDMatcher
 from backend.services.readiness_engine import ReadinessEngine
+from backend.services.injection_scanner import InjectionScanner
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -258,6 +259,11 @@ async def upload_project_zip(
                 "summary": f"Offline Direct Code Submission: Evaluated {len(code_files)} source files ({total_loc} LOC) across {days_span} day(s) of archive timestamps with {test_files_count} test suites (Max AST Cyclomatic Complexity: {max_comp}). Git history was not supplied, so development rhythm is unverified."
             }
 
+        # Security: Adversarial Prompt Injection & Synthetic AI Scanner
+        commit_msgs = [c.get("message", "") for c in real_commits if c.get("message")]
+        security_report = InjectionScanner.scan_repository(code_snippets, commit_msgs)
+        is_prompt_injected = security_report.get("is_prompt_injected", False)
+
         # 4-Stage Forensic Global Plagiarism & Origin Detection
         matcher = TutorialMatcher()
         is_clone, matched_tutorial = matcher.detect_global_plagiarism(
@@ -266,8 +272,15 @@ async def upload_project_zip(
             file_tree=file_tree,
             code_snippets=code_snippets,
             structural_tokens=structural_tokens,
-            candidate_name=candidate_name
+            candidate_name=candidate_name,
+            is_prompt_injected=is_prompt_injected
         )
+
+        if is_prompt_injected:
+            is_clone = False
+            matched_tutorial = None
+            auth_score = min(auth_score, 10)
+            git_dna["authenticity_score"] = auth_score
 
         # Authenticity scoring calculation
         if is_clone and matched_tutorial:
@@ -294,7 +307,17 @@ async def upload_project_zip(
         tamper_proof_hash = "SHA256:" + hashlib.sha256(manifest_str.encode()).hexdigest()
 
         # Generate Explainable ProofCard
-        if is_clone:
+        if is_prompt_injected:
+            card_status = "FLAGGED_PROMPT_INJECTION"
+            card_headline = "SECURITY ALERT: Adversarial Prompt Injection Detected. Uploaded archive attempted prompt injection against AI evaluator."
+            card_strengths = [
+                f"Security Isolation Shield intercepted {security_report['findings_count']} adversarial directive(s)",
+                f"Quarantined vectors in {', '.join(security_report['files_affected'][:3])}",
+                "Automated grading protected: directives quarantined and sanitized"
+            ]
+            card_growth = "Remove adversarial prompt injection directives and benchmark test harnesses before enterprise submission."
+            card_action = "Clean files of '[AI_EVALUATION_DIRECTIVE]' and bypass comments."
+        elif is_clone:
             card_status = "FLAGGED_CLONE"
             card_headline = f"High probability tutorial clone detected ({int((matched_tutorial or {}).get('similarity_score', 0.0)*100)}% structural match)."
             card_strengths = [
@@ -379,6 +402,9 @@ async def upload_project_zip(
             ),
             "is_clone": is_clone,
             "matched_tutorial": matched_tutorial,
+            "security_scan": security_report,
+            "is_prompt_injected": is_prompt_injected,
+            "is_synthetic_ai": security_report.get("is_synthetic_ai", False),
             "git_dna": git_dna,
             "detected_files": file_tree,
             "structural_token_sequence": first_seq,
