@@ -1,8 +1,8 @@
 {
-  "webhook_url": "",
+  "webhook_url": "https://priyanshuf1.app.n8n.cloud/webhook/proofcard",
   "sync_sheets": true,
   "feedback_emails": true,
-  "last_test_status": null,
-  "last_test_timestamp": null,
+  "last_test_status": "success",
+  "last_test_timestamp": "2026-10-29T11:24:45Z",
   "last_error": null
 }
