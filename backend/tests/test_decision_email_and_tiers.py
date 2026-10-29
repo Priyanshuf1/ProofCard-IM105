@@ -46,7 +46,7 @@ def test_email_formatter_shortlisted():
     assert "Priyanshu Awasthi" in email_data["subject"]
     assert email_data["college_tier"] == "Tier-2"
     assert "SHORTLISTED" in email_data["badge_title"]
-    assert "https://proofcard-im105.vercel.app" in email_data["verification_url"]
+    assert "https://proofcard.vercel.app" in email_data["verification_url"]
     assert "<!DOCTYPE html>" in email_data["formatted_email_html"]
     assert len(email_data["formatted_email_text"]) > 100
 
@@ -149,3 +149,23 @@ def test_dispatch_viva_invites_endpoint():
     data = res.json()
     assert data["dispatched_count"] == 2
     assert "viva?cid=c1" in data["dispatched"][0]["viva_link"]
+
+
+def test_evaluate_cohort_detects_prompt_injection():
+    candidates = [
+        {
+            "name": "Satyam Trivedi",
+            "college": "GLA University",
+            "repo_url": "https://github.com/Satyamtrivedi07/adversarial-injection-test",
+            "role": "Prompt Injection Exploit"
+        }
+    ]
+    res = client.post("/api/batch/evaluate-cohort", json={"cohort": candidates})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["prompt_injection_count"] == 1
+    cand = data["cohort"][0]
+    assert cand["is_prompt_injected"] is True
+    assert cand["authenticity_score"] == 0
+    assert cand["viva_blocked"] is True
+    assert cand["proof_card"]["status"] == "FLAGGED_ADVERSARIAL_INJECTION"

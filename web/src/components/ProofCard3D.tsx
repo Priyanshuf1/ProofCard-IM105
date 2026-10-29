@@ -535,15 +535,21 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
         {/* Top Header Row of Card */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#3A2F27] pb-5 mb-5 relative z-10">
           <div className="flex items-center gap-3.5">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-inner ${
-              isPromptInjected
-                ? 'bg-red-950 text-red-300 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' 
-                : isClone 
-                ? 'bg-red-950/50 text-red-400 border border-red-500/50' 
-                : 'bg-[#2A241B] text-[#D4AF37] border border-[#D4AF37]/50 shadow-[0_0_12px_rgba(212,175,55,0.3)]'
-            }`}>
-              {isPromptInjected ? '🚨' : isClone ? '⚠️' : 'Ω'}
-            </div>
+            {isPromptInjected ? (
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950 text-red-300 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] shrink-0">
+                🚨
+              </div>
+            ) : isClone ? (
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950/50 text-red-400 border border-red-500/50 shrink-0">
+                ⚠️
+              </div>
+            ) : (
+              <img 
+                src="/pariksha-logo.jpg" 
+                alt="Pariksha Verified Official Logo" 
+                className="w-12 h-12 rounded-xl object-cover border border-[#D4AF37]/60 shadow-[0_0_14px_rgba(255,140,0,0.35)] shrink-0" 
+              />
+            )}
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="text-xl sm:text-2xl font-bold text-white tracking-wide font-sans">{candidate.name}</span>

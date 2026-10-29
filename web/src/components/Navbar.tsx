@@ -101,10 +101,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Main Branding Bar */}
       <div className="px-4 sm:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
-          {/* Pariksha Emblem */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B1E1E] to-black border border-[#D4AF37]/50 flex items-center justify-center shadow-[0_0_14px_rgba(212,175,55,0.3)] shrink-0">
-            <span className="text-lg font-black text-[#D4AF37]">Ω</span>
-          </div>
+          {/* Official Pariksha Logo */}
+          <img 
+            src="/pariksha-logo.jpg" 
+            alt="Pariksha Logo" 
+            className="h-10 w-10 rounded-xl object-cover shadow-[0_0_16px_rgba(255,140,0,0.4)] shrink-0 border border-[#D4AF37]/60" 
+          />
 
           <div>
             <div className="flex items-center gap-2.5">

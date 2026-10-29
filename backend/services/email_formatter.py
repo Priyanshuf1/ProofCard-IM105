@@ -17,7 +17,7 @@ class EmailFormatter:
         decision: str = "FEEDBACK",  # "SHORTLISTED", "REJECTED", "FEEDBACK"
         rejection_reason_code: Optional[str] = None,
         custom_note: Optional[str] = None,
-        origin_url: str = "https://proofcard-im105.vercel.app"
+        origin_url: str = "https://proofcard.vercel.app"
     ) -> Dict[str, Any]:
         """
         Builds a comprehensive, well-spaced, luxury email report for candidates and recruiters.
@@ -47,7 +47,9 @@ class EmailFormatter:
         
         cid = candidate.get("candidate_id") or "cand_verified"
         card = candidate.get("proof_card") or {}
-        card_status = card.get("status") or ("FLAGGED_CLONE" if is_clone else "VERIFIED_COMPETENT")
+        card_status = card.get("status") or ("FLAGGED_ADVERSARIAL_INJECTION" if has_prompt_injection else ("FLAGGED_CLONE" if is_clone else "VERIFIED_COMPETENT"))
+        growth_area = card.get("growth_area") or ("Remove prompt injection directives from repository comments and documentation." if has_prompt_injection else ("Build original project architectures rather than copying online tutorials." if is_clone else "Deepen automated unit test suites and integration test fixtures."))
+        specific_action = card.get("specific_action") or ("Clean repository documentation to reflect genuine code authorship." if has_prompt_injection else ("Implement a unique feature or custom database schema to prove independent engineering." if is_clone else "Write automated unit tests covering error edge cases and failure recovery."))
         
         # Build live verifiable link
         query_params = urllib.parse.urlencode({
@@ -185,11 +187,18 @@ DECISION & EVALUATION SUMMARY
 --------------------------------------------------------------------------------
 VERIFIED TECHNICAL METRICS
 --------------------------------------------------------------------------------
-- Code Authenticity:     {auth_score} / 100 {("(Clone Flagged)" if is_clone else "(Verified Organic)")}
-- Viva Defense Status:   {f"{viva_score} / 10.0 (Live Defended)" if viva_score > 0 else ("Disqualified (Tutorial Clone)" if is_clone else "Pending Candidate Defense (3-Minute Oral Defense Required)")}
+- Code Authenticity:     {auth_score} / 100 {("(Prompt Injection Flagged)" if has_prompt_injection else ("(Clone Flagged)" if is_clone else "(Verified Organic)"))}
+- Viva Defense Status:   {f"{viva_score} / 10.0 (Live Defended)" if viva_score > 0 else ("Disqualified (Adversarial Injection)" if has_prompt_injection else ("Disqualified (Tutorial Clone)" if is_clone else "Pending Candidate Defense (3-Minute Oral Defense Required)"))}
 - Git-DNA History:       {commits} commits over {timespan} days ({deletion_pct}% refactoring deletion)
 - AppSec Injection Scan: {("FLAGGED: Prompt Injection Payload" if has_prompt_injection else "PASSED: 0 Vulnerabilities Detected")}
 - Institutional Pedigree Bias: 0.0% (Evaluated strictly on code quality)
+
+--------------------------------------------------------------------------------
+GROWTH FOCUS & RECOMMENDED ACTIONS
+--------------------------------------------------------------------------------
+Growth Focus:
+- Area:   {growth_area}
+- Action: {specific_action}
 
 --------------------------------------------------------------------------------
 ACTIONABLE ENGINEERING ROADMAP
@@ -233,7 +242,7 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
     
     <!-- Top Luxury Header Banner -->
     <div style="background: linear-gradient(135deg, #1f120c 0%, #0c0604 100%); padding: 36px 40px 28px 40px; border-bottom: 1px solid #D4AF37; text-align: center;">
-      <div style="display: inline-block; width: 44px; height: 44px; line-height: 44px; border-radius: 50%; border: 1px solid #D4AF37; color: #D4AF37; font-size: 22px; font-weight: bold; margin-bottom: 12px;">Ω</div>
+      <img src="https://proofcard.vercel.app/pariksha-logo.jpg" alt="Pariksha Intelligent Testing Platform" width="130" style="display: block; margin: 0 auto 16px auto; border-radius: 10px; border: 1px solid #D4AF37; box-shadow: 0 4px 16px rgba(255,140,0,0.35);" />
       <div style="color: #D4AF37; font-size: 12px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px;">PARIKSHA · PROBLEM STATEMENT IM-105</div>
       <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0 0 10px 0; letter-spacing: -0.5px;">Candidate Verification & Technical Evaluation Report</h1>
       <p style="color: #E6C280; font-size: 13px; margin: 0;">Unbiased merit-based hiring intelligence powered by code forensics & viva defense</p>
@@ -343,10 +352,17 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
 </html>
 """
 
+        clean_html = html_content.strip()
+        clean_text = text_content.strip()
+        action_plan_text = "\n\n".join(f"{s['title']}\n{s['desc']}" for s in steps)
+
         return {
             "candidate_id": cid,
             "candidate_name": name,
+            "name": name,
             "email": email,
+            "to": email,
+            "recipient": email,
             "college": college,
             "college_tier": college_tier,
             "college_tier_label": college_tier_label,
@@ -355,15 +371,23 @@ Tamper-Proof Seal: SHA256:{cid[:16]}...
             "subject": subject,
             "headline": headline,
             "findings_summary": decision_statement,
+            "growth_area": growth_area,
+            "specific_action": specific_action,
+            "action_plan": action_plan_text,
             "action_plan_steps": steps,
             "authenticity_score": auth_score,
             "viva_score": viva_score,
             "is_clone": is_clone,
             "has_prompt_injection": has_prompt_injection,
             "matched_tutorial": tut_name,
-            "formatted_email_text": text_content.strip(),
-            "formatted_email_html": html_content.strip(),
-            "verification_url": verify_url
+            "formatted_email_text": clean_text,
+            "formatted_email_html": clean_html,
+            "html": clean_html,
+            "text": clean_text,
+            "message": clean_text,
+            "body": clean_html,
+            "verification_url": verify_url,
+            "logo_url": "https://proofcard.vercel.app/pariksha-logo.jpg"
         }
 
     @classmethod

@@ -46,7 +46,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   const [testVivaScore, setTestVivaScore] = useState(8);
 
   // Filter tab for candidate pool segmentation
-  const [poolFilter, setPoolFilter] = useState<'all' | 'live' | 'pending' | 'clones'>('all');
+  const [poolFilter, setPoolFilter] = useState<'all' | 'live' | 'pending' | 'clones' | 'injections'>('all');
 
   // Dynamic candidate state overrides (e.g., when recruiter simulates viva completion)
   const [candidateOverrides, setCandidateOverrides] = useState<Record<string, Partial<CandidateProfile>>>({});
@@ -79,20 +79,32 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     return !c.is_clone && !isLiveDefended(c) && (c.viva_status === 'PENDING_DEFENSE' || c.defense_type === 'ASYNC_REMOTE' || (c.viva_score || 0) === 0);
   };
 
+  const isInjectionCandidate = (c: CandidateProfile) => {
+    return Boolean(
+      c.has_prompt_injection || 
+      c.is_prompt_injected || 
+      c.security_scan?.is_prompt_injected || 
+      c.proof_card?.status === 'FLAGGED_ADVERSARIAL_INJECTION' ||
+      c.viva_status === 'BLOCKED_ADVERSARIAL'
+    );
+  };
+
   const isCloneCandidate = (c: CandidateProfile) => {
-    return Boolean(c.is_clone || c.viva_blocked || c.viva_status === 'BLOCKED_CLONE' || c.has_prompt_injection);
+    return Boolean((c.is_clone || c.viva_blocked || c.viva_status === 'BLOCKED_CLONE') && !isInjectionCandidate(c));
   };
 
   // Counts for tabs
   const liveCount = useMemo(() => candidatePool.filter(isLiveDefended).length, [candidatePool]);
-  const pendingCount = useMemo(() => candidatePool.filter(isPendingViva).length, [candidatePool]);
+  const pendingCount = useMemo(() => candidatePool.filter(c => isPendingViva(c) && !isCloneCandidate(c) && !isInjectionCandidate(c)).length, [candidatePool]);
   const cloneCount = useMemo(() => candidatePool.filter(isCloneCandidate).length, [candidatePool]);
+  const injectionCount = useMemo(() => candidatePool.filter(isInjectionCandidate).length, [candidatePool]);
 
   // Filtered candidate list based on active tab
   const displayedPool = useMemo(() => {
     if (poolFilter === 'live') return candidatePool.filter(isLiveDefended);
-    if (poolFilter === 'pending') return candidatePool.filter(isPendingViva);
+    if (poolFilter === 'pending') return candidatePool.filter(c => isPendingViva(c) && !isCloneCandidate(c) && !isInjectionCandidate(c));
     if (poolFilter === 'clones') return candidatePool.filter(isCloneCandidate);
+    if (poolFilter === 'injections') return candidatePool.filter(isInjectionCandidate);
     return candidatePool;
   }, [candidatePool, poolFilter]);
 
@@ -124,6 +136,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   const [modalDecisionType, setModalDecisionType] = useState<'SHORTLISTED' | 'REJECTED'>('SHORTLISTED');
   const [modalRejectionReason, setModalRejectionReason] = useState<string>('VIVA_INCOMPLETE');
   const [modalCustomNote, setModalCustomNote] = useState<string>('');
+  const [modalCandidateEmail, setModalCandidateEmail] = useState<string>('');
   const [emailTab, setEmailTab] = useState<'html' | 'text' | 'payload'>('html');
   const [isSending, setIsSending] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -279,6 +292,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   // Open Decision Email Modal
   const handleOpenEmailModal = (candidate: CandidateProfile, initialDecision: 'SHORTLISTED' | 'REJECTED') => {
     setActiveModalCandidate(candidate);
+    setModalCandidateEmail(candidate.email || 'candidate@example.edu');
     setModalDecisionType(initialDecision);
     if (candidate.is_clone) {
       setModalRejectionReason('CLONE_DETECTED');
@@ -362,8 +376,9 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     setIsSending(true);
 
     try {
-      await sendDecisionEmail(
-        activeModalCandidate,
+      const candidateToSend = { ...activeModalCandidate, email: modalCandidateEmail || activeModalCandidate.email };
+      const dispatchRes = await sendDecisionEmail(
+        candidateToSend,
         modalDecisionType,
         modalDecisionType === 'REJECTED' ? modalRejectionReason : undefined,
         modalCustomNote
@@ -593,6 +608,18 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Disqualified Clones ({cloneCount})</span>
+          </button>
+
+          <button
+            onClick={() => setPoolFilter('injections')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              poolFilter === 'injections'
+                ? 'bg-red-900 text-red-100 border border-red-500 shadow-md font-extrabold'
+                : 'bg-black/50 border border-red-600/50 text-red-300 hover:bg-red-950/50'
+            }`}
+          >
+            <span>🚨</span>
+            <span>Adversarial Injections ({injectionCount})</span>
           </button>
         </div>
 
@@ -1255,7 +1282,17 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                 <div>
                   <div className="text-white font-bold text-base">{activeModalCandidate.name}</div>
                   <div className="text-xs text-[#E6C280]">{activeModalCandidate.college} ({classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).label})</div>
-                  <div className="text-xs text-neutral-400 font-mono mt-0.5">{activeModalCandidate.email || 'candidate@example.edu'}</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[11px] text-[#FFD166] font-bold uppercase font-mono">To Email:</span>
+                    <input
+                      type="email"
+                      value={modalCandidateEmail}
+                      onChange={(e) => setModalCandidateEmail(e.target.value)}
+                      placeholder="candidate@example.edu"
+                      className="bg-black/70 border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#D4AF37] w-64 shadow-inner"
+                      title="Editable: enter your test email address to test deliverability"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 text-right">
                   <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27] text-center">

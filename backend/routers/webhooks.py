@@ -133,8 +133,9 @@ async def send_decision_email(req: DecisionEmailRequest):
         rejection_reason_code=req.rejection_reason_code,
         custom_note=req.custom_note
     )
+    event_type = "CANDIDATE_SHORTLISTED" if req.decision == "SHORTLISTED" else "FEEDBACK_DISPATCH"
     dispatch_res = await N8nService.dispatch(
-        event_type="DECISION_EMAIL_DISPATCH",
+        event_type=event_type,
         payload=email_data,
         webhook_url=req.webhook_url
     )
@@ -161,9 +162,15 @@ async def send_viva_invitation(req: VivaInvitationRequest):
         candidate=req.candidate,
         custom_note=req.custom_message
     )
+    payload = {
+        **invitation_data,
+        "findings_summary": invitation_data.get("headline", ""),
+        "action_plan": "Complete your 3-minute Technical Viva Defense to finalize your verified Pariksha credential.",
+        "verification_url": invitation_data.get("viva_url", "")
+    }
     dispatch_res = await N8nService.dispatch(
-        event_type="VIVA_INVITATION_DISPATCH",
-        payload=invitation_data,
+        event_type="FEEDBACK_DISPATCH",
+        payload=payload,
         webhook_url=req.webhook_url
     )
     return {
