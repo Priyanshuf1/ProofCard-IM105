@@ -975,3 +975,40 @@ export async function dispatchN8nEvent(eventType: string, payload: any, webhookU
 }
 
 
+
+export async function sendDecisionEmail(
+  candidate: any,
+  decision: 'SHORTLISTED' | 'REJECTED' | 'FEEDBACK',
+  rejectionReasonCode?: string,
+  customNote?: string,
+  webhookUrl?: string
+): Promise<any> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/webhooks/send-decision-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate,
+        decision,
+        rejection_reason_code: rejectionReasonCode,
+        custom_note: customNote,
+        webhook_url: webhookUrl || (typeof window !== 'undefined' ? localStorage.getItem('n8n_webhook_url') : undefined) || undefined
+      })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Failed to dispatch decision email to backend, falling back:', e);
+  }
+  return {
+    status: 'success',
+    delivered: false,
+    email_data: {
+      candidate_name: candidate.name || 'Candidate',
+      email: candidate.email || 'candidate@example.edu',
+      decision,
+      subject: `[Pariksha IM-105] Technical Decision Notice - ${candidate.name || 'Candidate'}`
+    }
+  };
+}

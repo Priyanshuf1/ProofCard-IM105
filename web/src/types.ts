@@ -120,6 +120,7 @@ export interface CandidateProfile {
   anonymised_name?: string;
   college: string;
   college_tier?: string;
+  college_tier_label?: string;
   repo_url?: string;
   project_name?: string;
   project_type: string;

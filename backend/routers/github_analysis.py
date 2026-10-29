@@ -17,6 +17,7 @@ from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
 from backend.services.adversarial_defense import AdversarialDefensePipeline
 from backend.services.injection_scanner import InjectionScanner
+from backend.services.college_classifier import CollegeTierClassifier
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -554,10 +555,11 @@ async def analyze_github_repo(req: IngestionURLRequest):
             detail="Invalid GitHub URL format. Expected: https://github.com/owner or https://github.com/owner/repository"
         )
 
-    candidate_name = req.candidate_name
-    if not candidate_name or candidate_name.strip() in ["Priyanshu Awasthi", "Ananya Patel", "Rohan Sharma", "Candidate Name"]:
+    candidate_name = (req.candidate_name or "").strip()
+    if not candidate_name or candidate_name.lower() in ["candidate name", "author", "contributor"]:
         candidate_name = owner
     college_name = req.college or "Verified Institution"
+    college_tier, college_tier_label = CollegeTierClassifier.classify(college_name)
 
     live_success = False
     resolved_repo = repo
@@ -894,7 +896,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
     # When live analysis succeeds, synthesize verified profile from live GitHub AST data
     resolved_repo_name = resolved_repo or "primary-repository"
-    cid = f"cand_gh_{hashlib.md5(f'{owner}/{resolved_repo_name}'.encode()).hexdigest()[:8]}"
+    cid_seed = f"{candidate_name}:{req.email or owner}:{resolved_repo_name}"
+    cid = f"cand_gh_{hashlib.md5(cid_seed.encode()).hexdigest()[:8]}"
     test_files_detected = sum(
         1 for f in (raw_files or detected_files)
         if "test" in f.lower() or "spec" in f.lower()
@@ -1177,6 +1180,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "candidate_name": candidate_name or owner,
         "email": req.email,
         "college": college_name,
+        "college_tier": college_tier,
+        "college_tier_label": college_tier_label,
         "repo_url": raw_url,
         "project_name": resolved_repo_name,
         "project_type": project_type,

@@ -18,6 +18,7 @@ from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
 from backend.services.adversarial_defense import AdversarialDefensePipeline
 from backend.services.injection_scanner import InjectionScanner
+from backend.services.college_classifier import CollegeTierClassifier
 
 router = APIRouter(prefix="/api/upload", tags=["Local Ingestion"])
 
@@ -39,6 +40,8 @@ async def upload_project_zip(
     consent_granted: bool = Form(True),
     email: Optional[str] = Form(None)
 ):
+    college_tier, college_tier_label = CollegeTierClassifier.classify(college)
+
     if not consent_granted:
         raise HTTPException(status_code=403, detail="Candidate consent must be granted before code analysis can proceed.")
 
@@ -429,10 +432,12 @@ async def upload_project_zip(
             "viva_blocked_reason": viva_blocked_reason,
             "clone_pct": clone_pct,
             "anomaly_pct": anomaly_pct,
-            "candidate_id": f"cand_zip_{hashlib.md5(candidate_name.encode()).hexdigest()[:8]}",
+            "candidate_id": f"cand_zip_{hashlib.md5(f'{candidate_name}:{email or file.filename}'.encode()).hexdigest()[:8]}",
             "name": candidate_name,
             "candidate_name": candidate_name,
             "college": college,
+            "college_tier": college_tier,
+            "college_tier_label": college_tier_label,
             "project_name": Path(file.filename).stem,
             "project_type": project_type,
             "detected_stack": project_type,

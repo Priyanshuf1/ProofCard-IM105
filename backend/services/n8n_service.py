@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, List
+from backend.services.email_formatter import EmailFormatter
 import httpx
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "data" / "n8n_config.json"
@@ -221,63 +222,36 @@ class N8nService:
         return await N8nService.dispatch("CANDIDATE_SHORTLISTED", payload, webhook_url)
 
     @staticmethod
-    async def dispatch_feedback_email(candidate: Dict[str, Any], webhook_url: Optional[str] = None) -> Dict[str, Any]:
+    async def dispatch_feedback_email(
+        candidate: Dict[str, Any], 
+        webhook_url: Optional[str] = None,
+        decision: str = "FEEDBACK",
+        rejection_reason_code: Optional[str] = None,
+        custom_note: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Dispatches FEEDBACK_DISPATCH event when a candidate has low authenticity or is flagged as a clone,
-        sending constructive feedback recommendations for their email.
+        Dispatches FEEDBACK_DISPATCH / DECISION_EMAIL event with full luxury HTML & structured plain text.
         """
         proof_card = candidate.get("proof_card") or {}
-        name = candidate.get("name") or candidate.get("candidate_name") or "Builder"
         email = candidate.get("email") or proof_card.get("email")
         if not email:
             return {"status": "skipped", "delivered": False, "reason": "No student email provided"}
 
-        auth_score = candidate.get("authenticity_score", 0)
-        is_clone = bool(candidate.get("is_clone", False))
-        tut = candidate.get("matched_tutorial") or {}
+        email_data = EmailFormatter.generate_email(
+            candidate=candidate,
+            decision=decision,
+            rejection_reason_code=rejection_reason_code,
+            custom_note=custom_note
+        )
 
-        tut_name = tut.get("name") if isinstance(tut, dict) else None
-
-        if is_clone and tut_name:
-            reason = f"Your project matched patterns from the known tutorial/template '{tut_name}'."
-            action_plan = (
-                "1. Build a custom feature not included in the tutorial (e.g., custom OAuth, background workers, or redis cache).\n"
-                "2. Commit changes step-by-step with descriptive git commit messages over several days.\n"
-                "3. Add at least 3 automated unit tests and integration tests with pytest or jest."
-            )
-        elif auth_score < 40:
-            reason = "Your project appears to have been uploaded in a single bulk commit without progressive Git history."
-            action_plan = (
-                "1. Avoid bulk code dumps. Use incremental feature branching with verifiable timestamps.\n"
-                "2. Include automated test suites and architectural documentation.\n"
-                "3. Prepare for code defense viva by reviewing core data structures and edge case handling."
-            )
-        else:
-            reason = f"Your authenticity score ({auth_score}%) can be boosted to the exemplary tier (85%+)."
-            action_plan = (
-                "1. Add integration test fixtures verifying failure isolation.\n"
-                "2. Implement defensive error boundaries for asynchronous I/O.\n"
-                "3. Complete the ProofCard Viva defense to demonstrate deep conceptual code ownership."
-            )
-
+        # Retain backward-compatible fields in payload while providing luxury formatted emails
         payload = {
-            "candidate_id": candidate.get("candidate_id"),
-            "candidate_name": name,
-            "email": email,
-            "college": candidate.get("college", "University"),
-            "authenticity_score": auth_score,
-            "is_clone": is_clone,
-            "matched_tutorial": tut_name,
-            "subject": f"ProofCard Code Verification Feedback & Growth Action Plan for {name}",
-            "headline": proof_card.get("headline") or "ProofCard Verification Feedback",
-            "findings_summary": reason,
-            "action_plan": action_plan,
-            "growth_area": proof_card.get("growth_area", "Expand unit testing and failure handling."),
-            "specific_action": proof_card.get("specific_action", "Implement end-to-end integration tests."),
-            "verification_url": f"https://proofcard.dev/verify/{candidate.get('candidate_id', 'cand_01')}"
+            **email_data,
+            "action_plan": "\n\n".join(f"{s['title']}\n{s['desc']}" for s in email_data.get("action_plan_steps", []))
         }
 
-        return await N8nService.dispatch("FEEDBACK_DISPATCH", payload, webhook_url)
+        event_name = "CANDIDATE_SHORTLISTED" if decision == "SHORTLISTED" else "FEEDBACK_DISPATCH"
+        return await N8nService.dispatch(event_name, payload, webhook_url)
 
     @staticmethod
     async def dispatch_test_ping(webhook_url: Optional[str] = None) -> Dict[str, Any]:

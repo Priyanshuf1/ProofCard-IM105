@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, dispatchN8nEvent } from '../services/api';
 import { CandidateProfile } from '../types';
+import { classifyCollegeTier } from '../utils/collegeClassifier';
 
 interface CandidateIngestionProps {
   onScanComplete: (profile: CandidateProfile) => void;
@@ -348,16 +349,28 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
-                  College / University
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
+                    College / University
+                  </label>
+                  {college.trim() && (
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${classifyCollegeTier(college).badgeColor}`}>
+                      {classifyCollegeTier(college).label}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={college}
                   onChange={(e) => setCollege(e.target.value)}
-                  placeholder="e.g. GLA University"
+                  placeholder="e.g. IIT Bombay, BITS Pilani, GLA University, or NIT Surathkal"
                   className="w-full bg-black/50 backdrop-blur-md border border-[#E6C280]/25 rounded-xl p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#E85D04] transition font-sans"
                 />
+                {college.trim() && (
+                  <p className="text-[11px] text-[#E6C280] mt-1 font-sans">
+                    Institutional Tier: <strong>{classifyCollegeTier(college).label}</strong> · {classifyCollegeTier(college).description}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -382,13 +395,26 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     type="button"
                     onClick={() => {
                       setGithubUrl('https://github.com/Priyanshuf1/rabto');
+                      setCandidateName('Rohan Sharma');
+                      setCandidateEmail('rohan.sharma@iitd.ac.in');
+                      setCollege('IIT Delhi');
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 hover:bg-amber-900/40 transition cursor-pointer font-mono"
+                  >
+                    🏛️ Rohan Sharma (IIT Delhi - Tier 1)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGithubUrl('https://github.com/Priyanshuf1/rabto');
                       setCandidateName('Priyanshu Awasthi');
                       setCandidateEmail('priyanshu@example.edu');
                       setCollege('GLA University');
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-[#200e07]/80 border border-[#E85D04]/40 text-[#ff9f1c] hover:bg-[#E85D04]/20 transition cursor-pointer font-mono"
                   >
-                    🚀 Priyanshuf1/rabto
+                    🚀 Priyanshu Awasthi (GLA Univ - Tier 2)
                   </button>
 
                   <button
@@ -702,7 +728,12 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                           <td className="py-3 px-3 text-neutral-400">{idx + 1}</td>
                           <td className="py-3 px-3">
                             <strong className="text-white block font-sans">{cand.name}</strong>
-                            <span className="text-xs text-[#E6C280]">{cand.college}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-xs text-[#E6C280]">{cand.college}</span>
+                              <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${classifyCollegeTier(cand.college || cand.college_tier).badgeColor}`}>
+                                {classifyCollegeTier(cand.college || cand.college_tier).tier}
+                              </span>
+                            </div>
                             {cand.email && (
                               <span className="text-[11px] text-neutral-400 block font-mono mt-0.5">{cand.email}</span>
                             )}
