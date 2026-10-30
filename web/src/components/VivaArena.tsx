@@ -451,9 +451,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     try {
       const res = await evaluateVivaAnswer(
         candidate.candidate_id,
-        currentQ.question_id,
+        currentQ.question_id || (currentQ as any).id || 'viva_q_1',
         currentQ.question,
-        currentQ.expected_concepts,
+        currentQ.expected_concepts || [],
         userAnswer
       );
 
@@ -974,7 +974,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           <div className="flex items-center justify-between text-xs text-[#E6C280] font-mono mb-2">
             <span className="flex items-center gap-1.5">
               <Code className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Extracted Target: <strong>{currentQ.function_name}()</strong> in {currentQ.file}:{currentQ.line_number}</span>
+              <span>Extracted Target: <strong>{currentQ.function_name || 'core_logic'}()</strong> in {currentQ.file || 'resume'}:{currentQ.line_number || 1}</span>
             </span>
             <span className={`px-2 py-0.5 rounded uppercase font-bold text-[10px] ${
               currentQ.difficulty === 'hard'
@@ -1052,7 +1052,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             Key Grading Concepts:
           </span>
           <div className="flex flex-wrap gap-2">
-            {currentQ.expected_concepts.map((c, i) => (
+            {(currentQ.expected_concepts || []).map((c, i) => (
               <span key={i} className="text-xs sm:text-sm px-3 py-1 rounded-full bg-[#1A1A1A] border border-[#3A2F27] text-neutral-200 font-medium">
                 {c}
               </span>

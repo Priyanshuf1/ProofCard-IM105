@@ -28,7 +28,7 @@ jobs:
 
     - name: Run Pytest Suite
       run: |
-        python -m pytest backend/tests/ -v
+        python -m pytest backend/tests/ tests/ -v
 
   build-frontend:
     name: Frontend Vite Production Build

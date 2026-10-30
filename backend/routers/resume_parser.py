@@ -80,15 +80,67 @@ def extract_with_regex(text: str) -> dict:
             break
 
     email_match = re.search(r'[\w.+-]+@[\w.-]+\.\w{2,}', text)
-    github_match = re.search(r'https?://github\.com/[\w.-]+(?:/[\w.-]+)?', text, re.IGNORECASE)
-    linkedin_match = re.search(r'https?://(?:www\.)?linkedin\.com/in/[\w.-]+', text, re.IGNORECASE)
-    
-    # College extraction heuristics
-    college_match = re.search(
-        r'\b(IIT\s+[A-Za-z]+|IIM\s+[A-Za-z]+|BITS\s+[A-Za-z]+|GLA\s+University|NIT\s+[A-Za-z]+|[A-Z][A-Za-z\s]+(?:University|Institute\s+of\s+Technology|Engineering\s+College|Business\s+School))\b',
-        text
+
+    # GitHub URL extraction: supports scheme-less (github.com/user or github.com/user/repo) and http(s)
+    github_match = re.search(
+        r'(?:https?://)?(?:www\.)?github\.com/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?',
+        text,
+        re.IGNORECASE
     )
-    detected_college = college_match.group(1).strip() if college_match else None
+    detected_github = None
+    if github_match:
+        raw_gh = github_match.group(0).rstrip(".,;:)'\"")
+        detected_github = raw_gh if raw_gh.lower().startswith(("http://", "https://")) else f"https://{raw_gh}"
+
+    # LinkedIn URL extraction: supports scheme-less (linkedin.com/in/...) and http(s)
+    linkedin_match = re.search(
+        r'(?:https?://)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9_.-]+/?',
+        text,
+        re.IGNORECASE
+    )
+    detected_linkedin = None
+    if linkedin_match:
+        raw_li = linkedin_match.group(0).rstrip(".,;:)'\"")
+        detected_linkedin = raw_li if raw_li.lower().startswith(("http://", "https://")) else f"https://{raw_li}"
+
+    # College extraction heuristics: use horizontal whitespace [ \t] to prevent greedy newline capture of headers
+    college_match = re.search(
+        r'(?:EDUCATION|ACADEMICS|ACADEMIC\s+BACKGROUND|QUALIFICATIONS|COLLEGE|UNIVERSITY)?[\s:\-–—]*\b(IIT[ \t]+[A-Za-z]+|IIM[ \t]+[A-Za-z]+|BITS[ \t]+[A-Za-z]+|GLA[ \t]+University|NIT[ \t]+[A-Za-z]+|[A-Z][A-Za-z \t]+(?:University|Institute[ \t]+of[ \t]+Technology|Engineering[ \t]+College|Business\s+School))\b',
+        text,
+        re.IGNORECASE
+    )
+    detected_college = None
+    if college_match:
+        clean_college = college_match.group(1).strip()
+        clean_college = re.sub(r'^(?:EDUCATION|ACADEMICS|QUALIFICATIONS|COLLEGE)\s+', '', clean_college, flags=re.IGNORECASE).strip()
+        detected_college = clean_college
+
+    # Live portfolio or deployed URL extraction: vercel.app, netlify.app, pages.dev, or custom domains
+    detected_live_url = None
+    plat_match = re.search(
+        r'(?:https?://)?(?:[a-zA-Z0-9-]+\.)+(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|herokuapp\.com|github\.io)(?:/[^\s,)]*)?',
+        text,
+        re.IGNORECASE
+    )
+    if plat_match:
+        raw_live = plat_match.group(0).rstrip(".,;:)'\"")
+        detected_live_url = raw_live if raw_live.lower().startswith(("http://", "https://")) else f"https://{raw_live}"
+    else:
+        # Search for custom domain mentions in projects (e.g. alleyrich.com, globallogicmedia.com, myportfolio.dev)
+        candidate_domains = re.findall(
+            r'\b([a-zA-Z0-9-]+\.(?:com|org|dev|io|me|app|tech|ai|site))\b',
+            text,
+            re.IGNORECASE
+        )
+        skip_domains = {
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'example.com',
+            'example.edu', 'example.org', 'github.com', 'linkedin.com', 'b.tech', 'm.tech', 'b.sc', 'm.sc'
+        }
+        for d in candidate_domains:
+            d_lower = d.lower()
+            if d_lower not in skip_domains and not re.search(r'[\w.+-]+@' + re.escape(d), text, re.IGNORECASE):
+                detected_live_url = f"https://{d}"
+                break
 
     # Extract skills
     skill_keywords = [
@@ -116,8 +168,9 @@ def extract_with_regex(text: str) -> dict:
         "name": detected_name,
         "email": email_match.group(0) if email_match else None,
         "college": detected_college,
-        "github_url": github_match.group(0) if github_match else None,
-        "linkedin_url": linkedin_match.group(0) if linkedin_match else None,
+        "github_url": detected_github,
+        "linkedin_url": detected_linkedin,
+        "live_url": detected_live_url,
         "skills": found_skills[:20],
         "role_type": role_type,
     }
@@ -215,7 +268,7 @@ async def parse_resume(file: UploadFile = File(...)):
     college = pick(gemini_result.get("college"), regex_result.get("college"))
     github_url = pick(gemini_result.get("github_url"), regex_result.get("github_url"))
     linkedin_url = pick(gemini_result.get("linkedin_url"), regex_result.get("linkedin_url"))
-    live_url = gemini_result.get("live_url") or None
+    live_url = pick(gemini_result.get("live_url"), regex_result.get("live_url"))
     skills = gemini_result.get("skills") or regex_result.get("skills", [])
     projects = gemini_result.get("projects") or []
     experience = gemini_result.get("experience") or []

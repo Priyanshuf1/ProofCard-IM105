@@ -25,7 +25,7 @@ import {
   Globe
 } from 'lucide-react';
 import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, evaluateCohortBatch, dispatchBatchVivaInvites, dispatchN8nEvent, parseResumePdf, ResumeParseResult } from '../services/api';
-import { CandidateProfile } from '../types';
+import { CandidateProfile, VivaQuestion, ComplexFunction } from '../types';
 import { classifyCollegeTier } from '../utils/collegeClassifier';
 
 interface CandidateIngestionProps {
@@ -242,49 +242,127 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           const topSkillsStr = defaultSkills.slice(0, 3).join(', ');
           const pairSkillsStr = defaultSkills.slice(0, 2).join(' and ');
 
-          const synthesizedViva: any[] = (candidateRole.includes('MBA') || candidateRole.includes('Business') || candidateRole.includes('Product')) ? [
+          const isBusinessTrack = candidateRole.includes('MBA') || candidateRole.includes('Business') || candidateRole.includes('Product');
+
+          const synthesizedViva: (VivaQuestion & { id?: string; weight?: number; rationale?: string })[] = isBusinessTrack ? [
             {
               id: 'viva_biz_1',
+              question_id: 'viva_biz_1',
+              function_name: 'business_case_roi',
+              file: 'strategy/business_case.md',
+              line_number: 14,
               question: "In your resume project '" + firstProjName + "', what was the core business constraint you faced and how did you measure ROI?",
+              expected_concepts: ['roi', 'attribution', 'conversion', 'metrics', 'budget'],
               difficulty: 'medium',
               weight: 0.35,
               rationale: 'Tests quantified decision making and business impact attribution.'
             },
             {
               id: 'viva_biz_2',
+              question_id: 'viva_biz_2',
+              function_name: 'market_penetration_cac',
+              file: 'gtm/market_analysis.xlsx',
+              line_number: 28,
               question: 'Explain a specific conflict or misalignment between cross-functional stakeholders in your past experience and your framework for resolution.',
+              expected_concepts: ['cac', 'ltv', 'payback', 'retention', 'margin'],
               difficulty: 'hard',
               weight: 0.35,
               rationale: 'Tests behavioral leadership and stakeholder alignment.'
             },
             {
               id: 'viva_biz_3',
+              question_id: 'viva_biz_3',
+              function_name: 'executive_stakeholder_tradeoffs',
+              file: 'operations/stakeholder_mgmt.doc',
+              line_number: 45,
               question: "You highlighted skills in " + topSkillsStr + ". If your primary acquisition channel dropped 30% month-over-month, walk through your 48-hour diagnostic protocol.",
-              difficulty: 'hard',
+              expected_concepts: ['alignment', 'kpi', 'roadmap', 'mitigation', 'governance'],
+              difficulty: 'medium',
               weight: 0.30,
               rationale: 'Evaluates analytical depth, root-cause diagnostics, and rapid triage under uncertainty.'
             }
           ] : [
             {
               id: 'viva_res_1',
+              question_id: 'viva_res_1',
+              function_name: 'architectural_tradeoffs',
+              file: 'src/architecture/design.md',
+              line_number: 22,
               question: "Your resume lists experience with " + pairSkillsStr + ". Explain the core architectural trade-offs of your chosen implementation.",
+              expected_concepts: ['architecture', 'tradeoff', 'scalability', 'concurrency', 'latency'],
               difficulty: 'medium',
               weight: 0.35,
               rationale: 'Evaluates hands-on technical depth based on verified resume claims.'
             },
             {
               id: 'viva_res_2',
+              question_id: 'viva_res_2',
+              function_name: 'production_incident_debug',
+              file: 'src/monitoring/telemetry.ts',
+              line_number: 58,
               question: "In your project '" + firstProjName + "', walk us through your error handling and edge-case protection strategy.",
+              expected_concepts: ['debugging', 'telemetry', 'incident', 'root-cause', 'recovery'],
               difficulty: 'hard',
               weight: 0.35,
               rationale: 'Verifies production readiness and defensive architecture.'
             },
             {
               id: 'viva_res_3',
+              question_id: 'viva_res_3',
+              function_name: 'scale_and_optimization',
+              file: 'src/core/optimizer.py',
+              line_number: 104,
               question: 'How do you monitor and benchmark performance bottlenecks once your system or workflow scales 10x?',
-              difficulty: 'hard',
+              expected_concepts: ['optimization', 'caching', 'indexing', 'bottleneck', 'profiling'],
+              difficulty: 'medium',
               weight: 0.30,
               rationale: 'Assesses scalability mindset and observability.'
+            }
+          ];
+
+          const synthesizedFunctions: ComplexFunction[] = isBusinessTrack ? [
+            {
+              file: 'strategy/business_case.md',
+              function_name: 'business_case_roi',
+              complexity: 8,
+              line_number: 14,
+              snippet: `# Strategic Business Case & ROI Framework\ndef business_case_roi(budget, revenue, attribution_rate):\n    incremental_margin = revenue * attribution_rate\n    roi = (incremental_margin - budget) / budget\n    return {"roi": roi, "payback_ratio": incremental_margin / budget}`
+            },
+            {
+              file: 'gtm/market_analysis.xlsx',
+              function_name: 'market_penetration_cac',
+              complexity: 7,
+              line_number: 28,
+              snippet: `# Market Penetration & CAC Payback Model\ndef market_penetration_cac(cac, ltv, retention_rate):\n    payback_months = cac / (ltv * retention_rate)\n    return {"payback_months": payback_months, "unit_margin": ltv - cac}`
+            },
+            {
+              file: 'operations/stakeholder_mgmt.doc',
+              function_name: 'executive_stakeholder_tradeoffs',
+              complexity: 9,
+              line_number: 45,
+              snippet: `# Executive Stakeholder Trade-off & Governance Protocol\ndef executive_stakeholder_tradeoffs(kpi_targets, roadmap_milestones):\n    alignment_score = evaluate_alignment(kpi_targets)\n    return mitigate_governance_risk(alignment_score, roadmap_milestones)`
+            }
+          ] : [
+            {
+              file: 'src/architecture/design.md',
+              function_name: 'architectural_tradeoffs',
+              complexity: 8,
+              line_number: 22,
+              snippet: `// System Architecture & Scalability Blueprint\nexport function architectural_tradeoffs(req: Request, latencyConstraintMs: number) {\n  const strategy = latencyConstraintMs < 50 ? 'in-memory-cache' : 'replicated-db';\n  return { strategy, maxConcurrency: 10000 };\n}`
+            },
+            {
+              file: 'src/monitoring/telemetry.ts',
+              function_name: 'production_incident_debug',
+              complexity: 9,
+              line_number: 58,
+              snippet: `// Telemetry & Incident Root Cause Recovery\nexport async function production_incident_debug(incidentId: string) {\n  const telemetryLogs = await fetchTelemetryStream(incidentId);\n  return isolateRootCause(telemetryLogs);\n}`
+            },
+            {
+              file: 'src/core/optimizer.py',
+              function_name: 'scale_and_optimization',
+              complexity: 8,
+              line_number: 104,
+              snippet: `# Scale & Optimization Engine\ndef scale_and_optimization(workload_stream, cache_tier):\n    bottlenecks = profile_bottlenecks(workload_stream)\n    return apply_indexing_and_caching(bottlenecks, cache_tier)`
             }
           ];
 
@@ -303,6 +381,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             analysis_status: 'COMPLETED',
             total_commits: 12,
             viva_questions: synthesizedViva,
+            complex_functions: synthesizedFunctions,
             detected_files: resumeData?.projects?.map(p => p.name + '.spec') || ['resume_summary.md', 'portfolio_profile.json'],
             skill_evidence: defaultSkills.reduce((acc: any, skill: string) => {
               acc[skill] = ['resume/' + skill.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_claim.pdf'];

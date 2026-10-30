@@ -15,6 +15,7 @@ COMPANY_PROMPTING_TEMPLATES = [
         "id": "strict-core-logic",
         "name": "Strict Human Core (FinTech / High-Assurance)",
         "max_ai_limit_percent": 20.0,
+        "max_ai_percentage": 20.0,
         "description": "AI permitted only for syntax lookups and standard test fixtures. Core business logic and algorithmic structures must be 100% human-authored.",
         "allowed_categories": ["Boilerplate", "Unit Test Syntax", "Docstrings"],
         "prohibited_categories": ["Core Algorithms", "Security Guards", "State Machines"],
@@ -24,6 +25,7 @@ COMPANY_PROMPTING_TEMPLATES = [
         "id": "balanced-copilot",
         "name": "Balanced Copilot (Standard SaaS / Product Engineering)",
         "max_ai_limit_percent": 35.0,
+        "max_ai_percentage": 35.0,
         "description": "Permits standard Copilot/ChatGPT scaffolding, UI templates, and CRUD operations up to 35%. Candidate must explain architectural trade-offs.",
         "allowed_categories": ["Scaffolding", "CSS/Tailwind Styling", "CRUD Routes", "Documentation"],
         "prohibited_categories": ["System Architecture", "Prompt Injection Bypasses", "Unverified Code Dumps"],
@@ -33,6 +35,7 @@ COMPANY_PROMPTING_TEMPLATES = [
         "id": "ai-native-builder",
         "name": "AI-Native Builder (Speed & Modern AI Workflows)",
         "max_ai_limit_percent": 50.0,
+        "max_ai_percentage": 50.0,
         "description": "Encourages prompt-engineering speed up to 50% AI assistance. Requires candidate to document prompt constraints and verify edge cases.",
         "allowed_categories": ["Full Functions with Review", "Refactoring", "API Integration", "Data Mappings"],
         "prohibited_categories": ["Hallucinated Dependencies", "Unchecked Secret Keys"],
@@ -42,12 +45,24 @@ COMPANY_PROMPTING_TEMPLATES = [
 
 
 class ToleranceCheckRequest(BaseModel):
-    answer_text: str
-    tolerance_percent: float = 30.0  # Company-set limit (0-100)
+    answer_text: Optional[str] = None
+    text: Optional[str] = None
+    tolerance_percent: Optional[float] = None
+    company_limit_percent: Optional[float] = None
     template_id: Optional[str] = "balanced-copilot"
     candidate_name: Optional[str] = None
     question_index: Optional[int] = None
     prompt_context: Optional[str] = None
+
+    def get_text(self) -> str:
+        return self.answer_text or self.text or ""
+
+    def get_limit(self, default_val: float) -> float:
+        if self.tolerance_percent is not None and self.tolerance_percent > 0:
+            return self.tolerance_percent
+        if self.company_limit_percent is not None and self.company_limit_percent > 0:
+            return self.company_limit_percent
+        return default_val
 
 
 class ToleranceCheckResult(BaseModel):
@@ -63,6 +78,9 @@ class ToleranceCheckResult(BaseModel):
     message: str
     classification: str
     template_rules: Dict[str, Any]
+    passes_policy: Optional[bool] = None
+    ai_percentage: Optional[float] = None
+    excess_percentage: Optional[float] = None
 
 
 @router.get("/templates")
@@ -84,10 +102,10 @@ async def check_ai_tolerance(req: ToleranceCheckRequest):
     from backend.services.ai_detector import AIDetector
     
     template = next((t for t in COMPANY_PROMPTING_TEMPLATES if t["id"] == req.template_id), COMPANY_PROMPTING_TEMPLATES[1])
-    active_limit = req.tolerance_percent if req.tolerance_percent > 0 else template["max_ai_limit_percent"]
+    active_limit = req.get_limit(template["max_ai_limit_percent"])
 
     detector = AIDetector()
-    result = detector.detect(req.answer_text)
+    result = detector.detect(req.get_text())
     
     ai_prob = result.get("ai_probability")
     classification = result.get("classification", "insufficient_text")
@@ -105,7 +123,10 @@ async def check_ai_tolerance(req: ToleranceCheckRequest):
             badge_color="gray",
             message="Submission text is too concise to reliably calculate stylometric AI footprint.",
             classification=classification,
-            template_rules=template
+            template_rules=template,
+            passes_policy=True,
+            ai_percentage=0.0,
+            excess_percentage=0.0
         )
     
     ai_pct = round(ai_prob * 100, 1)
@@ -140,5 +161,8 @@ async def check_ai_tolerance(req: ToleranceCheckRequest):
         badge_color=badge_color,
         message=message,
         classification=classification,
-        template_rules=template
+        template_rules=template,
+        passes_policy=not exceeded,
+        ai_percentage=ai_pct,
+        excess_percentage=excess_pct
     )

@@ -2,6 +2,7 @@ import os
 import json
 import csv
 import io
+import re
 import hashlib
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
@@ -10,6 +11,7 @@ import urllib.parse
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from backend.services.college_classifier import CollegeTierClassifier
+from backend.services.injection_scanner import InjectionScanner
 from backend.services.n8n_service import N8nService
 from backend.services.email_formatter import EmailFormatter
 
@@ -78,11 +80,12 @@ def ingest_batch_candidates(req: BatchIngestRequest):
     applicants = []
     
     if req.csv_text:
-        lines = [line.strip() for line in req.csv_text.strip().splitlines() if line.strip()]
+        cleaned_csv = req.csv_text.lstrip("\ufeff\u200b\u200c\u200d\u200e\u200f\u2060").strip()
+        lines = [line.strip() for line in cleaned_csv.splitlines() if line.strip()]
         if not lines:
             raise HTTPException(status_code=400, detail="Uploaded CSV file is empty.")
 
-        f = io.StringIO(req.csv_text.strip())
+        f = io.StringIO(cleaned_csv)
         reader = csv.DictReader(f)
         fieldnames = [str(fn).strip().lower().replace(" ", "_").replace("-", "_") for fn in (reader.fieldnames or [])]
         has_header = any(h in fieldnames for h in ["name", "candidate_name", "candidate", "github_url", "repo_url", "college", "university"])
@@ -130,7 +133,7 @@ def ingest_batch_candidates(req: BatchIngestRequest):
                 })
         else:
             # Positional parsing for headerless CSV rows
-            f_raw = io.StringIO(req.csv_text.strip())
+            f_raw = io.StringIO(cleaned_csv)
             raw_reader = csv.reader(f_raw)
             for row in raw_reader:
                 cols = [c.strip() for c in row if c is not None and c.strip()]
@@ -235,13 +238,6 @@ def ingest_batch_candidates(req: BatchIngestRequest):
     clone_count = 0
     dump_count = 0
 
-    injection_keywords = [
-        "prompt_injection", "prompt-injection", "injection", "jailbreak", "adversarial",
-        "ignore previous instructions", "ignore-previous", "bypass", "system prompt",
-        "override", "dan-mode", "exploit", "payload", "force 10/10", "developer mode",
-        "evil", "hack", "inject", "satyamtrivedi07"
-    ]
-
     analyzed_candidates = []
     for i, a in enumerate(applicants):
         repo_url = _normalize_github_repo_url(a["github_url"])
@@ -249,10 +245,13 @@ def ingest_batch_candidates(req: BatchIngestRequest):
         candidate_hash = hashlib.sha256(f"{candidate_id}:{repo_url}".encode()).hexdigest()
         lowered = f"{repo_url} {a['name']} {a.get('role', '')} {a.get('email', '')}".lower()
 
-        is_inj = any(k in lowered for k in injection_keywords)
-        is_cln = not is_inj and any(k in lowered for k in [
-            "clone", "traversy", "netflix", "amazon", "spotify", "code-with-harry", "apna-college", "tutorial", "template"
-        ])
+        # Check for genuine adversarial prompt injection directives via compiled InjectionScanner rules
+        is_inj = (
+            any(re.search(rule[0], lowered) for rule in InjectionScanner.RULES)
+            or bool(re.search(r'(?i)\b(?:prompt[\s\-_]+injection|adversarial[\s\-_]+injection|indirect[\s\-_]+prompt[\s\-_]+injection|prompt[\s\-_]+injected[\s\-_]+repo|jailbreak)\b', lowered))
+        )
+        # Ingestion validates repository URLs without guessing plagiarism or AST cloning from URL substrings
+        is_cln = False
 
         if is_inj:
             auth = 0
@@ -266,14 +265,6 @@ def ingest_batch_candidates(req: BatchIngestRequest):
                 "highest_severity": "CRITICAL",
                 "summary": "🚨 CRITICAL SECURITY ALERT: Adversarial Prompt Injection detected in repository source/README."
             }
-        elif is_cln:
-            auth = 25
-            status = "FLAGGED_CLONE"
-            headline = "High probability tutorial clone detected."
-            viva_status = "BLOCKED_CLONE"
-            viva_blocked = True
-            viva_block_reason = "Tutorial clone detected; viva blocked."
-            security_scan = None
         else:
             auth = 85
             status = "PENDING_FORENSIC_ANALYSIS"
@@ -292,38 +283,38 @@ def ingest_batch_candidates(req: BatchIngestRequest):
             "repo_url": repo_url,
             "project_type": a.get("role", "Backend Engineer"),
             "project_name": a.get("role", "Backend Engineer"),
-            "analysis_status": "COMPLETED" if (is_inj or is_cln) else "PENDING_FORENSIC_ANALYSIS",
+            "analysis_status": "COMPLETED" if is_inj else "PENDING_FORENSIC_ANALYSIS",
             "verification_reason": "Repository URL accepted; security and authenticity checks executed.",
-            "total_loc": 500 if not is_cln else 120,
+            "total_loc": 500,
             "authenticity_score": auth,
-            "is_clone": is_cln,
+            "is_clone": False,
             "is_prompt_injected": is_inj,
             "has_prompt_injection": is_inj,
             "security_scan": security_scan,
-            "matched_tutorial": {"name": "Online Video Tutorial", "similarity_score": 0.89} if is_cln else None,
+            "matched_tutorial": None,
             "viva_score": 0,
             "viva_status": viva_status,
             "viva_blocked": viva_blocked,
             "viva_block_reason": viva_block_reason,
             "detected_files": ["main.py", "README.md"],
             "git_dna": {
-                "total_commits": 15 if not is_cln else 2,
-                "time_span_days": 20 if not is_cln else 1,
-                "burst_ratio": 0.99 if is_inj else (0.85 if is_cln else 0.15),
+                "total_commits": 15,
+                "time_span_days": 20,
+                "burst_ratio": 0.99 if is_inj else 0.15,
                 "deletion_ratio": 0.12,
-                "organic_growth": not is_cln and not is_inj,
+                "organic_growth": not is_inj,
                 "history_verified": True,
                 "confidence": 0.92,
                 "authenticity_score": auth,
-                "summary": "Adversarial injection payload detected." if is_inj else ("Tutorial clone matched." if is_cln else "Verified authentic progression.")
+                "summary": "Adversarial injection payload detected." if is_inj else "Verified authentic progression."
             },
             "proof_card": {
                 "status": status,
                 "has_prompt_injection": is_inj,
                 "headline": headline,
-                "strengths": ["Automated security filter flagged adversarial injection"] if is_inj else (["Basic project scaffold"] if is_cln else ["Clean architectural modularity"]),
-                "growth_area": "Sanitize prompt injection payloads." if is_inj else ("Build authentic code from scratch." if is_cln else "Expand test coverage."),
-                "specific_action": "Remove adversarial prompt directives." if is_inj else ("Build organic commit history." if is_cln else "Complete live technical defense viva."),
+                "strengths": ["Automated security filter flagged adversarial injection"] if is_inj else ["Clean architectural modularity"],
+                "growth_area": "Sanitize prompt injection payloads." if is_inj else "Expand test coverage.",
+                "specific_action": "Remove adversarial prompt directives." if is_inj else "Complete live technical defense viva.",
                 "tamper_proof_hash": f"SHA256:{candidate_hash}"
             }
         })
@@ -339,6 +330,17 @@ def ingest_batch_candidates(req: BatchIngestRequest):
         "clone_clusters": cluster_list,
         "cohort": analyzed_candidates
     }
+
+
+@router.post("/upload-csv")
+async def upload_csv_file(file: UploadFile = File(...)):
+    """Accepts multipart CSV file upload and ingests candidates."""
+    content = await file.read()
+    try:
+        csv_text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        csv_text = content.decode("latin-1")
+    return ingest_batch_candidates(BatchIngestRequest(csv_text=csv_text))
 
 
 @router.post("/auto-shortlist")
@@ -418,23 +420,21 @@ def evaluate_cohort(req: EvaluateCohortRequest):
         cid = c.get("candidate_id") or f"cand_batch_{idx:03d}"
         email = c.get("email") or f"{cid}@example.edu"
 
-        lowered = f"{repo_url} {c.get('project_type', '')} {c.get('project_name', '')} {name}".lower()
+        lowered = f"{repo_url} {role} {c.get('project_name', '')} {name}".lower()
 
         # Check for Prompt Injection payloads in repo URL, project name, notes, comments, or explicit candidate flags
-        injection_keywords = [
-            "prompt_injection", "prompt-injection", "injection", "jailbreak", "adversarial",
-            "ignore previous instructions", "ignore-previous", "bypass", "system prompt",
-            "override", "dan-mode", "exploit", "payload", "force 10/10", "developer mode",
-            "evil", "hack", "inject", "satyamtrivedi07"
-        ]
         has_injection_flag = bool(
             c.get("has_prompt_injection") or 
             c.get("is_prompt_injected") or 
-            c.get("security_scan", {}).get("is_prompt_injected") or
+            (c.get("security_scan") or {}).get("is_prompt_injected") or
             (c.get("proof_card") or {}).get("has_prompt_injection") or
             (c.get("proof_card") or {}).get("status") == "FLAGGED_ADVERSARIAL_INJECTION"
         )
-        is_prompt_injected = has_injection_flag or any(k in lowered for k in injection_keywords)
+        is_prompt_injected = (
+            has_injection_flag
+            or any(re.search(rule[0], lowered) for rule in InjectionScanner.RULES)
+            or bool(re.search(r'(?i)\b(?:prompt[\s\-_]+injection|adversarial[\s\-_]+injection|indirect[\s\-_]+prompt[\s\-_]+injection|prompt[\s\-_]+injected[\s\-_]+repo|jailbreak)\b', lowered))
+        )
 
         # Check for clone signatures in repo, project name, or role
         is_clone = not is_prompt_injected and any(k in lowered for k in [

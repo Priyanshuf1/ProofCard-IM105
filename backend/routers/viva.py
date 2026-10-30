@@ -9,10 +9,18 @@ router = APIRouter(prefix="/api/viva", tags=["Dynamic Code Viva"])
 class VivaSubmission(BaseModel):
     candidate_id: str
     question_id: str
-    question_text: str
-    expected_concepts: List[str]
-    candidate_answer: str
+    question_text: Optional[str] = None
+    question: Optional[str] = None
+    expected_concepts: List[str] = []
+    candidate_answer: Optional[str] = None
+    answer: Optional[str] = None
     gemini_api_key: Optional[str] = None
+
+    def get_question_text(self) -> str:
+        return self.question_text or self.question or ""
+
+    def get_candidate_answer(self) -> str:
+        return self.candidate_answer or self.answer or ""
 
 class BatchVivaSubmission(BaseModel):
     candidate_id: str
@@ -43,9 +51,9 @@ def evaluate_single_answer(
     engine = VivaEngine()
     active_key = submission.gemini_api_key or x_gemini_api_key
     result = engine.evaluate_answer(
-        question_text=submission.question_text,
+        question_text=submission.get_question_text(),
         expected_concepts=submission.expected_concepts,
-        candidate_answer=submission.candidate_answer,
+        candidate_answer=submission.get_candidate_answer(),
         gemini_api_key=active_key
     )
     return {

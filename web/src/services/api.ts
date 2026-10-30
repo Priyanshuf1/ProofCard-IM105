@@ -278,6 +278,9 @@ export async function evaluateVivaAnswer(
   expectedConcepts: string[],
   candidateAnswer: string
 ): Promise<any> {
+  const safeConcepts = Array.isArray(expectedConcepts) ? expectedConcepts : [];
+  const safeQuestionId = questionId || 'viva_q_default';
+
   const geminiKey = typeof window !== 'undefined'
     ? (localStorage.getItem('gemini_api_key') || (import.meta as any).env?.VITE_GEMINI_API_KEY)
     : undefined;
@@ -293,9 +296,9 @@ export async function evaluateVivaAnswer(
       headers,
       body: JSON.stringify({
         candidate_id: candidateId,
-        question_id: questionId,
+        question_id: safeQuestionId,
         question_text: questionText,
-        expected_concepts: expectedConcepts,
+        expected_concepts: safeConcepts,
         candidate_answer: candidateAnswer,
         gemini_api_key: geminiKey
       }),
@@ -381,10 +384,10 @@ export async function evaluateVivaAnswer(
   if (isNonAnswer(text) || isGibberish(text)) {
     return {
       candidate_id: candidateId,
-      question_id: questionId,
+      question_id: safeQuestionId,
       score: 0,
       concepts_demonstrated: [],
-      concepts_missing: expectedConcepts,
+      concepts_missing: safeConcepts,
       feedback: 'Response is empty, non-answer, joke, or unparseable gibberish. Zero technical concepts demonstrated (Score: 0/10).',
       passed: false,
       ai_detection: {
@@ -457,7 +460,22 @@ export async function evaluateVivaAnswer(
     telemetry: ["metrics", "logging", "tracing", "observability", "latency"],
     validation: ["sanitize", "schema", "assert", "types", "defense", "boundary", "sanitization"],
     comparison: ["constant-time", "hmac", "compare_digest", "timing", "side-channel", "fixed-time"],
-    normalization: ["crlf", "newline", "newlines", "linebreaks", "whitespace", "posix", "windows", "cross-platform"]
+    normalization: ["crlf", "newline", "newlines", "linebreaks", "whitespace", "posix", "windows", "cross-platform"],
+    roi: ["roi", "return", "profit", "margin", "payback", "revenue", "irr", "npv", "financial"],
+    metrics: ["metrics", "kpi", "kpis", "measure", "measurement", "analytics", "tracking", "okr", "okrs"],
+    attribution: ["attribution", "channel", "source", "cac", "touchpoint", "multi-touch", "credit"],
+    conversion: ["conversion", "funnel", "cvr", "signup", "purchase", "activation", "lead", "pipeline"],
+    budget: ["budget", "spend", "allocation", "cost", "expenditure", "capital"],
+    cac: ["cac", "acquisition", "cost", "cpa", "blended"],
+    ltv: ["ltv", "clv", "lifetime", "value", "arpu"],
+    payback: ["payback", "break-even", "recovery", "amortization"],
+    retention: ["retention", "churn", "renewal", "sticky", "cohort", "engagement"],
+    margin: ["margin", "gross", "contribution", "ebitda", "profitability"],
+    alignment: ["alignment", "consensus", "agreement", "buy-in", "sync", "collaboration", "shared"],
+    stakeholder: ["stakeholder", "stakeholders", "executive", "client", "customer", "partner", "leadership", "sponsor"],
+    governance: ["governance", "compliance", "policy", "audit", "oversight", "controls"],
+    roadmap: ["roadmap", "milestone", "timeline", "deliverables", "strategy", "planning"],
+    mitigation: ["mitigation", "risk", "contingency", "prevention", "buffer"]
   };
 
   const CLUSTER_MAP: Record<string, Set<string>> = {};
@@ -479,7 +497,7 @@ export async function evaluateVivaAnswer(
   const missing: string[] = [];
   const consumedTokens = new Set<string>();
 
-  expectedConcepts.forEach(concept => {
+  safeConcepts.forEach(concept => {
     const conceptNormalized = concept.toLowerCase().replace(/-/g, ' ');
     if (ansNormalized.includes(conceptNormalized)) {
       demonstrated.push(concept);
@@ -540,10 +558,10 @@ export async function evaluateVivaAnswer(
     const topMissing = missing.slice(0, 2);
     return {
       candidate_id: candidateId,
-      question_id: questionId,
+      question_id: safeQuestionId,
       score: 0,
       concepts_demonstrated: [],
-      concepts_missing: expectedConcepts,
+      concepts_missing: safeConcepts,
       feedback: `Did not address any required technical concepts: ${topMissing.join(', ')} (Score: 0/10).`,
       passed: false,
       ai_detection: {
@@ -571,7 +589,9 @@ export async function evaluateVivaAnswer(
     "schema", "validation", "boundary", "mock", "fixture", "assertion",
     "deadlock", "crlf", "newline", "endianness", "serialization", "deserialization",
     "digest", "byte", "bytes", "timing", "constant-time", "tamper", "tampering",
-    "hashing", "hashes", "side-channel", "attack"
+    "hashing", "hashes", "side-channel", "attack",
+    "roi", "cac", "ltv", "attribution", "conversion", "retention", "margin", "payback",
+    "kpi", "metrics", "governance", "stakeholder", "budget", "alignment", "roadmap", "mitigation"
   ]);
 
   const matchedVocab = Array.from(TECH_VOCAB).filter(tv => 
@@ -579,7 +599,7 @@ export async function evaluateVivaAnswer(
   );
 
   const nDem = demonstrated.length;
-  const ratio = nDem / Math.max(expectedConcepts.length, 1);
+  const ratio = nDem / Math.max(safeConcepts.length, 1);
 
   const rationaleKeywords = [
     "because", "in order to", "to ensure", "ensure", "ensuring", "ensures",
@@ -613,14 +633,14 @@ export async function evaluateVivaAnswer(
   } else if (passed) {
     feedback = `Solid technical competence. Demonstrated command of: ${demonstrated.slice(0, 2).join(', ')} (Score: ${finalScore}/10).`;
   } else if (finalScore >= 4) {
-    feedback = `Borderline response. Mentioned baseline concepts but lacked depth on: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
+    feedback = `Borderline response. Mentioned baseline concepts but lacked depth on: ${(missing.slice(0, 2).length > 0 ? missing.slice(0, 2) : safeConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
   } else {
-    feedback = `Weak buzzword response without architectural mechanism. Missing: ${(missing.slice(0, 2) || expectedConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
+    feedback = `Weak buzzword response without architectural mechanism. Missing: ${(missing.slice(0, 2).length > 0 ? missing.slice(0, 2) : safeConcepts.slice(0, 2)).join(', ')} (Score: ${finalScore}/10).`;
   }
 
   return {
     candidate_id: candidateId,
-    question_id: questionId,
+    question_id: safeQuestionId,
     score: finalScore,
     concepts_demonstrated: demonstrated,
     concepts_missing: missing,
