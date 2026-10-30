@@ -29,7 +29,8 @@ const RadarSkillChart: React.FC<{
   viva: number;
   isClone?: boolean;
   isAdversarial?: boolean;
-}> = ({ authenticity, viva, isClone, isAdversarial }) => {
+  isNonTech?: boolean;
+}> = ({ authenticity, viva, isClone, isAdversarial, isNonTech = false }) => {
   const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
 
   // Enlarged center and radius for maximum visual prominence
@@ -43,7 +44,45 @@ const RadarSkillChart: React.FC<{
   const vCodeQuality = isClone ? 25 : (isAdversarial ? 10 : Math.min(95, authenticity + 3));
   const vViva = viva > 0 ? Math.min(100, Math.max(10, viva * 10)) : (isClone ? 10 : 20);
 
-  const axes = [
+  // isNonTech passed from parent candidate profile
+
+  const axes = isNonTech ? [
+    { 
+      id: 'framing', 
+      label: 'Problem Framing', 
+      val: Math.min(95, Math.max(50, authenticity + 4)), 
+      angle: -90,
+      desc: 'Modular problem decomposition, target market pain points, and user journey clarity.' 
+    },
+    { 
+      id: 'impact', 
+      label: 'Business Impact', 
+      val: Math.min(96, Math.max(45, authenticity + 2)), 
+      angle: -18,
+      desc: 'Empirical ROI measurement, conversion delta, retention curves, and financial viability.' 
+    },
+    { 
+      id: 'originality', 
+      label: 'Case Originality', 
+      val: Math.min(98, Math.max(40, authenticity)), 
+      angle: 54,
+      desc: 'Genuine data grounding, zero synthetic ChatGPT prompt dumps, and authentic research.' 
+    },
+    { 
+      id: 'stakeholder', 
+      label: 'Stakeholder Strategy', 
+      val: Math.min(94, Math.max(50, authenticity - 2)), 
+      angle: 126,
+      desc: 'Cross-functional engineering alignment, roadmap prioritization, and conflict resolution.' 
+    },
+    { 
+      id: 'viva', 
+      label: viva > 0 ? 'Case Viva' : 'Viva (Pending)', 
+      val: vViva, 
+      angle: 198,
+      desc: viva > 0 ? 'Verbal business case defense, trade-off clarity, and crisis protocol rigor.' : 'Oral case defense pending candidate completion.' 
+    }
+  ] : [
     { 
       id: 'arch', 
       label: 'Architecture', 
@@ -643,6 +682,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               viva={hasCompletedViva ? (candidate.viva_score ?? 0) : 0}
               isClone={isClone}
               isAdversarial={isAdversarial}
+              isNonTech={Boolean(candidate.stream_track === 'NON_TECHNICAL' || /mba|business|product|marketing|design|hr/i.test(candidate.project_type || ''))}
             />
           </div>
 

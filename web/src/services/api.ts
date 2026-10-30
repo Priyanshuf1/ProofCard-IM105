@@ -1139,6 +1139,7 @@ export interface ResumeParseResult {
   projects: Array<{ name: string; tech: string[]; description: string; url?: string }>;
   experience: Array<{ company: string; role: string; duration: string }>;
   role_type: string;
+  stream_track?: 'TECHNICAL' | 'NON_TECHNICAL';
   raw_text_snippet: string;
   parse_confidence: number;
   source: string;
@@ -1212,6 +1213,7 @@ export async function parseResumePdf(file: File): Promise<ResumeParseResult> {
         { company: 'Enterprise / Industry Practice', role: detectedRole, duration: '2023 - Present' }
       ],
       role_type: detectedRole,
+      stream_track: (detectedRole === 'Business/MBA' || detectedRole === 'Product Manager' || detectedRole === 'Designer') ? 'NON_TECHNICAL' : 'TECHNICAL',
       raw_text_snippet: rawText.substring(0, 200),
       parse_confidence: 0.85,
       source: 'client_fallback'

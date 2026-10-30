@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
+  Briefcase,
   Zap, 
   Clock, 
   CheckCircle, 
@@ -600,9 +601,14 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             </div>
 
             <h1 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight font-sans flex flex-wrap items-center gap-2">
-              <span>AI Viva Arena</span>
+              <span>{candidate.stream_track === 'NON_TECHNICAL' ? '💼 Executive & Strategy Case Defense Arena' : '⚡ AI Code Defense Arena'}</span>
               <span className="text-sm text-[#4b5563] font-semibold font-mono">
                 ({candidate.name})
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                candidate.stream_track === 'NON_TECHNICAL' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>
+                {candidate.stream_track === 'NON_TECHNICAL' ? 'Non-Technical Track' : 'Technical Track'}
               </span>
             </h1>
           </div>
@@ -974,8 +980,12 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs text-[#4b5563] font-mono mb-2">
             <span className="flex items-center gap-1.5">
-              <Code className="w-3.5 h-3.5 text-[#4b5563]" />
-              <span>Extracted Target: <strong>{currentQ.function_name || 'core_logic'}()</strong> in {currentQ.file || 'resume'}:{currentQ.line_number || 1}</span>
+              {candidate.stream_track === 'NON_TECHNICAL' ? (
+                <Briefcase className="w-3.5 h-3.5 text-purple-600" />
+              ) : (
+                <Code className="w-3.5 h-3.5 text-[#4b5563]" />
+              )}
+              <span>{candidate.stream_track === 'NON_TECHNICAL' ? 'Strategic Initiative:' : 'Extracted Target:'} <strong>{currentQ.function_name || 'core_logic'}()</strong> in {currentQ.file || 'resume'}:{currentQ.line_number || 1}</span>
             </span>
             <span className={`px-2 py-0.5 rounded uppercase font-bold text-[10px] ${
               currentQ.difficulty === 'hard'
