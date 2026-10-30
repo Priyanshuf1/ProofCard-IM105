@@ -19,6 +19,7 @@ import {
   Code
 } from 'lucide-react';
 import { CandidateProfile, VivaQuestion, ComplexFunction } from '../types';
+import { ensureTenVivaQuestions } from '../utils/vivaQuestionGenerator';
 import { 
   evaluateVivaAnswer, 
   generateMoreVivaQuestions, 
@@ -110,10 +111,16 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     );
   }
 
-  const [questions, setQuestions] = useState<VivaQuestion[]>(candidate.viva_questions || []);
+  const initialSetup = useMemo(
+    () => ensureTenVivaQuestions(candidate),
+    [candidate?.candidate_id]
+  );
+  const [isVivaActive, setIsVivaActive] = useState<boolean>(false);
+  const [questions, setQuestions] = useState<VivaQuestion[]>(initialSetup.questions);
+  const [complexFunctions, setComplexFunctions] = useState<ComplexFunction[]>(initialSetup.complexFunctions);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
   const [evaluatedAnswers, setEvaluatedAnswers] = useState<Record<number, any>>({});
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -279,19 +286,19 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     const targetQ = questions[currentQuestionIndex];
     const { seconds } = calculateQuestionTime(targetQ);
     setTimeLeft(seconds);
-    setIsTimerRunning(!evaluatedAnswers[currentQuestionIndex]);
+    setIsTimerRunning(isVivaActive && !evaluatedAnswers[currentQuestionIndex]);
     setUserAnswer('');
-  }, [currentQuestionIndex, questions]);
+  }, [currentQuestionIndex, questions, isVivaActive]);
 
   // Sync questions when candidate changes
   useEffect(() => {
     stopVoiceDefense(true);
     setVoiceError(null);
-    if (candidate.viva_questions && candidate.viva_questions.length > 0) {
-      setQuestions(candidate.viva_questions);
-    } else {
-      setQuestions([]);
-    }
+    setIsVivaActive(false);
+    setIsTimerRunning(false);
+    const setup = ensureTenVivaQuestions(candidate);
+    setQuestions(setup.questions);
+    setComplexFunctions(setup.complexFunctions);
     setCurrentQuestionIndex(0);
     setEvaluatedAnswers({});
   }, [candidate.candidate_id]);
@@ -540,8 +547,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   // Synchronize snippet tab with the current active question
   useEffect(() => {
-    if (!candidate?.complex_functions || candidate.complex_functions.length === 0) return;
-    const funcs = candidate.complex_functions;
+    const funcs = complexFunctions.length > 0 ? complexFunctions : (candidate?.complex_functions || []);
+    if (funcs.length === 0) return;
     const matchIdx = funcs.findIndex(
       f => f.function_name === currentQ?.function_name || f.file === currentQ?.file
     );
@@ -552,14 +559,16 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     } else {
       setSelectedFuncIndex(0);
     }
-  }, [currentQuestionIndex, currentQ?.function_name, currentQ?.file, candidate?.complex_functions]);
+  }, [currentQuestionIndex, currentQ?.function_name, currentQ?.file, complexFunctions, candidate?.complex_functions]);
 
   // Derived active snippet to display directly below the question
   const activeSnippetFunc = useMemo<ComplexFunction>(() => {
-    const funcs = candidate?.complex_functions || [];
+    const funcs = complexFunctions.length > 0 ? complexFunctions : (candidate?.complex_functions || []);
     if (funcs[selectedFuncIndex]) {
       return funcs[selectedFuncIndex];
     }
+    const match = funcs.find(f => f.function_name === currentQ?.function_name);
+    if (match) return match;
     return {
       file: currentQ?.file || 'src/main.py',
       function_name: currentQ?.function_name || 'core_implementation',
@@ -567,7 +576,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       line_number: currentQ?.line_number || 42,
       snippet: `def ${currentQ?.function_name || 'core_implementation'}():\n    # Implementation logic for ${currentQ?.file || 'src/main.py'}:${currentQ?.line_number || 42}\n    pass`
     };
-  }, [candidate?.complex_functions, selectedFuncIndex, currentQ, currentQuestionIndex]);
+  }, [complexFunctions, candidate?.complex_functions, selectedFuncIndex, currentQ, currentQuestionIndex]);
 
   if (!currentQ || questions.length === 0) {
     return (
@@ -846,6 +855,51 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             </div>
           </div>
         </div>
+      ) : !isVivaActive ? (
+        <div className="p-8 sm:p-12 rounded-2xl bg-white border border-gray-200 shadow-sm text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-200 text-[#e20001] text-xs font-bold uppercase tracking-wider mb-4">
+            <Zap className="w-4 h-4 text-[#e20001] fill-[#e20001]" />
+            <span>10 Technical Viva Questions Prepared</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight mb-2 font-sans">
+            Candidate Technical Viva
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto mb-6 leading-relaxed">
+            Ready to assess <strong>{candidate.name}</strong> on 10 verified architecture, system design, and algorithmic implementation questions derived from their source code.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8 text-left">
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="text-xs font-bold text-[#111827] uppercase tracking-wider mb-1">10 Questions</div>
+              <p className="text-xs text-gray-500">Targeted on real AST code branches & key functions.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="text-xs font-bold text-[#111827] uppercase tracking-wider mb-1">Voice & Speech</div>
+              <p className="text-xs text-gray-500">Live microphone recognition or manual text response.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="text-xs font-bold text-[#111827] uppercase tracking-wider mb-1">Anti-Bias Scoring</div>
+              <p className="text-xs text-gray-500">Scored strictly on verified code competence.</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsVivaActive(true);
+              setIsTimerRunning(true);
+              const targetQ = questions[currentQuestionIndex] || questions[0];
+              const { seconds } = calculateQuestionTime(targetQ);
+              setTimeLeft(seconds || 60);
+            }}
+            className="btn-primary text-base font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer inline-flex items-center gap-2 px-8 py-3.5"
+          >
+            <Zap className="w-5 h-5 text-white fill-white" />
+            <span>Take Viva</span>
+            <ArrowRight className="w-4 h-4 text-white" />
+          </button>
+          <p className="text-xs text-gray-400 mt-3 font-medium">Click to unlock questions, start timer, and begin oral evaluation.</p>
+        </div>
       ) : (
         <>
       {/* Question Selector & Countdown Bar */}
@@ -1032,14 +1086,14 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
               <span>Key Functions Extracted from Code</span>
             </span>
             <span className="font-mono text-xs text-[#4b5563] font-bold">
-              {candidate?.complex_functions?.length || 1} Functions Identified
+              {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length} Functions Identified
             </span>
           </div>
 
           {/* Function Tabs */}
-          {candidate?.complex_functions && candidate.complex_functions.length > 0 && (
+          {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length > 0 && (
             <div className="px-4 py-2 bg-white border-b border-[#2A241B] flex flex-wrap items-center gap-2">
-              {candidate.complex_functions.map((f, i) => {
+              {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).map((f, i) => {
                 const isSelected = selectedFuncIndex === i;
                 const isCurrentTarget = f.function_name === currentQ.function_name;
                 return (

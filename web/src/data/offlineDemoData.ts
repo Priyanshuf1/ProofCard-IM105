@@ -104,6 +104,118 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
         mock_answer: "Redis sorted sets allow O(log N) retrieval of timestamps within our sliding 1-hour window, enabling real-time Z-score calculations without querying the primary SQL database.",
         score: 10,
         feedback: "Clean temporal caching pattern."
+      },
+      {
+        question_id: "q4",
+        function_name: "verify_sha256_payload_integrity",
+        file: "backend/security/crypto_audit.py",
+        line_number: 68,
+        question: "In verify_sha256_payload_integrity ('backend/security/crypto_audit.py':68), how do you prevent timing attacks when comparing cryptographic signatures?",
+        expected_concepts: [
+          "Constant-time comparison (hmac.compare_digest)",
+          "Preventing early return on byte mismatch",
+          "Protection against statistical timing analysis"
+        ],
+        difficulty: "hard",
+        mock_answer: "We use hmac.compare_digest for constant-time byte string comparisons, ensuring that execution time remains independent of matching byte count and eliminating timing side-channels.",
+        score: 9,
+        feedback: "Clear understanding of constant-time cryptographic comparisons."
+      },
+      {
+        question_id: "q5",
+        function_name: "sanitize_incoming_telemetry",
+        file: "src/middleware/validator.ts",
+        line_number: 31,
+        question: "In sanitize_incoming_telemetry ('src/middleware/validator.ts':31), how does your schema validation guard against SSRF and prototype pollution?",
+        expected_concepts: [
+          "Strict JSON schema boundary enforcement",
+          "Freezing Object prototype prototypes",
+          "URL scheme and IP range validation"
+        ],
+        difficulty: "medium",
+        mock_answer: "We validate payloads against strict zod schemas with Object.freeze on prototype chains, blocking unsafe __proto__ keys and validating all webhook URLs against non-routable private CIDR blocks.",
+        score: 10,
+        feedback: "Robust defense against injection and privilege escalation vectors."
+      },
+      {
+        question_id: "q6",
+        function_name: "sync_distributed_cache",
+        file: "backend/cache/redis_cluster.py",
+        line_number: 144,
+        question: "In sync_distributed_cache ('backend/cache/redis_cluster.py':144), how do you resolve cache stampedes when multiple clients query an expired key simultaneously?",
+        expected_concepts: [
+          "Probabilistic early expiration (XFetch)",
+          "Distributed mutex locking (Redlock)",
+          "Stale-while-revalidate caching"
+        ],
+        difficulty: "hard",
+        mock_answer: "We implement a distributed Redis lock with a 2-second lease: the first cache miss acquires the lock to compute and re-populate the cache, while concurrent requests serve slightly stale cached data.",
+        score: 9,
+        feedback: "Solid cache stampede mitigation strategy."
+      },
+      {
+        question_id: "q7",
+        function_name: "execute_transactional_pipeline",
+        file: "backend/database/session_manager.py",
+        line_number: 95,
+        question: "In execute_transactional_pipeline ('backend/database/session_manager.py':95), how do you handle partial failures during multi-table writes?",
+        expected_concepts: [
+          "ACID atomic transaction boundary",
+          "Explicit rollback on unhandled exceptions",
+          "Idempotency keys on retried batches"
+        ],
+        difficulty: "hard",
+        mock_answer: "All writes execute inside an asynchronous ACID transaction context manager. Any unhandled exception triggers an immediate rollback, while idempotency keys prevent duplicate records on automatic retries.",
+        score: 10,
+        feedback: "Sound transactional integrity patterns."
+      },
+      {
+        question_id: "q8",
+        function_name: "throttle_client_rate_limit",
+        file: "src/services/rateLimiter.ts",
+        line_number: 52,
+        question: "In throttle_client_rate_limit ('src/services/rateLimiter.ts':52), why did you choose the Token Bucket algorithm over a Fixed Window counter?",
+        expected_concepts: [
+          "Smooth burst tolerance without edge doubling",
+          "Continuous token refill at steady rate",
+          "Fair resource allocation under spike traffic"
+        ],
+        difficulty: "medium",
+        mock_answer: "Token Bucket permits controlled traffic bursts up to the bucket capacity while maintaining a steady refill rate, preventing the double-limit traffic spikes that occur at fixed window boundaries.",
+        score: 9,
+        feedback: "Strong grasp of API rate limiting algorithms."
+      },
+      {
+        question_id: "q9",
+        function_name: "aggregate_telemetry_metrics",
+        file: "src/analytics/pipeline.py",
+        line_number: 178,
+        question: "In aggregate_telemetry_metrics ('src/analytics/pipeline.py':178), how do you compute rolling percentiles over unbounded streams with bounded memory?",
+        expected_concepts: [
+          "T-Digest or HdrHistogram approximation",
+          "Fixed-size reservoir sampling",
+          "Sub-linear memory consumption"
+        ],
+        difficulty: "hard",
+        mock_answer: "We maintain an in-memory T-Digest sketch with a compression factor of 100, which calculates p50, p95, and p99 percentiles within 0.5% accuracy while using less than 15KB of memory.",
+        score: 10,
+        feedback: "Excellent algorithmic understanding of streaming quantile sketches."
+      },
+      {
+        question_id: "q10",
+        function_name: "render_radar_geometry",
+        file: "src/components/ProofCardCanvas.tsx",
+        line_number: 210,
+        question: "In render_radar_geometry ('src/components/ProofCardCanvas.tsx':210), how do you optimize 60fps WebGL rendering on low-power mobile GPUs?",
+        expected_concepts: [
+          "Clamping devicePixelRatio to Math.min(dpr, 2)",
+          "Single shared buffer geometry",
+          "Conditional render loops (dirty-flag on demand)"
+        ],
+        difficulty: "medium",
+        mock_answer: "We clamp the device pixel ratio to 2.0 to prevent 4K rasterization overhead on mobile, reuse instanced buffer geometries, and only trigger renders on dirty state changes rather than polling 60fps unthrottled.",
+        score: 10,
+        feedback: "Outstanding WebGL performance and GPU resource optimization intuition."
       }
     ],
     viva_score: 9,
