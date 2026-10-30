@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
+  Briefcase,
   Zap, 
   Clock, 
   CheckCircle, 
@@ -229,6 +230,11 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
   );
 
+  const isNonTech = Boolean(
+    candidate.stream_track === 'NON_TECHNICAL' || 
+    /mba|business|product|marketing|recruiter|hr|design|sales|operations/i.test(candidate.project_type || '')
+  );
+
   // Web Speech API state
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState<boolean | null>(null);
@@ -292,18 +298,73 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     setUserAnswer('');
   }, [currentQuestionIndex, questions, isVivaActive]);
 
-  // Sync questions when candidate changes
+  const defaultNonTechQuestions: VivaQuestion[] = useMemo(() => [
+    {
+      question_id: 'biz_q1',
+      function_name: 'saas_onboarding_roi',
+      file: 'strategy/business_case.pdf',
+      line_number: 1,
+      question: `In your case initiative '${candidate.project_name || 'Strategic Portfolio'}', how did you measure ROI and attribute the quantified business impact against baseline churn?`,
+      expected_concepts: ['ROI attribution', 'Unit economics', 'Payback period', 'Cohort retention', 'LTV to CAC ratio'],
+      difficulty: 'hard',
+      mock_answer: 'We isolated organic lift with a 50/50 randomized holdout and measured incremental margin contribution against customer acquisition cost.',
+      score: 0,
+      feedback: 'Pending oral case evaluation.'
+    },
+    {
+      question_id: 'biz_q2',
+      function_name: 'stakeholder_priority_conflict',
+      file: 'strategy/roadmap_prioritization.pdf',
+      line_number: 1,
+      question: 'Engineering wants to spend 2 sprints refactoring tech debt, while Enterprise Sales demands 3 custom client features to close the quarterly quota. What structured framework do you apply to resolve this deadlock?',
+      expected_concepts: ['RICE / Value vs Effort scoring', 'Capacity allocation (70/20/10)', 'Opportunity cost evaluation', 'Executive stakeholder negotiation'],
+      difficulty: 'medium',
+      mock_answer: 'I implement a 70/20/10 capacity allocation where 20% of engineering bandwidth is protected for critical technical debt, and rank sales requests by net ARR impact.',
+      score: 0,
+      feedback: 'Pending oral case evaluation.'
+    },
+    {
+      question_id: 'biz_q3',
+      function_name: 'growth_triage_protocol',
+      file: 'growth/funnel_diagnostics.xlsx',
+      line_number: 1,
+      question: 'If your primary customer acquisition channel or core conversion funnel dropped 30% month-over-month overnight, walk through your systematic 48-hour diagnostic protocol.',
+      expected_concepts: ['Tracking/tag instrumentation audit', 'Step-level funnel segmentation', 'Browser/device cohort breakdown', '24-hour triage hypothesis'],
+      difficulty: 'hard',
+      mock_answer: 'Step 1: Check telemetry tags to ensure tracking did not break. Step 2: Segment drop-off by channel, device, and browser. Step 3: Inspect step-level conversion. Step 4: Formulate a 24-hr hotfix hypothesis.',
+      score: 0,
+      feedback: 'Pending oral case evaluation.'
+    }
+  ], [candidate.project_name]);
+
+  // Sync questions when candidate changes or stream changes
   useEffect(() => {
     stopVoiceDefense(true);
     setVoiceError(null);
     setIsVivaActive(false);
     setIsTimerRunning(false);
-    const setup = ensureTenVivaQuestions(candidate);
-    setQuestions(setup.questions);
-    setComplexFunctions(setup.complexFunctions);
+    if (isNonTech) {
+      const hasCodingQuestion = candidate.viva_questions?.some(q => 
+        q.question.includes('train_hybrid_ensemble') || 
+        q.question.includes('VotingClassifier') || 
+        q.question.includes('Soft voting') || 
+        q.question.includes('function') ||
+        q.file?.endsWith('.py') ||
+        q.file?.endsWith('.ts')
+      );
+      if (!candidate.viva_questions || candidate.viva_questions.length === 0 || hasCodingQuestion) {
+        setQuestions(defaultNonTechQuestions);
+      } else {
+        setQuestions(candidate.viva_questions);
+      }
+    } else {
+      const setup = ensureTenVivaQuestions(candidate);
+      setQuestions(setup.questions);
+      setComplexFunctions(setup.complexFunctions);
+    }
     setCurrentQuestionIndex(0);
     setEvaluatedAnswers({});
-  }, [candidate.candidate_id]);
+  }, [candidate.candidate_id, isNonTech, defaultNonTechQuestions]);
 
   const handleInsertSampleSpokenAnswer = () => {
     const targetQ = questions[currentQuestionIndex] || questions[0];
@@ -646,9 +707,14 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             </div>
 
             <h1 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight font-sans flex flex-wrap items-center gap-2">
-              <span>AI Viva Arena</span>
+              <span>{candidate.stream_track === 'NON_TECHNICAL' ? '💼 Executive & Strategy Case Defense Arena' : '⚡ AI Code Defense Arena'}</span>
               <span className="text-sm text-[#4b5563] font-semibold font-mono">
                 ({candidate.name})
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                candidate.stream_track === 'NON_TECHNICAL' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+              }`}>
+                {candidate.stream_track === 'NON_TECHNICAL' ? 'Non-Technical Track' : 'Technical Track'}
               </span>
             </h1>
           </div>
@@ -1062,11 +1128,70 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
 
       {/* Main Question Defense Card */}
       <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
+        {/* Stream Track Switcher Banner */}
+        <div className="p-3.5 mb-5 rounded-2xl bg-white border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+              isNonTech ? 'bg-purple-100 text-purple-700' : 'bg-red-50 text-[#e20001]'
+            }`}>
+              {isNonTech ? <Briefcase className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono uppercase font-bold text-gray-500">Active Stream:</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  isNonTech ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                  {isNonTech ? '💼 Non-Technical Branch (MBA, Strategy & Product)' : '⚡ Technical Branch (Software & ML)'}
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {isNonTech
+                  ? 'Code snippets waived. Oral defense evaluates ROI attribution, cross-functional trade-offs & crisis diagnostics.'
+                  : 'Abstract Syntax Tree and Git-DNA active. Oral defense evaluates function architecture & memory bounds.'}
+              </p>
+            </div>
+          </div>
+
+          {onSelectCandidate && cohort && cohort.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-400 font-mono">Switch candidate:</span>
+              <select
+                value={candidate.candidate_id}
+                onChange={(e) => {
+                  const found = cohort.find(c => c.candidate_id === e.target.value);
+                  if (found) onSelectCandidate(found);
+                }}
+                className="text-xs font-sans font-bold bg-gray-50 border border-gray-300 rounded-lg px-2.5 py-1.5 text-gray-800 focus:outline-none cursor-pointer"
+              >
+                {cohort.map(c => (
+                  <option key={c.candidate_id} value={c.candidate_id}>
+                    {c.name} ({c.stream_track === 'NON_TECHNICAL' ? 'MBA / Strategy' : 'Tech / Code'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
         <div className="mb-4">
-          <div className="flex items-center justify-between text-xs text-[#4b5563] font-mono mb-2">
+          <div className="flex items-center justify-between text-xs font-mono mb-2">
             <span className="flex items-center gap-1.5">
-              <Code className="w-3.5 h-3.5 text-[#4b5563]" />
-              <span>Extracted Target: <strong>{currentQ.function_name || 'core_logic'}()</strong> in {currentQ.file || 'resume'}:{currentQ.line_number || 1}</span>
+              {isNonTech ? (
+                <>
+                  <Briefcase className="w-3.5 h-3.5 text-purple-600" />
+                  <span className="text-purple-700 font-bold">
+                    Executive Strategy Target: <strong>{currentQ.function_name?.replace(/_/g, ' ').toUpperCase() || 'STRATEGIC DECISION'}</strong> ({candidate.project_name || 'Portfolio / Case Study'})
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Code className="w-3.5 h-3.5 text-[#4b5563]" />
+                  <span className="text-[#4b5563]">
+                    Extracted Target: <strong>{currentQ.function_name || 'core_logic'}()</strong> in {currentQ.file || 'repo'}:{currentQ.line_number || 1}
+                  </span>
+                </>
+              )}
             </span>
             <span className={`px-2 py-0.5 rounded uppercase font-bold text-[10px] ${
               currentQ.difficulty === 'hard'
@@ -1082,61 +1207,154 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           </h2>
         </div>
 
-        {/* KEY FUNCTIONS EXTRACTED FROM CODE (Dynamically synchronized with active question) */}
-        <div className="mb-5 rounded-2xl bg-gray-900 border border-gray-200 overflow-hidden shadow-xl">
-          <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between text-xs font-sans">
-            <span className="font-bold uppercase tracking-wider text-[#4b5563] flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-[#4b5563]" />
-              <span>Key Functions Extracted from Code</span>
-            </span>
-            <span className="font-mono text-xs text-[#4b5563] font-bold">
-              {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length} Functions Identified
-            </span>
-          </div>
-
-          {/* Function Tabs */}
-          {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length > 0 && (
-            <div className="px-4 py-2 bg-white border-b border-[#2A241B] flex flex-wrap items-center gap-2">
-              {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).map((f, i) => {
-                const isSelected = selectedFuncIndex === i;
-                const isCurrentTarget = f.function_name === currentQ.function_name;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setSelectedFuncIndex(i)}
-                    className={`px-3 py-1.5 rounded-xl font-mono text-xs transition cursor-pointer flex items-center gap-2 ${
-                      isSelected
-                        ? 'bg-[#e20001] text-white border border-gray-200 shadow-sm font-bold'
-                        : isCurrentTarget
-                        ? 'bg-white text-[#4b5563] border border-gray-200 hover:bg-amber-50'
-                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-gray-200'
-                    }`}
-                  >
-                    <span>{f.function_name}()</span>
-                    <span className="px-1.5 py-0.2 rounded bg-white text-[10px] text-[#4b5563] font-bold">
-                      Complexity: {f.complexity}
-                    </span>
-                    {isCurrentTarget && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFD166] animate-pulse"></span>
-                    )}
-                  </button>
-                );
-              })}
+        {isNonTech ? (
+          /* EXECUTIVE STRATEGIC SCENARIO & BUSINESS BRIEF CARD */
+          <div className="mb-5 rounded-2xl bg-gradient-to-br from-purple-50/60 via-white to-gray-50 border border-purple-200 overflow-hidden shadow-sm">
+            <div className="bg-purple-100/70 px-4 py-2.5 border-b border-purple-200/70 flex items-center justify-between text-xs font-sans">
+              <span className="font-bold uppercase tracking-wider text-purple-900 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-purple-700" />
+                <span>Executive Case Scenario & Strategy Brief</span>
+              </span>
+              <span className="font-mono text-xs text-purple-800 font-bold px-2 py-0.5 rounded-full bg-purple-200/80">
+                {candidate.project_type || 'Product & Strategy'}
+              </span>
             </div>
-          )}
 
-          {/* Verified Code Snippet Box */}
-          <div className="bg-[#f8fafc] rounded-b-xl overflow-hidden border border-gray-300">
-            <div className="px-4 py-2.5 bg-gray-100 border-b border-gray-200 flex items-center justify-between text-xs font-mono text-[#111827] font-bold">
-              <span>{activeSnippetFunc.file}:{activeSnippetFunc.line_number}</span>
-              <span className="text-[#e20001] font-bold">Verified Code Snippet</span>
+            {/* Scenario Navigation Tabs */}
+            <div className="px-4 py-2.5 bg-white border-b border-purple-100 flex flex-wrap items-center gap-2">
+              {[
+                { title: '1. ROI & Unit Economics', badge: 'Quantitative' },
+                { title: '2. Stakeholder Dilemma', badge: 'Leadership' },
+                { title: '3. 48-Hour Growth Drop', badge: 'Crisis Triage' }
+              ].map((sc, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCurrentQuestionIndex(i)}
+                  className={`px-3 py-1.5 rounded-xl font-sans text-xs transition cursor-pointer flex items-center gap-2 font-medium ${
+                    currentQuestionIndex === i
+                      ? 'bg-purple-700 text-white shadow-sm font-bold'
+                      : 'bg-purple-50 text-purple-900 border border-purple-200 hover:bg-purple-100'
+                  }`}
+                >
+                  <span>{sc.title}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                    currentQuestionIndex === i ? 'bg-purple-900 text-purple-200' : 'bg-white text-purple-700 font-bold'
+                  }`}>
+                    {sc.badge}
+                  </span>
+                </button>
+              ))}
             </div>
-            <pre className="p-4 text-xs text-[#111827] font-mono font-semibold overflow-x-auto leading-relaxed max-h-64 scrollbar-thin bg-[#f8fafc]">
-              <code className="text-[#111827] font-semibold">{activeSnippetFunc.snippet}</code>
-            </pre>
+
+            {/* Scenario Details Grid */}
+            <div className="p-4 sm:p-5 bg-white space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl bg-purple-50/50 border border-purple-100">
+                  <span className="text-[10px] uppercase font-bold text-purple-800 tracking-wider block mb-1">
+                    Business Context
+                  </span>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    {currentQuestionIndex === 0 && `Candidate claims quantified impact in '${candidate.project_name || 'Initiative'}'. The executive committee demands verification of financial models, payback horizons, and attribution logic.`}
+                    {currentQuestionIndex === 1 && "Engineering needs 2 sprints for architectural debt; Enterprise Sales demands immediate features to hit Q3 quotas with zero headcount expansion."}
+                    {currentQuestionIndex === 2 && "Primary self-serve conversion funnel drops 30% MoM over a 48-hour window without any intentional changes to campaigns or ad creative."}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/70">
+                  <span className="text-[10px] uppercase font-bold text-amber-900 tracking-wider block mb-1">
+                    Strategic Trade-off / Constraint
+                  </span>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    {currentQuestionIndex === 0 && "Scaling customer acquisition velocity without deteriorating CAC payback or experiencing adverse cohort retention churn."}
+                    {currentQuestionIndex === 1 && "Balancing technical stability and team burnout against enterprise ARR revenue commitments under fixed sprint velocity."}
+                    {currentQuestionIndex === 2 && "Distinguishing instrumentation/tracking drops from auction saturation or checkout UX drop-offs under CEO urgency."}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/70">
+                  <span className="text-[10px] uppercase font-bold text-emerald-900 tracking-wider block mb-1">
+                    Target Impact & KPIs
+                  </span>
+                  <p className="text-xs text-gray-800 font-medium leading-relaxed">
+                    {currentQuestionIndex === 0 && "LTV:CAC > 3.0x · Payback < 8 Months · Positive Net Contribution Margin"}
+                    {currentQuestionIndex === 1 && "RICE Score Ranking · 70/20/10 Capacity Rule · Zero Unbudgeted ARR Churn"}
+                    {currentQuestionIndex === 2 && "Root-Cause Triage < 48 Hrs · Step-Level Funnel Audit · Recovery Hotfix"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-purple-100 text-xs">
+                <span className="text-gray-600 font-medium">
+                  Verified Deliverable: <strong className="text-purple-900 font-mono">{candidate.portfolio_url || candidate.repo_url || 'https://hritiksakpal.github.io/portfolio/'}</strong>
+                </span>
+                <span className="text-purple-800 font-medium">
+                  Evaluation Framework: <span className="font-semibold">
+                    {currentQuestionIndex === 0 && "Unit Economics & Attribution"}
+                    {currentQuestionIndex === 1 && "RICE Prioritization & Alignment"}
+                    {currentQuestionIndex === 2 && "MECE Funnel Diagnostics"}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* TECHNICAL CODE SNIPPET BOX (Existing behavior for technical candidates) */
+          <div className="mb-5 rounded-2xl bg-gray-900 border border-gray-200 overflow-hidden shadow-xl">
+            <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between text-xs font-sans">
+              <span className="font-bold uppercase tracking-wider text-[#4b5563] flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-[#4b5563]" />
+                <span>Key Functions Extracted from Code</span>
+              </span>
+              <span className="font-mono text-xs text-[#4b5563] font-bold">
+                {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length} Functions Identified
+              </span>
+            </div>
+
+            {/* Function Tabs */}
+            {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).length > 0 && (
+              <div className="px-4 py-2 bg-white border-b border-[#2A241B] flex flex-wrap items-center gap-2">
+                {(complexFunctions.length > 0 ? complexFunctions : candidate?.complex_functions || []).map((f, i) => {
+                  const isSelected = selectedFuncIndex === i;
+                  const isCurrentTarget = f.function_name === currentQ.function_name;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedFuncIndex(i)}
+                      className={`px-3 py-1.5 rounded-xl font-mono text-xs transition cursor-pointer flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-[#e20001] text-white border border-gray-200 shadow-sm font-bold'
+                          : isCurrentTarget
+                          ? 'bg-white text-[#4b5563] border border-gray-200 hover:bg-amber-50'
+                          : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-gray-200'
+                      }`}
+                    >
+                      <span>{f.function_name}()</span>
+                      <span className="px-1.5 py-0.2 rounded bg-white text-[10px] text-[#4b5563] font-bold">
+                        Complexity: {f.complexity}
+                      </span>
+                      {isCurrentTarget && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FFD166] animate-pulse"></span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Verified Code Snippet Box */}
+            <div className="bg-[#f8fafc] rounded-b-xl overflow-hidden border border-gray-300">
+              <div className="px-4 py-2.5 bg-gray-100 border-b border-gray-200 flex items-center justify-between text-xs font-mono text-[#111827] font-bold">
+                <span>{activeSnippetFunc.file}:{activeSnippetFunc.line_number}</span>
+                <span className="text-[#e20001] font-bold">Verified Code Snippet</span>
+              </div>
+              <pre className="p-4 text-xs text-[#111827] font-mono font-semibold overflow-x-auto leading-relaxed max-h-64 scrollbar-thin bg-[#f8fafc]">
+                <code className="text-[#111827] font-semibold">{activeSnippetFunc.snippet}</code>
+              </pre>
+            </div>
+          </div>
+        )}
 
         {/* Expected Concepts */}
         <div className="mb-4 p-3.5 rounded-xl bg-gray-50 border border-gray-200">

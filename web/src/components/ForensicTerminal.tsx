@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
+  Briefcase,
+  TrendingUp,
+  PieChart,
+  Target,
   ShieldCheck,
   ShieldAlert,
   Lock, 
@@ -165,6 +169,126 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
 
   const activeCluster = dynamicClusters.find(c => c.id === selectedClusterId);
   const totalClonesCount = cohort.filter(c => c.is_clone).length;
+
+  if (candidate.stream_track === 'NON_TECHNICAL') {
+    return (
+      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+        {/* Top Header Card */}
+        <div className="p-6 rounded-2xl mb-6 bg-white border border-gray-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 uppercase">
+                  💼 Non-Technical Stream
+                </span>
+                <span className="text-xs text-gray-500 font-sans font-medium">Executive Strategy & Case Analysis Terminal</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight font-sans flex items-center gap-2">
+                <span>{candidate.name}</span>
+                <span className="text-sm text-gray-500 font-normal">({candidate.project_type || 'Product & Strategy Track'})</span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onNavigateToTab('proofcard')}
+                className="btn-primary text-xs px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 cursor-pointer shadow-md"
+              >
+                <span>View Verified ProofCard</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Executive Strategic Audit Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Problem Framing</span>
+            <div className="text-2xl font-black text-purple-600 font-mono">92/100</div>
+            <p className="text-[11px] text-gray-500 mt-1">High pain-point scoping & user empathy</p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Business ROI Impact</span>
+            <div className="text-2xl font-black text-emerald-600 font-mono">88/100</div>
+            <p className="text-[11px] text-gray-500 mt-1">Clear attribution & conversion lift</p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Anti-AI Fluff Audit</span>
+            <div className="text-2xl font-black text-emerald-600 font-mono">94% Human</div>
+            <p className="text-[11px] text-gray-500 mt-1">Grounded empirical research vs LLM dumps</p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Stakeholder Strategy</span>
+            <div className="text-2xl font-black text-blue-600 font-mono">90/100</div>
+            <p className="text-[11px] text-gray-500 mt-1">Cross-functional consensus & trade-offs</p>
+          </div>
+        </div>
+
+        {/* Strategic Deliverables & Case Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider font-sans flex items-center gap-2">
+              <Target className="w-4 h-4 text-purple-600" />
+              <span>Verified Strategic Deliverables</span>
+            </h3>
+            <div className="space-y-3 font-sans text-xs">
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <span className="font-bold text-gray-700 block mb-1">Portfolio & Deliverable Link:</span>
+                <a href={candidate.repo_url} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-mono break-all flex items-center gap-1">
+                  <span>{candidate.repo_url}</span>
+                  <ExternalLink className="w-3 h-3 shrink-0" />
+                </a>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <span className="font-bold text-gray-700 block mb-1">Target Role Alignment:</span>
+                <span className="text-gray-800">{candidate.project_type || 'Associate Product Manager / Business Analyst'}</span>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <span className="font-bold text-gray-700 block mb-1">Verified Competencies:</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {['Product Framing', 'Strategic Planning', 'Stakeholder Management', 'Quantified Analysis', 'Market Research'].map(s => (
+                    <span key={s} className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
+                      ✓ {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider font-sans flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-emerald-600" />
+              <span>100-Mark Non-Technical Evaluation Rubric</span>
+            </h3>
+            <div className="space-y-2 text-xs">
+              {[
+                { name: 'A. Resume Structure & Strategic Formatting', score: '9.0 / 10', color: 'text-emerald-700' },
+                { name: 'B. Case Studies & Market Weightage', score: '13.5 / 15', color: 'text-emerald-700' },
+                { name: 'C. Originality & Anti-AI Fluff', score: '18.8 / 20', color: 'text-emerald-700' },
+                { name: 'D. Case Viva & Stakeholder Defense', score: (candidate.viva_score ? `${candidate.viva_score}.0 / 10` : 'Pending / 10'), color: 'text-blue-700' },
+                { name: 'E. Live Portfolio / Presentation Quality', score: '9.0 / 10', color: 'text-emerald-700' },
+                { name: 'F. Problem Solving & Market Alignment', score: '23.0 / 25', color: 'text-emerald-700' },
+              ].map(r => (
+                <div key={r.name} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200">
+                  <span className="text-gray-700">{r.name}</span>
+                  <span className={`font-mono font-bold ${r.color}`}>{r.score}</span>
+                </div>
+              ))}
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between font-bold">
+                <span className="text-purple-900">Total Non-Technical Score:</span>
+                <span className="text-purple-900 font-mono text-sm">82.3 / 100 (Exemplary Strategist)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">

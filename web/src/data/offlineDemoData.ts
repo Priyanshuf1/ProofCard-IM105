@@ -218,10 +218,10 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
         feedback: "Outstanding WebGL performance and GPU resource optimization intuition."
       }
     ],
-    viva_score: 9,
-    viva_status: "COMPLETED",
-    defense_type: "LIVE_DEFENDED",
-    live_analyzed: true,
+    viva_score: 0,
+    viva_status: "PENDING_DEFENSE",
+    defense_type: "ASYNC_REMOTE",
+    live_analyzed: false,
     proof_card: {
       status: "VERIFIED_EXEMPLARY",
       headline: "Exemplary fullstack and ML telemetry builder with 157 authentic git commits, 38% refactoring ratio, and verified sensor architecture.",
@@ -689,6 +689,110 @@ export const OFFLINE_DEMO_PROFILES: CandidateProfile[] = [
       growth_area: "Increase test coverage for cart calculation edge cases and refactor away from tutorial state boilerplate.",
       specific_action: "Write 4 Jest tests for discount code validation and cart checkout tax calculations.",
       tamper_proof_hash: "SHA256:5d41402abc4b2a76b9719d911017c592b04f1fedf3e3e8f85d1e2e3f4e5a6b7c"
+    },
+    consent_recorded: true
+  },
+  {
+    candidate_id: "cand_hritik_mba",
+    name: "Hritik Sakpal",
+    college: "GLA University (MBA / Strategy)",
+    college_tier: "Tier-2 Accredited",
+    repo_url: "https://hritiksakpal.github.io/portfolio/",
+    portfolio_url: "https://hritiksakpal.github.io/portfolio/",
+    project_name: "SaaS Onboarding & Growth Optimization",
+    project_type: "Product Management & Growth Strategy (MBA)",
+    stream_track: "NON_TECHNICAL",
+    total_loc: 0,
+    authenticity_score: 94,
+    is_clone: false,
+    matched_tutorial: null,
+    git_dna: {
+      total_commits: 22,
+      time_span_days: 28,
+      burst_ratio: 0.22,
+      deletion_ratio: 0.18,
+      organic_growth: true,
+      message_maturity_score: 95,
+      test_files_detected: 0,
+      authenticity_score: 94,
+      history_verified: true,
+      summary: "Executive Portfolio and Strategic Deliverables verified: +32% user onboarding activation, CAC reduction modeling, and cross-functional PRD specifications."
+    },
+    detected_files: [
+      "strategy/saas_onboarding_prd.pdf",
+      "analytics/cac_payback_model.xlsx",
+      "growth/funnel_retention_cohorts.csv",
+      "portfolio/index.html"
+    ],
+    complex_functions: [],
+    viva_questions: [
+      {
+        question_id: "biz_q1",
+        function_name: "saas_onboarding_roi",
+        file: "strategy/saas_onboarding_prd.pdf",
+        line_number: 1,
+        question: "In your SaaS Onboarding project, you claim a +32% conversion lift. How did you isolate this impact from seasonal baseline traffic, and what was your payback period assumption?",
+        expected_concepts: [
+          "A/B test cohort separation",
+          "Incremental conversion attribution",
+          "Payback period reduction",
+          "LTV to CAC ratio"
+        ],
+        difficulty: "hard",
+        mock_answer: "We maintained a holdout 50/50 randomized split across 12,000 signups over 6 weeks. The variant lifted day-7 activation by 32%, cutting payback period from 11 months to 6.8 months.",
+        score: 0,
+        feedback: "Pending oral case evaluation."
+      },
+      {
+        question_id: "biz_q2",
+        function_name: "stakeholder_priority_conflict",
+        file: "strategy/roadmap_prioritization.pdf",
+        line_number: 1,
+        question: "Engineering wants to spend 2 sprints refactoring tech debt, while Enterprise Sales demands 3 custom client features to close the quarterly quota. How do you resolve this deadlock?",
+        expected_concepts: [
+          "RICE or Value vs Effort scoring",
+          "Opportunity cost evaluation",
+          "20% allocated tech-debt budget",
+          "Executive stakeholder negotiation"
+        ],
+        difficulty: "medium",
+        mock_answer: "I implement an explicit 70/20/10 capacity allocation where 20% of every sprint is reserved for critical architectural debt, and score sales features against potential ARR churn using RICE.",
+        score: 0,
+        feedback: "Pending oral case evaluation."
+      },
+      {
+        question_id: "biz_q3",
+        function_name: "growth_triage_protocol",
+        file: "growth/funnel_diagnostics.xlsx",
+        line_number: 1,
+        question: "If your primary self-serve conversion funnel dropped 30% month-over-month overnight, walk through your step-by-step diagnostic triage within the first 48 hours.",
+        expected_concepts: [
+          "Funnel drop-off step isolation",
+          "Browser/device cohort segmentation",
+          "Tracking/tag instrumentation audit",
+          "Cross-team war room synthesis"
+        ],
+        difficulty: "hard",
+        mock_answer: "Step 1: Check telemetry tags to ensure tracking did not break. Step 2: Segment drop-off by channel, device, and browser. Step 3: Inspect step-level conversion (e.g. payment gateway vs signup form). Step 4: Formulate a 24-hr hotfix hypothesis.",
+        score: 0,
+        feedback: "Pending oral case evaluation."
+      }
+    ],
+    viva_score: 0,
+    viva_status: "PENDING_DEFENSE",
+    defense_type: "ASYNC_REMOTE",
+    live_analyzed: false,
+    proof_card: {
+      status: "VERIFIED_EXEMPLARY",
+      headline: "Exemplary MBA and Product Strategy candidate with validated deliverable impact, +32% onboarding conversion modeling, and structured case frameworks.",
+      strengths: [
+        "Rigorous quantitative business modeling with verified cohort retention analytics",
+        "Documented +32% onboarding activation lift with robust attribution methodology",
+        "Clear cross-functional PRDs and executive stakeholder alignment matrices"
+      ],
+      growth_area: "Incorporate deeper multi-touch marketing attribution models and expanded B2B pricing experiments.",
+      specific_action: "Conduct sensitivity analysis on expansion revenue vs net revenue retention (NRR).",
+      tamper_proof_hash: "SHA256:7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2d3c4b5a6f7e8d"
     },
     consent_recorded: true
   }

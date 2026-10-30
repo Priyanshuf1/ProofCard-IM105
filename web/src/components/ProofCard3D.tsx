@@ -29,7 +29,8 @@ const RadarSkillChart: React.FC<{
   viva: number;
   isClone?: boolean;
   isAdversarial?: boolean;
-}> = ({ authenticity, viva, isClone, isAdversarial }) => {
+  isNonTech?: boolean;
+}> = ({ authenticity, viva, isClone, isAdversarial, isNonTech = false }) => {
   const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
 
   // Enlarged center and radius for maximum visual prominence
@@ -43,7 +44,45 @@ const RadarSkillChart: React.FC<{
   const vCodeQuality = isClone ? 25 : (isAdversarial ? 10 : Math.min(95, authenticity + 3));
   const vViva = viva > 0 ? Math.min(100, Math.max(10, viva * 10)) : (isClone ? 10 : 20);
 
-  const axes = [
+  // isNonTech passed from parent candidate profile
+
+  const axes = isNonTech ? [
+    { 
+      id: 'framing', 
+      label: 'Problem Framing', 
+      val: Math.min(95, Math.max(50, authenticity + 4)), 
+      angle: -90,
+      desc: 'Modular problem decomposition, target market pain points, and user journey clarity.' 
+    },
+    { 
+      id: 'impact', 
+      label: 'Business Impact', 
+      val: Math.min(96, Math.max(45, authenticity + 2)), 
+      angle: -18,
+      desc: 'Empirical ROI measurement, conversion delta, retention curves, and financial viability.' 
+    },
+    { 
+      id: 'originality', 
+      label: 'Case Originality', 
+      val: Math.min(98, Math.max(40, authenticity)), 
+      angle: 54,
+      desc: 'Genuine data grounding, zero synthetic ChatGPT prompt dumps, and authentic research.' 
+    },
+    { 
+      id: 'stakeholder', 
+      label: 'Stakeholder Strategy', 
+      val: Math.min(94, Math.max(50, authenticity - 2)), 
+      angle: 126,
+      desc: 'Cross-functional engineering alignment, roadmap prioritization, and conflict resolution.' 
+    },
+    { 
+      id: 'viva', 
+      label: viva > 0 ? 'Case Viva' : 'Viva (Pending)', 
+      val: vViva, 
+      angle: 198,
+      desc: viva > 0 ? 'Verbal business case defense, trade-off clarity, and crisis protocol rigor.' : 'Oral case defense pending candidate completion.' 
+    }
+  ] : [
     { 
       id: 'arch', 
       label: 'Architecture', 
@@ -119,12 +158,12 @@ const RadarSkillChart: React.FC<{
         >
           <defs>
             <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.7)' : 'rgba(255,209,102,0.65)'} />
-              <stop offset="65%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.3)' : 'rgba(212,175,55,0.3)'} />
-              <stop offset="100%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.08)' : 'rgba(212,175,55,0.06)'} />
+              <stop offset="0%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.55)' : 'rgba(226,0,1,0.28)'} />
+              <stop offset="65%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.20)'} />
+              <stop offset="100%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.04)'} />
             </radialGradient>
             <filter id="radarBloom" x="-25%" y="-25%" width="150%" height="150%">
-              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -142,20 +181,21 @@ const RadarSkillChart: React.FC<{
               <g key={lidx}>
                 <polygon
                   points={pts}
-                  fill={lvl === 1.0 ? 'rgba(212, 175, 55, 0.04)' : 'none'}
-                  stroke={lvl === 1.0 ? 'rgba(212, 175, 55, 0.65)' : 'rgba(212, 175, 55, 0.35)'}
-                  strokeWidth={lvl === 1.0 ? '1.8' : '1.2'}
+                  fill={lvl === 1.0 ? 'rgba(248, 250, 252, 0.85)' : 'none'}
+                  stroke={lvl === 1.0 ? '#94a3b8' : '#cbd5e1'}
+                  strokeWidth={lvl === 1.0 ? '2' : '1.2'}
                   strokeDasharray={lvl === 1.0 ? 'none' : '4,4'}
                 />
                 {/* Scale Ring Numeric Markers on Vertical Axis */}
                 <text
                   x={cx + 6}
                   y={cy - r * lvl + 4}
-                  fill="rgba(255, 209, 102, 0.75)"
-                  fontSize="9"
-                  fontWeight="700"
+                  fill="#475569"
+                  fontSize="10"
+                  fontWeight="800"
                   fontFamily="monospace"
                   className="select-none"
+                  style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '3px' }}
                 >
                   {Math.round(lvl * 100)}%
                 </text>
@@ -174,8 +214,8 @@ const RadarSkillChart: React.FC<{
                 y1={cy}
                 x2={pt.x}
                 y2={pt.y}
-                stroke={isTargeted ? '#FFD166' : 'rgba(212, 175, 55, 0.35)'}
-                strokeWidth={isTargeted ? 2 : 1.2}
+                stroke={isTargeted ? '#0f172a' : '#94a3b8'}
+                strokeWidth={isTargeted ? 2.5 : 1.4}
                 className="transition-colors duration-200"
               />
             );
@@ -185,7 +225,7 @@ const RadarSkillChart: React.FC<{
           <polygon
             points={polygonPoints}
             fill="url(#radarGlow)"
-            stroke={isClone || isAdversarial ? '#EF4444' : '#FFD166'}
+            stroke={isClone || isAdversarial ? '#dc2626' : '#e20001'}
             strokeWidth="3.5"
             filter="url(#radarBloom)"
             className="transition-all duration-300 cursor-pointer"
@@ -252,31 +292,32 @@ const RadarSkillChart: React.FC<{
                   cx={pt.x}
                   cy={pt.y}
                   r={isTargeted ? 8 : 6}
-                  fill={isTargeted ? '#FFFFFF' : (isClone || isAdversarial ? '#EF4444' : '#FFD166')}
-                  stroke="#000000"
-                  strokeWidth="2"
+                  fill={isTargeted ? '#ffffff' : (isClone || isAdversarial ? '#dc2626' : '#e20001')}
+                  stroke="#0f172a"
+                  strokeWidth="2.5"
                   className="transition-all duration-200"
                 />
 
-                {/* High-Contrast Crisp Text Label */}
+                {/* High-Contrast Crisp Black & Bold Text Label */}
                 <text
                   x={lblX}
                   y={lblY}
                   textAnchor={anchor}
-                  fontSize={isTargeted ? '13' : '12'}
+                  fontSize={isTargeted ? '13.5' : '12.5'}
                   fontFamily="system-ui, -apple-system, sans-serif"
-                  style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.95))' }}
-                  className="select-none transition-all duration-200"
+                  className="select-none transition-all duration-200 font-sans"
                 >
                   <tspan 
-                    fill={isTargeted ? '#FFD166' : '#FFFFFF'} 
-                    fontWeight={isTargeted ? '800' : '700'}
+                    fill={isTargeted ? '#e20001' : '#0f172a'} 
+                    fontWeight="800"
+                    style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '4px', strokeLinejoin: 'round' }}
                   >
                     {a.label}
                   </tspan>
                   <tspan 
-                    fill={isClone || isAdversarial ? '#FCA5A5' : '#FFD166'} 
-                    fontWeight="800"
+                    fill={isClone || isAdversarial ? '#dc2626' : (isTargeted ? '#991b1b' : '#b91c1c')} 
+                    fontWeight="900"
+                    style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '4px', strokeLinejoin: 'round' }}
                   >
                     {' '}({a.val}%)
                   </tspan>
@@ -312,10 +353,10 @@ const RadarSkillChart: React.FC<{
                 <button
                   key={a.id}
                   onClick={() => setHoveredAxis(hoveredAxis === a.id ? null : a.id)}
-                  className="p-1 rounded-lg bg-gray-50 border border-gray-200 hover:border-amber-300 transition cursor-pointer"
+                  className="p-1.5 rounded-xl bg-gray-100/80 border border-gray-300 hover:border-gray-500 hover:bg-gray-100 transition cursor-pointer shadow-xs"
                 >
-                  <div className="text-[9px] text-[#111827] truncate uppercase font-bold">{a.label.split(' ')[0]}</div>
-                  <div className="text-xs font-mono font-black text-[#4b5563]">{a.val}%</div>
+                  <div className="text-[10px] text-[#0f172a] truncate uppercase font-extrabold font-sans">{a.label.split(' ')[0]}</div>
+                  <div className="text-xs font-mono font-black text-[#e20001]">{a.val}%</div>
                 </button>
               ))}
             </div>
@@ -402,6 +443,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
     candidate.security_scan?.is_prompt_injected
   );
   const isAdversarial = isPromptInjected;
+
+  const isNonTech = Boolean(
+    candidate.stream_track === 'NON_TECHNICAL' || 
+    /mba|business|product|marketing|recruiter|hr|design|sales|operations/i.test(candidate.project_type || '')
+  );
 
   const hasCompletedViva = Boolean(
     (candidate.live_analyzed || candidate.viva_status === 'COMPLETED' || candidate.defense_type === 'LIVE_DEFENDED') && 
@@ -643,23 +689,28 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               viva={hasCompletedViva ? (candidate.viva_score ?? 0) : 0}
               isClone={isClone}
               isAdversarial={isAdversarial}
+              isNonTech={Boolean(candidate.stream_track === 'NON_TECHNICAL' || /mba|business|product|marketing|design|hr/i.test(candidate.project_type || ''))}
             />
           </div>
 
           {/* Strengths & Recommended Next Steps */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            {/* Technical Strengths */}
+            {/* Technical or Strategic Strengths */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-700 uppercase tracking-wider font-mono">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Technical Strengths</span>
+                <span>{isNonTech ? 'Strategic & Domain Strengths' : 'Technical Strengths'}</span>
               </div>
               <ul className="space-y-2 text-sm text-gray-800 font-sans font-medium">
-                {(card.strengths && card.strengths.length > 0 ? card.strengths : [
+                {(card.strengths && card.strengths.length > 0 ? card.strengths : (isNonTech ? [
+                  'Demonstrated quantified business acumen with structured framework thinking',
+                  'Validated deliverable authenticity and zero resume template inflation',
+                  'Clear stakeholder diplomacy and agile roadmap prioritization'
+                ] : [
                   'Demonstrated code originality with organic development cadence',
                   'Solid architecture and verified implementation of core application logic',
                   'Tamper-proof cryptographic commit ledger verification'
-                ]).map((str, idx) => (
+                ])).map((str, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-emerald-700 font-bold shrink-0">✓</span>
                     <span className="leading-snug">{str}</span>
@@ -693,27 +744,36 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                   100
                 </span>
                 <h3 className="text-base font-bold text-[#111827] uppercase tracking-wider font-mono">
-                  100-Mark Fragmented AI Evaluation Ledger
+                  100-Mark Fragmented AI Evaluation Ledger {isNonTech && <span className="text-xs text-purple-700 font-sans font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">Non-Technical Strategy Track</span>}
                 </h3>
               </div>
               <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Fragmented AI evaluation across 8 individual parameters: Gemini document parsing, AST code forensics, and live oral viva
+                {isNonTech
+                  ? 'Fragmented business evaluation across 8 parameters: Document forensics, deliverable audit, unit economics, and live executive case defense'
+                  : 'Fragmented AI evaluation across 8 individual parameters: Gemini document parsing, AST code forensics, and live oral viva'}
               </p>
             </div>
             <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 px-4 py-2 rounded-xl">
               <span className="text-xs uppercase font-bold text-gray-700">Composite Score:</span>
-              <span className="text-xl font-black text-[#e20001] font-mono">
-                {Math.min(100, Math.round(
-                  (isClone ? 4 : (isPromptInjected ? 2 : 9.5)) +
-                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) +
-                  (isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) +
-                  (hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) +
-                  (isClone ? 2 : 9.0) +
-                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) +
-                  (isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) +
-                  (isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10)))
-                ))} <span className="text-xs text-gray-500 font-normal">/ 100</span>
-              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-[#e20001] font-mono">
+                  {Math.min(100, Math.round(
+                    (isClone ? 4 : (isPromptInjected ? 2 : 9.5)) +
+                    (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) +
+                    (isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) +
+                    (hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 0) +
+                    (isClone ? 2 : 9.0) +
+                    (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) +
+                    (isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) +
+                    (isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10)))
+                  ))} <span className="text-xs text-gray-500 font-normal">/ 100</span>
+                </span>
+                {!hasCompletedViva && (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    +10 Viva Pending
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -732,79 +792,85 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">B. Projects Weightage</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'B. Business Impact Scope' : 'B. Projects Weightage'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))} / 15</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) / 15) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Project complexity & implementation depth</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Quantified ROI, metrics & case study scope' : 'Project complexity & implementation depth'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">C. Code Originality</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'C. Deliverable Originality' : 'C. Code Originality'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))} / 20</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) / 20) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Manual effort vs AI prompt/cloned dumps</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Authentic case synthesis vs AI template dump' : 'Manual effort vs AI prompt/cloned dumps'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">D. Oral Viva Defense</span>
-                <span className="font-mono font-bold text-[#e20001]">{hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5} / 10</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'D. Executive Case Viva' : 'D. Oral Viva Defense'}</span>
+                {hasCompletedViva ? (
+                  <span className="font-mono font-bold text-[#e20001]">{Math.min(10, Math.max(1, candidate.viva_score || 8.0))} / 10</span>
+                ) : (
+                  <span className="font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] border border-amber-200">
+                    0 / 10 (Pending)
+                  </span>
+                )}
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
-                <div className="bg-[#e20001] h-full" style={{ width: `${((hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) / 10) * 100}%` }}></div>
+                <div className="bg-[#e20001] h-full" style={{ width: `${((hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 0) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Verbal code defense & systems reasoning</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Situational business case defense & logic' : 'Verbal code defense & systems reasoning'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">E. Live Project Usability</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'E. Portfolio Usability' : 'E. Live Project Usability'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : 9.0} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : 9.0) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">HTTP 200 uptime, SSL & responsive DOM</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Live portfolio, Notion/deck layout & links' : 'HTTP 200 uptime, SSL & responsive DOM'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F1. Job Skill Alignment</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F1. Business Skill Fit' : 'F1. Job Skill Alignment'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))} / 15</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) / 15) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Match against company job specifications</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Match against Product/Strategy/GTM specs' : 'Match against company job specifications'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F2. Code Architecture</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F2. Strategic Problem Framing' : 'F2. Code Architecture'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">McCabe complexity & modular isolation</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Hypothesis rigor, MECE trees & unit economics' : 'McCabe complexity & modular isolation'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F3. Git Discipline</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F3. Execution & Stakeholders' : 'F3. Git Discipline'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Commit progression & refactoring ratio</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Milestone cadence & cross-functional alignment' : 'Commit progression & refactoring ratio'}</span>
             </div>
           </div>
         </div>

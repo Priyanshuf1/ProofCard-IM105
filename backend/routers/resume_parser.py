@@ -27,6 +27,7 @@ class ResumeParseResult(BaseModel):
     projects: List[dict] = []
     experience: List[dict] = []
     role_type: str = "Software Engineer"  # "Software Engineer" | "Designer" | "Business/MBA" | "Product Manager"
+    stream_track: str = "TECHNICAL"  # "TECHNICAL" | "NON_TECHNICAL"
     raw_text_snippet: str = ""
     parse_confidence: float = 0.0
     source: str = "resume_pdf"
@@ -302,7 +303,13 @@ async def parse_resume(file: UploadFile = File(...)):
     confidence = round(fields_found / 6.0, 2)
     snippet = raw_text[:300].replace("\n", " ")
     
-    logger.info(f"Resume parsed: name={name}, role={role_type}, skills={len(skills)}, confidence={confidence}")
+    # Determine stream track (Technical vs Non-Technical)
+    is_non_tech = role_type in ["Business/MBA", "Product Manager", "Designer"] or any(
+        tok in str(role_type).lower() for tok in ["mba", "business", "product", "design", "marketing", "hr", "sales", "operations"]
+    ) or (not github_url and any(s.lower() in ["strategy", "marketing", "sales", "recruiting", "operations", "financial", "prd", "roadmap", "stakeholder"] for s in skills))
+    stream_track = "NON_TECHNICAL" if is_non_tech else "TECHNICAL"
+
+    logger.info(f"Resume parsed: name={name}, role={role_type}, stream={stream_track}, skills={len(skills)}, confidence={confidence}")
     
     return ResumeParseResult(
         name=name,
@@ -315,6 +322,7 @@ async def parse_resume(file: UploadFile = File(...)):
         projects=projects[:5],
         experience=experience[:5],
         role_type=role_type,
+        stream_track=stream_track,
         raw_text_snippet=snippet,
         parse_confidence=max(0.65, confidence),
         source="resume_pdf"
