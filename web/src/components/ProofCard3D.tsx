@@ -77,7 +77,7 @@ const RadarSkillChart: React.FC<{
       label: viva > 0 ? 'Viva' : 'Viva (Pending)', 
       val: vViva, 
       angle: 198,
-      desc: viva > 0 ? 'Verbal conceptual clarity, technical justification, and deep design reasoning.' : 'Oral technical defense pending candidate completion.' 
+      desc: viva > 0 ? 'Verbal conceptual clarity, technical justification, and deep design reasoning.' : 'Technical viva pending candidate completion.' 
     }
   ];
 
@@ -348,7 +348,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             No Pariksha Card Generated
           </h2>
           <p className="text-sm text-gray-600 max-w-md mx-auto mb-6">
-            A candidate must undergo repository scanning and technical defense evaluation to issue a verified Pariksha card credential.
+            A candidate must undergo repository scanning and technical viva evaluation to issue a verified Pariksha card credential.
           </p>
           <button
             onClick={() => onNavigateToTab('ingestion')}

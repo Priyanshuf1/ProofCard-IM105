@@ -76,21 +76,20 @@ html { scroll-behavior: smooth; }
   }
 }
 
-/* Custom battlefield scrollbars */
+/* Clean Minimal Agency Scrollbars */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0503;
+  background: #f3f4f6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a150c;
+  background: #d1d5db;
   border-radius: 4px;
-  border: 1px solid rgba(230, 194, 128, 0.2);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #E85D04;
+  background: #e20001;
 }
 
 /* Deviathon Official Banner Hero Background with Atmospheric Vignette */

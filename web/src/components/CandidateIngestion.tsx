@@ -405,7 +405,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               strengths: [
                 'Extracted ' + defaultSkills.length + ' validated domain skills from verified credentials',
                 'Demonstrated domain proficiency in ' + (resumeData?.projects?.[0]?.name || 'key deliverables'),
-                'Ready for architectural defense and behavioral case viva'
+                'Ready for technical case viva'
               ],
               growth_area: 'Expand public GitHub repositories or open-source artifact presence.',
               tamper_proof_hash: 'HASH_RESUME_' + Math.random().toString(36).substring(2, 10).toUpperCase()
@@ -948,7 +948,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-[#e20001] shrink-0" />
                           <span>
-                            <strong>Non-Tech / Portfolio Viva Track Activated:</strong> Pariksha will generate domain-specific viva defense questions tailored to candidate's verified resume claims.
+                            <strong>Non-Tech / Portfolio Viva Track Activated:</strong> Pariksha will generate domain-specific viva questions tailored to candidate's verified resume claims.
                           </span>
                         </div>
                         <span className="text-[10px] font-mono bg-red-100 px-2 py-0.5 rounded text-[#e20001] font-bold">

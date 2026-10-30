@@ -203,7 +203,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Unbiased Selection: Select candidates while eliminating pedigree bias (EEOC 4/5ths compliant)
+  // Unbiased Selection: Select candidates while eliminating college bias (EEOC 4/5ths compliant)
   const handleUnbiasedSelection = () => {
     const viable = candidatePool.filter(c => !c.is_clone && (c.authenticity_score || 0) >= 50);
     
@@ -344,7 +344,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     }
   };
 
-  // Simulate Candidate Completing Defense (Recruiter Test Feature)
+  // Simulate Candidate Completing Viva (Recruiter Test Feature)
   const handleSimulateCandidateDefense = (candidate: CandidateProfile) => {
     const id = candidate.candidate_id || '';
     const simulatedScore = Math.round((8.4 + Math.random() * 1.4) * 10) / 10;
@@ -982,7 +982,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
           </div>
         </div>
         <p className="text-sm text-gray-800 mb-6 leading-relaxed">
-          Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code quality and defense scores receive the exact same evaluation regardless of whether their degree is from an elite tier-1 or a regional tier-3 college.
+          Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code quality and viva scores receive the exact same evaluation regardless of whether their degree is from an elite tier-1 or a regional tier-3 college.
         </p>
 
         {/* Sliders */}
@@ -1046,7 +1046,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
           <span>
-            <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. Pariksha completely decouples pedigree bias from hiring.
+            <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. Pariksha completely decouples college bias from hiring.
           </span>
         </div>
       </div>
@@ -1180,13 +1180,13 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                 );
               })()}
 
-              {/* What Happens in the Defense Viva */}
+              {/* What Happens in the Viva */}
               <div className="p-3.5 rounded-xl bg-white border border-gray-200 text-xs space-y-1.5">
                 <span className="font-bold text-[#4b5563] block">Candidate Viva Experience:</span>
                 <ul className="list-disc pl-4 space-y-1 text-gray-700 text-[11px]">
                   <li><strong>3 Targeted Code Questions:</strong> Derived directly from key functions extracted from candidate's code.</li>
                   <li><strong>3 Minutes Total:</strong> Answer via microphone or browser text.</li>
-                  <li><strong>Instant Score Population:</strong> Completing the defense updates their verified ProofCard and live recruiter ranking.</li>
+                  <li><strong>Instant Score Population:</strong> Completing the viva updates their verified ProofCard and live recruiter ranking.</li>
                 </ul>
               </div>
 
@@ -1480,7 +1480,7 @@ ${modalDecisionType === 'SHORTLISTED'
 
 TECHNICAL SCORECARD:
 - Code Quality Score:   ${activeModalCandidate.authenticity_score ?? 0} / 100
-- Viva Status:  ${isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10 (Defended)` : 'Pending Remote Defense'}
+- Viva Status:  ${isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10 (Completed)` : 'Pending Remote Viva'}
 - Zero College Bias:   Evaluated strictly on code quality and technical merit
 
 View verified credential on live ledger:

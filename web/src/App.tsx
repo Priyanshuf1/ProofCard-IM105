@@ -311,7 +311,7 @@ export const App: React.FC = () => {
 
 
         {/* ====================================================================
-            SECTION 03: CODE DEFENSE VIVA & AI GATE (#viva)
+            SECTION 03: CANDIDATE VIVA & AI LIMIT (#viva)
             ==================================================================== */}
         <section id="viva" className="glm-section">
           <div className="max-w-6xl mx-auto">

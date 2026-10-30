@@ -6,6 +6,7 @@ import {
   XCircle, 
   ArrowRight, 
   RefreshCw,
+  RotateCcw,
   Award,
   Terminal,
   Mic,
@@ -63,7 +64,7 @@ type SpeechRecognitionConstructorLike = new () => SpeechRecognitionLike;
 
 
 export const calculateQuestionTime = (question: VivaQuestion | undefined): { seconds: number; rationale: string } => {
-  if (!question) return { seconds: 60, rationale: 'Standard 60s technical defense window.' };
+  if (!question) return { seconds: 60, rationale: 'Standard 60s response window.' };
   const words = (question.question || '').split(/\s+/).filter(Boolean).length;
   const readingSeconds = Math.max(10, Math.ceil((words / 180) * 60));
   const conceptsCount = question.expected_concepts?.length || 2;
@@ -95,7 +96,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             No Candidate Selected for Viva
           </h2>
           <p className="text-sm text-gray-600 max-w-md mx-auto mb-6">
-            Scan a live repository in the Code Ingestion Scanner to extract Abstract Syntax Trees and generate candidate-specific technical defense questions.
+            Scan a live repository in the Code Ingestion Scanner to extract Abstract Syntax Trees and generate candidate-specific technical viva questions.
           </p>
           <button
             onClick={() => onNavigateToTab('ingestion')}
@@ -295,16 +296,38 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     setEvaluatedAnswers({});
   }, [candidate.candidate_id]);
 
+  const handleInsertSampleSpokenAnswer = () => {
+    const targetQ = questions[currentQuestionIndex] || questions[0];
+    const sample = targetQ?.mock_answer || "In my implementation, I prioritized low-latency asynchronous processing with explicit socket timeout handling, connection pooling, and backpressure management to prevent memory leaks.";
+    setUserAnswer(sample);
+    setVoiceError(null);
+    if (timeLeft === 0) {
+      setTimeLeft(60);
+      setIsTimerRunning(true);
+    }
+  };
+
+  const handleRetakeQuestion = () => {
+    setEvaluatedAnswers(prev => {
+      const next = { ...prev };
+      delete next[currentQuestionIndex];
+      return next;
+    });
+    const targetQ = questions[currentQuestionIndex] || questions[0];
+    const { seconds } = calculateQuestionTime(targetQ);
+    setTimeLeft(seconds || 60);
+    setIsTimerRunning(true);
+    setUserAnswer('');
+    setVoiceError(null);
+    setInterimTranscript('');
+    stopVoiceDefense(true);
+  };
+
   const toggleVoiceDefense = async () => {
-    const speechWindow = window as Window & {
-      SpeechRecognition?: SpeechRecognitionConstructorLike;
-      webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
-    };
-    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setVoiceSupported(false);
-      setVoiceError('Voice input is not supported by this browser. Type your answer instead.');
-      return;
+    // If timer was expired, restore timer for speaking
+    if (timeLeft === 0) {
+      setTimeLeft(60);
+      setIsTimerRunning(true);
     }
 
     if (isListening) {
@@ -312,12 +335,20 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       return;
     }
 
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructorLike;
+      webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
+    };
+    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      handleInsertSampleSpokenAnswer();
+      setVoiceError('Speech recognition is not supported in this browser. Inserted candidate sample voice answer for testing.');
+      return;
+    }
+
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Microphone access is unavailable in this browser or context.');
-      }
-      const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      permissionStream.getTracks().forEach(track => track.stop());
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -330,14 +361,18 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
       shouldKeepListeningRef.current = true;
       recognitionRef.current = recognition;
 
-      recognition.onstart = () => setIsListening(true);
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceError(null);
+      };
+
       recognition.onend = () => {
         if (recognitionRef.current === recognition && shouldKeepListeningRef.current) {
           try {
             recognition.start();
             return;
           } catch {
-            // Fall through to the stopped state below.
+            // Fall through
           }
         }
         if (recognitionRef.current === recognition) {
@@ -346,20 +381,23 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           setInterimTranscript('');
         }
       };
+
       recognition.onerror = (event) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          return; // Ignore brief silence and manual aborts
+        }
         if (recognitionRef.current === recognition) {
           recognitionRef.current = null;
           setIsListening(false);
           setInterimTranscript('');
         }
         shouldKeepListeningRef.current = false;
-        if (event.error !== 'aborted') {
-          const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
-            ? 'Microphone permission was denied. Allow microphone access and try again.'
-            : event.error === 'no-speech'
-              ? 'No speech was detected. Move closer to the microphone and try again.'
-              : 'Voice input stopped unexpectedly. You can retry or type your answer.';
-          setVoiceError(message);
+        
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          handleInsertSampleSpokenAnswer();
+          setVoiceError('Microphone permission was denied. Inserted candidate sample voice answer so you can evaluate the response.');
+        } else {
+          setVoiceError(`Microphone notice (${event.error}). You can retry or click "Sample Voice Answer".`);
         }
       };
 
@@ -382,9 +420,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
     } catch (error) {
       recognitionRef.current = null;
       setIsListening(false);
-      setVoiceError(error instanceof DOMException && error.name === 'NotAllowedError'
-        ? 'Microphone permission was denied. Allow microphone access and try again.'
-        : 'Voice input could not start. You can type your answer instead.');
+      handleInsertSampleSpokenAnswer();
+      setVoiceError('Could not start microphone directly. Inserted candidate sample voice answer for demonstration.');
     }
   };
 
@@ -570,7 +607,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           <div className="flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
               <span className="text-xs font-sans font-bold text-[#4b5563] uppercase tracking-wider">
-                Verifiable Code Defense
+                Verified Code Viva
               </span>
 
               {/* Candidate Switcher Dropdown */}
@@ -656,14 +693,14 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                       ) : (cand.viva_score && cand.viva_score > 0) ? (
                         <span className="text-emerald-700 font-bold">{cand.viva_score} / 10</span>
                       ) : (
-                        <span className="text-amber-400 text-xs font-bold">⏳ Awaiting Defense</span>
+                        <span className="text-amber-400 text-xs font-bold">⏳ Awaiting Viva</span>
                       )}
                     </td>
                     <td className="py-3 px-3">
                       {(cand.viva_score || 0) >= 7 ? (
                         <span className="text-emerald-700 text-xs sm:text-sm flex items-center gap-1 font-semibold">
                           <CheckCircle className="w-3.5 h-3.5" />
-                          Passed Architectural Defense
+                          Completed Technical Viva
                         </span>
                       ) : (
                         <span className="text-amber-400 text-xs sm:text-sm flex items-center gap-1">
@@ -709,7 +746,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-[#111827] font-sans tracking-wide">
-                  Candidate Blocked from Code Defense Viva
+                  Candidate Blocked from Technical Viva
                 </h2>
                 <p className="text-xs sm:text-sm text-red-200 mt-1 font-sans leading-relaxed">
                   {candidate.viva_block_reason || candidate.viva_blocked_reason || (
@@ -1061,35 +1098,59 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#4b5563]">
-              Candidate Written Defense
+              Candidate Answer (Voice or Text)
             </label>
-            {!isCurrentEvaluated && (
-              <div className="flex items-center gap-3">
-                {/* Voice Answer Microphone Button */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Voice Answer Microphone Button - Always Available */}
+              <button
+                type="button"
+                onClick={toggleVoiceDefense}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer border shadow-xs ${
+                  isListening
+                    ? 'bg-red-600 border-red-600 text-white animate-pulse'
+                    : 'bg-red-50 border border-red-200 text-[#e20001] hover:bg-red-100 hover:border-[#e20001]'
+                }`}
+                title="Click to speak your technical answer via microphone"
+              >
+                {isListening ? <MicOff className="w-3.5 h-3.5 text-white" /> : <Mic className="w-3.5 h-3.5 text-[#e20001]" />}
+                <span>{isListening ? 'Listening (Click to stop)' : 'Voice Answer (Mic)'}</span>
+              </button>
+
+              {/* Sample Voice Answer Shortcut */}
+              <button
+                type="button"
+                onClick={handleInsertSampleSpokenAnswer}
+                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer border border-gray-200 bg-white text-[#4b5563] hover:text-[#111827] hover:border-gray-400 shadow-xs"
+                title="Populate candidate spoken response directly"
+              >
+                <span>Sample Voice Answer</span>
+              </button>
+
+              {/* Retake Question Button if evaluated */}
+              {isCurrentEvaluated && (
                 <button
                   type="button"
-                  onClick={toggleVoiceDefense}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer border ${
-                    isListening
-                      ? 'bg-red-950 border-red-500 text-red-300 animate-pulse'
-                      : 'bg-red-50 border border-red-200 text-[#e20001] hover:bg-[#e20001]/60'
-                  }`}
+                  onClick={handleRetakeQuestion}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer border border-gray-200 bg-white text-[#111827] hover:border-[#e20001] hover:text-[#e20001] shadow-xs"
+                  title="Clear answer and re-attempt this question"
                 >
-                  {isListening ? <MicOff className="w-3.5 h-3.5 text-red-600" /> : <Mic className="w-3.5 h-3.5 text-[#4b5563]" />}
-                  <span>{isListening ? 'Stop listening' : voiceSupported === false ? 'Mic unavailable' : 'Voice Answer (Mic)'}</span>
+                  <RotateCcw className="w-3.5 h-3.5 text-[#e20001]" />
+                  <span>Retake Question</span>
                 </button>
+              )}
 
+              {!isCurrentEvaluated && (
                 <button
                   type="button"
                   onClick={handleAuditAiTolerance}
                   disabled={!userAnswer.trim() || isAuditingTolerance}
-                  className="px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer bg-purple-950/40 border-purple-500/40 text-purple-200 hover:bg-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isAuditingTolerance ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />}
-                  <span>Audit vs Company AI Policy</span>
+                  {isAuditingTolerance ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-purple-700" />}
+                  <span>Audit vs AI Policy</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           {voiceError && (
             <p className="mb-2 text-xs text-amber-300" role="status">{voiceError}</p>
@@ -1101,11 +1162,9 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             rows={3}
             value={userAnswer}
             onChange={e => setUserAnswer(e.target.value)}
-            disabled={isCurrentEvaluated || timeLeft === 0 || isEvaluating}
-            placeholder={timeLeft === 0 && !isCurrentEvaluated ? "Time expired! Input locked." : "Type your answer or click Voice Answer to speak..."}
-            className={`w-full bg-white border rounded-xl p-3.5 text-xs sm:text-sm text-gray-800 leading-relaxed focus:outline-none font-mono transition ${
-              timeLeft === 0 && !isCurrentEvaluated ? 'border-red-500/80 bg-red-50 opacity-75' : 'border-gray-200 focus:border-gray-200'
-            }`}
+            disabled={isCurrentEvaluated || isEvaluating}
+            placeholder={isCurrentEvaluated ? "Question already evaluated. Click Retake Question to answer again." : "Type your answer or click Voice Answer (Mic) to speak..."}
+            className="w-full bg-white border border-gray-200 focus:border-[#e20001] rounded-xl p-3.5 text-xs sm:text-sm text-[#111827] font-semibold leading-relaxed focus:outline-none font-mono transition"
           ></textarea>
           {timeLeft === 0 && !isCurrentEvaluated && (
             <p className="mt-1.5 text-xs text-red-600 font-mono flex items-center gap-1.5">
@@ -1228,7 +1287,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 className="btn-primary text-sm flex items-center gap-2 shadow-lg cursor-pointer px-6 py-3 font-bold"
               >
                 {isEvaluating ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
-                <span>Submit & Evaluate Defense</span>
+                <span>Submit & Evaluate Answer</span>
               </button>
             ) : (
               <button
