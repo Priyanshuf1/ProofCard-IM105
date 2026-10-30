@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
+  Globe,
   Briefcase,
   TrendingUp,
   PieChart,
@@ -696,6 +697,123 @@ export const ForensicTerminal: React.FC<ForensicTerminalProps> = ({
               </a>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Live Site Authenticity & Apify Search Audit */}
+      {candidate.live_site_audit && (
+        <div className="mb-6 p-6 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-5 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-[#111827]">
+                    Live Website Authenticity & Apify Web Scan
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700">
+                    HTTP {candidate.live_site_audit.http_status} · {candidate.live_site_audit.ssl_valid ? 'SSL Verified' : 'No SSL'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">
+                  {candidate.live_site_audit.url} ({candidate.live_site_audit.latency_ms}ms response)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                candidate.live_site_audit.template_match_score > 35
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+              }`}>
+                {candidate.live_site_audit.verdict.replace(/_/g, ' ')}
+              </span>
+            </div>
+          </div>
+
+          {/* Scores Overview Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold uppercase text-gray-500 block mb-0.5">Content Originality</span>
+              <span className="text-xl font-bold font-mono text-emerald-700">
+                {candidate.live_site_audit.content_originality_score}%
+              </span>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold uppercase text-gray-500 block mb-0.5">Design Uniqueness</span>
+              <span className="text-xl font-bold font-mono text-blue-700">
+                {candidate.live_site_audit.design_score}%
+              </span>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold uppercase text-gray-500 block mb-0.5">Template Match</span>
+              <span className="text-xl font-bold font-mono text-neutral-800">
+                {candidate.live_site_audit.template_match_score}%
+              </span>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <span className="text-[10px] font-bold uppercase text-gray-500 block mb-0.5">Mobile Viewport</span>
+              <span className="text-xl font-bold font-mono text-emerald-700">
+                {candidate.live_site_audit.viewport_detected ? '100% Responsive' : 'Non-Responsive'}
+              </span>
+            </div>
+          </div>
+
+          {/* Detected Tech Stack */}
+          {candidate.live_site_audit.tech_stack && candidate.live_site_audit.tech_stack.length > 0 && (
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-600 block mb-2">
+                Detected Frameworks & Technology Stack:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.live_site_audit.tech_stack.map((tech, idx) => (
+                  <span key={idx} className="px-2.5 py-1 rounded-lg text-xs font-bold bg-neutral-100 border border-neutral-200 text-[#111827]">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Similar Websites Ranked via Apify Google Search */}
+          {candidate.live_site_audit.potential_matches && candidate.live_site_audit.potential_matches.length > 0 && (
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                  Google Similar Websites Scraped & Similarity Ranked (Apify Engine):
+                </span>
+                <span className="text-[11px] font-mono text-gray-500">
+                  {candidate.live_site_audit.potential_matches.length} candidates analyzed
+                </span>
+              </div>
+              <div className="space-y-2">
+                {candidate.live_site_audit.potential_matches.map((match, mIdx) => (
+                  <div key={mIdx} className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#111827]">{match.title}</span>
+                        <span className="text-[10px] font-mono text-gray-500">({match.domain})</span>
+                      </div>
+                      <a href={match.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline font-mono truncate max-w-md block">
+                        {match.url}
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-gray-600">{match.match_type}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono ${
+                        match.similarity_score > 70 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {match.similarity_score}% Match
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

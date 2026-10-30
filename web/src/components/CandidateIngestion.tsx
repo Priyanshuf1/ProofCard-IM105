@@ -29,7 +29,7 @@ import {
   Cpu,
   Layers
 } from 'lucide-react';
-import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, evaluateCohortBatch, dispatchBatchVivaInvites, dispatchN8nEvent, parseResumePdf, ResumeParseResult } from '../services/api';
+import { uploadZipFile, analyzeGithubUrl, ingestBatchCsv, evaluateCohortBatch, dispatchBatchVivaInvites, dispatchN8nEvent, parseResumePdf, ResumeParseResult, evaluateLiveSite } from '../services/api';
 import { CandidateProfile, VivaQuestion, ComplexFunction } from '../types';
 import { classifyCollegeTier } from '../utils/collegeClassifier';
 
@@ -133,7 +133,9 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       setIsSandboxUploading(false);
     }
   };
-  const [ingestMode, setIngestMode] = useState<'github' | 'zip' | 'resume'>('github');
+  const [ingestMode, setIngestMode] = useState<'github' | 'zip' | 'resume' | 'live_site'>('github');
+  const [liveSiteUrl, setLiveSiteUrl] = useState('');
+  const [apifyToken, setApifyToken] = useState((import.meta as any).env?.VITE_APIFY_API_TOKEN || '');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<ResumeParseResult | null>(null);
   const [isParsingResume, setIsParsingResume] = useState(false);
@@ -252,6 +254,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       }
       if (result.live_url) {
         setDeliverableUrl(result.live_url);
+        setLiveSiteUrl(result.live_url);
       }
       if (result.projects && result.projects.length > 0 && result.projects[0].name) {
         setCaseStudyTitle(result.projects[0].name);
@@ -318,6 +321,11 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
 
       if (ingestMode === 'resume' && !resumeFile && !resumeData) {
         setErrorMessage('Please upload a candidate resume (PDF or DOCX) to proceed.');
+        return;
+      }
+
+      if (ingestMode === 'live_site' && !liveSiteUrl.trim()) {
+        setErrorMessage('Please enter a target live website URL to evaluate.');
         return;
       }
     }
@@ -437,10 +445,29 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       } else if (ingestMode === 'zip') {
         profile = await uploadZipFile(selectedFile!, candidateName || 'Project Author', college || 'College', consentGranted, emailParam);
         profile.stream_track = 'TECHNICAL';
+      } else if (ingestMode === 'live_site') {
+        profile = await evaluateLiveSite({
+          url: liveSiteUrl.trim(),
+          candidate_name: candidateName.trim() || undefined,
+          candidate_email: emailParam,
+          college: college.trim() || undefined,
+          stream_track: candidateStream,
+          apify_token: apifyToken.trim() || undefined,
+        });
       } else if (ingestMode === 'resume') {
         const repoUrl = (githubUrl.trim() || resumeData?.github_url || '').trim();
+        const detectedLiveUrl = (liveSiteUrl.trim() || resumeData?.live_url || '').trim();
         if (repoUrl && repoUrl.includes('github.com')) {
           profile = await analyzeGithubUrl(repoUrl, candidateName || resumeData?.name || 'Candidate', college || resumeData?.college || 'University', consentGranted, undefined, emailParam);
+        } else if (detectedLiveUrl) {
+          profile = await evaluateLiveSite({
+            url: detectedLiveUrl,
+            candidate_name: candidateName || resumeData?.name || 'Candidate',
+            candidate_email: emailParam,
+            college: college || resumeData?.college || 'University',
+            stream_track: candidateStream,
+            apify_token: apifyToken.trim() || undefined,
+          });
         } else {
           // Non-Tech / Resume-driven evaluation path (MBA / BBA / Design / Non-repo)
           const candidateRole = resumeData?.role_type || 'Business / Management Track';
@@ -907,7 +934,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       {scopeMode === 'single' && (
         <div className="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm">
           {/* Ingestion Mode Toggle Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-8">
             <button
               onClick={() => setIngestMode('github')}
               className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
@@ -951,6 +978,21 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <span className="text-sm font-bold text-[#111827] font-bold">Resume PDF / DOCX</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-1">Multi-domain auto-fill & viva</p>
+            </button>
+
+            <button
+              onClick={() => setIngestMode('live_site')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                ingestMode === 'live_site'
+                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
+                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Globe className={`w-4 h-4 ${ingestMode === 'live_site' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
+                <span className="text-sm font-bold text-[#111827]">Live Website URL</span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Apify Web & Clone Scanner</p>
             </button>
           </div>
 
@@ -1419,6 +1461,26 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                     )}
 
                     {/* Section 4: Routing & Evaluation Readiness */}
+                    {resumeData.live_url && (
+                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span>
+                            <strong>Live Deployment Detected:</strong> {resumeData.live_url}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLiveSiteUrl(resumeData.live_url || '');
+                            setIngestMode('live_site');
+                          }}
+                          className="text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded cursor-pointer transition"
+                        >
+                          Evaluate with Apify →
+                        </button>
+                      </div>
+                    )}
                     {resumeData.github_url ? (
                       <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
                         <div className="flex items-center gap-2">

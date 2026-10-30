@@ -105,6 +105,36 @@ export interface ProofCardContent {
   has_prompt_injection?: boolean;
 }
 
+export interface SimilarWebsiteMatch {
+  title: string;
+  domain: string;
+  url: string;
+  similarity_score: number;
+  snippet?: string;
+  match_type: string;
+}
+
+export interface LiveSiteAudit {
+  url: string;
+  domain: string;
+  http_status: number;
+  is_live: boolean;
+  ssl_valid: boolean;
+  latency_ms: number;
+  title: string;
+  meta_description: string;
+  tech_stack: string[];
+  content_originality_score: number;
+  design_score: number;
+  template_match_score: number;
+  potential_matches: SimilarWebsiteMatch[];
+  verdict: string;
+  semantic_elements: string[];
+  viewport_detected: boolean;
+  a11y_score: number;
+  apify_verified: boolean;
+}
+
 export interface AssessmentResults {
   coding_score?: number;
   code_score?: number;
@@ -156,6 +186,8 @@ export interface CandidateProfile {
   detected_stack?: string;
   available_repos?: string[];
   live_analyzed?: boolean;
+  portfolio_url?: string;
+  live_site_audit?: LiveSiteAudit;
   analysis_status?: string;
   analysis_confidence?: number;
   skill_evidence?: Record<string, string[]>;

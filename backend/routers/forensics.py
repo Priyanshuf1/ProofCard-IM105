@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException, status
 from backend.services.repo_extractor import RepoUrlExtractor
 from backend.services.forensic_cloner import ForensicRepoCloner
 from backend.services.live_site_inspector import LiveSiteInspector
+from backend.services.apify_site_evaluator import ApifySiteEvaluator
 
 router = APIRouter(prefix="/api/v1/forensics", tags=["Forensic Repository & Live Site Inspection"])
 
@@ -34,6 +35,16 @@ class RepoCloneRequest(BaseModel):
     test_mode: Optional[bool] = Field(False, description="When true, falls back to local sample fixtures")
     timeout_seconds: Optional[int] = Field(15, description="Timeout limit in seconds for cloning")
     max_size_mb: Optional[int] = Field(150, description="Maximum repository size limit in MB")
+
+
+class LiveSiteEvaluationRequest(BaseModel):
+    url: str = Field(..., description="Target working live deployment URL")
+    candidate_name: Optional[str] = Field("Candidate", description="Name of candidate")
+    candidate_email: Optional[str] = Field("student@example.edu", description="Contact email")
+    college: Optional[str] = Field("Academic / Industry Organization", description="University or organization")
+    stream_track: Optional[str] = Field("TECHNICAL", description="TECHNICAL or NON_TECHNICAL")
+    apify_token: Optional[str] = Field(None, description="Apify API Key")
+    timeout_seconds: Optional[float] = Field(8.0, description="Evaluation timeout limit")
 
 
 class LiveUrlInspectionRequest(BaseModel):
@@ -99,3 +110,26 @@ async def inspect_live_website(payload: LiveUrlInspectionRequest):
         timeout=payload.timeout or 8.0,
     )
     return audit
+
+
+@router.post(
+    "/evaluate-live-site",
+    response_model=Dict[str, Any],
+    summary="Evaluate Live Site Authenticity via Apify",
+    description="Evaluates live deployment URL, searches for similar websites on Google via Apify, compares content/design uniqueness, and generates viva questions and ProofCard profile.",
+)
+async def evaluate_live_site_with_apify(payload: LiveSiteEvaluationRequest):
+    """
+    Evaluates candidate live site without requiring a GitHub link.
+    Performs live inspection, Apify search, similarity scoring, and returns complete CandidateProfile.
+    """
+    profile = await ApifySiteEvaluator.evaluate_url(
+        url=payload.url,
+        candidate_name=payload.candidate_name or "Candidate",
+        candidate_email=payload.candidate_email or "student@example.edu",
+        college=payload.college or "Academic Institution",
+        stream_track=payload.stream_track or "TECHNICAL",
+        apify_token=payload.apify_token,
+        timeout_seconds=payload.timeout_seconds or 8.0,
+    )
+    return profile
