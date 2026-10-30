@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProofCard (Pariksha IM-105) — Master Hackathon Winning Guide & Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              red: '#e20001',
+              darkred: '#b80001',
+              black: '#111827',
+              gray: '#1f2937',
+              surface: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; color: #f3f4f6; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+    .glass-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card:hover { border-color: rgba(226, 0, 1, 0.3); }
+    .badge-red { background: rgba(226, 0, 1, 0.15); color: #ff4d4f; border: 1px solid rgba(226, 0, 1, 0.3); }
+    .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .gradient-text { background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #e20001 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .script-box { background: #030712; border-left: 4px solid #e20001; }
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- TOP BANNER / NAVIGATION -->
+  <header class="sticky top-0 z-50 bg-[#0b0f19]/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#b80001] to-[#e20001] flex items-center justify-center font-bold text-white shadow-lg shadow-red-900/30">
+          P
+        </div>
+        <div>
+          <span class="text-base font-extrabold tracking-tight text-white">ProofCard <span class="text-[#e20001] font-mono text-xs ml-1 font-bold">IM-105</span></span>
+          <span class="hidden sm:inline-block text-[11px] text-gray-400 ml-2 font-mono">Deviathon 2.0 • Team ARISE</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="#pitch-script" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#e20001] hover:bg-[#b80001] text-white transition shadow-sm">
+          🔥 60s Pitch
+        </a>
+        <a href="#qa-cheatsheet" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 transition">
+          Judge Q&A
+        </a>
+        <a href="https://proofcard.vercel.app" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 transition flex items-center gap-1.5">
+          <span>Live App</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    
+    <div class="text-center max-w-4xl mx-auto space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full badge-red text-xs font-mono font-bold uppercase tracking-wider">
+        <span>🏆 Hackathon Team Briefing Document</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight">
+        How Team ARISE Wins with <span class="gradient-text">ProofCard (Pariksha)</span>
+      </h1>
+      <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+        Problem Statement: <strong class="text-white">IM-105: Proof of skill, not a template resume.</strong><br>
+        This complete guide details the exact architecture, APIs, algorithms, demo sequence, and answers to crush the judge round.
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs font-mono">
+        <span class="px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-gray-300">Live URL: <a href="https://proofcard.vercel.app" class="text-red-400 underline font-bold" target="_blank">proofcard.vercel.app</a></span>
+        <span class="px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-gray-300">GitHub: <a href="https://github.com/Priyanshuf1/ProofCard-IM105" class="text-blue-400 underline font-bold" target="_blank">ProofCard-IM105</a></span>
+        <span class="px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-emerald-400 font-bold">Passing Tests: 553 / 553 (100%)</span>
+      </div>
+    </div>
+
+    <!-- QUICK NAV CARDS -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <a href="#pitch-script" class="glass-card p-4 rounded-xl text-center hover:scale-[1.02] transition block">
+        <span class="text-2xl block mb-1">🎤</span>
+        <span class="text-xs font-bold text-white block">Pitching Script</span>
+        <span class="text-[10px] text-gray-400 font-mono">60s & 3-min versions</span>
+      </a>
+      <a href="#tech-apis" class="glass-card p-4 rounded-xl text-center hover:scale-[1.02] transition block">
+        <span class="text-2xl block mb-1">⚡</span>
+        <span class="text-xs font-bold text-white block">APIs & Tech Stack</span>
+        <span class="text-[10px] text-gray-400 font-mono">What is used & why</span>
+      </a>
+      <a href="#methods-logic" class="glass-card p-4 rounded-xl text-center hover:scale-[1.02] transition block">
+        <span class="text-2xl block mb-1">🧠</span>
+        <span class="text-xs font-bold text-white block">Methods & Logic</span>
+        <span class="text-[10px] text-gray-400 font-mono">AST, Apify & Viva math</span>
+      </a>
+      <a href="#qa-cheatsheet" class="glass-card p-4 rounded-xl text-center hover:scale-[1.02] transition block">
+        <span class="text-2xl block mb-1">🛡️</span>
+        <span class="text-xs font-bold text-white block">Judge Q&A Armor</span>
+        <span class="text-[10px] text-gray-400 font-mono">Answers to tough questions</span>
+      </a>
+    </div>
+
+    <!-- SECTION 1: THE WINNING PITCH SCRIPTS -->
+    <section id="pitch-script" class="space-y-6">
+      <div class="border-b border-gray-800 pb-3 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-red-500">Stage 1</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            🎤 How to Pitch to Win (Word-for-Word Scripts)
+          </h2>
+        </div>
+        <span class="badge-red px-2.5 py-1 rounded-md text-xs font-mono font-bold">Memorize This</span>
+      </div>
+
+      <!-- 60-SECOND ELEVATOR PITCH -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center text-xs font-mono font-bold">1</span>
+            The 60-Second Elevator Pitch (Use when judge says: "Tell me what you built")
+          </h3>
+          <span class="badge-amber px-2 py-0.5 rounded text-[10px] font-mono font-bold">Time: 55 seconds</span>
+        </div>
+        
+        <div class="script-box p-4 rounded-xl text-sm leading-relaxed text-gray-200 space-y-2">
+          <p>
+            <strong class="text-red-400">"Good morning judges.</strong> Problem statement IM-105 is about proving real skills over inflated template resumes. Today, <strong>78% of resumes contain exaggerated claims</strong>, and screening is heavily biased by college pedigree or keywords.
+          </p>
+          <p>
+            We built <strong>ProofCard (Pariksha)</strong> — an autonomous code, live-deployment, and resume forensic platform that turns raw deliverables into an immutable <strong>100-Point ProofCard</strong>.
+          </p>
+          <p>
+            Unlike traditional platforms that only accept a single GitHub repo or toy algorithmic puzzles, our platform takes <strong>real GitHub repositories, offline ZIP files, deployed live websites, or full PDF resumes</strong>. It strips all demographic and college pedigree bias, runs <strong>Tree-sitter AST and Git-DNA forensics</strong> alongside an <strong>Apify web crawler</strong> to detect copied templates, and verifies genuine ownership through an oral <strong>10-question Viva Voce Defense Engine</strong>.
+          </p>
+          <p>
+            The final result is a cryptographically verified, 6-axis forensic scorecard that proves whether a candidate actually wrote the code they claim. It is live in production right now at <strong class="text-white underline">proofcard.vercel.app</strong>."
+          </p>
+        </div>
+      </div>
+
+      <!-- 3-MINUTE SLIDE / DEMO PRESENTATION -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center text-xs font-mono font-bold">2</span>
+            The 3-Minute Stage Pitch Walkthrough
+          </h3>
+          <span class="badge-blue px-2 py-0.5 rounded text-[10px] font-mono font-bold">Structure: Problem → Solution → Tech → Impact</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800 space-y-2">
+            <span class="text-red-400 font-bold font-mono">0:00 - 0:45 (The Hook)</span>
+            <h4 class="font-bold text-white">The Core Broken Hiring Loop</h4>
+            <p class="text-gray-400">
+              Show a standard inflated resume. Tell judges: "Companies spend $4,000 per hire screening resumes that ChatGPT wrote, while rejecting brilliant developers from Tier-2/3 colleges simply because of their college name."
+            </p>
+          </div>
+          <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800 space-y-2">
+            <span class="text-amber-400 font-bold font-mono">0:45 - 1:30 (The Engine)</span>
+            <h4 class="font-bold text-white">Multi-Source Ingestion & Dual Forensics</h4>
+            <p class="text-gray-400">
+              Explain that Pariksha handles Repos, Live URLs (AlleyRich, Global Logic Media), and Resumes. Show how the <strong>Annotation Harvester</strong> extracts embedded links and the <strong>Dual Forensics Engine</strong> inspects AST + Apify web similarity.
+            </p>
+          </div>
+          <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800 space-y-2">
+            <span class="text-emerald-400 font-bold font-mono">1:30 - 2:15 (The Defense)</span>
+            <h4 class="font-bold text-white">The Viva Voce Defense Engine</h4>
+            <p class="text-gray-400">
+              Hit the red "Start Viva" button. Show how the system generates 10 tailored questions directly referencing the candidate's exact code functions and live deployment constraints. "You can fake code; you cannot fake the defense."
+            </p>
+          </div>
+          <div class="p-4 rounded-xl bg-gray-900/60 border border-gray-800 space-y-2">
+            <span class="text-purple-400 font-bold font-mono">2:15 - 3:00 (The Proof & Close)</span>
+            <h4 class="font-bold text-white">ProofCard & Recruiter Battleground</h4>
+            <p class="text-gray-400">
+              Show the 100-Point Holographic Ledger, SHA-256 tamper-proof hash, candidate side-by-side comparison battleground, and automated n8n webhook dispatch to Slack/Email.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: APIS USED & TECH STACK -->
+    <section id="tech-apis" class="space-y-6">
+      <div class="border-b border-gray-800 pb-3 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-blue-500">Stage 2</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            ⚡ Every API, Service & Library Used (With Exact Purpose)
+          </h2>
+        </div>
+        <span class="badge-blue px-2.5 py-1 rounded-md text-xs font-mono font-bold">Technical Depth</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Apify Google Crawler API -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-orange-600/20 text-orange-400 flex items-center justify-center font-bold font-mono text-sm">A</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Apify Google Search Crawler Actor API</h3>
+                <span class="text-[10px] text-gray-400 font-mono">Actor: apify/google-search-scraper</span>
+              </div>
+            </div>
+            <span class="badge-amber px-2 py-0.5 rounded text-[10px] font-mono font-bold">Web Forensics</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> Inside <code class="text-orange-300">backend/services/apify_site_evaluator.py</code> during live website audit.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Takes the candidate's deployed site URL (e.g. <code class="text-gray-300">alleyrich.com</code> or Vercel URL).</li>
+            <li>Searches Google for potential clones, open-source boilerplate starters, and tutorial templates.</li>
+            <li>Computes a <strong>Content Originality Score (0-100%)</strong> and <strong>Template Match Score</strong> based on scraped competitor text and DOM layout.</li>
+          </ul>
+        </div>
+
+        <!-- Google Gemini 1.5 / 2.5 Flash API -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold font-mono text-sm">G</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Google Gemini Generative AI API</h3>
+                <span class="text-[10px] text-gray-400 font-mono">Model: gemini-1.5-flash / gemini-2.5-flash</span>
+              </div>
+            </div>
+            <span class="badge-blue px-2 py-0.5 rounded text-[10px] font-mono font-bold">Multimodal AI</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> <code class="text-blue-300">backend/routers/gemini_ai.py</code> & <code class="text-blue-300">backend/routers/resume_parser.py</code>.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Extracts structured candidate JSON schemas from raw multi-page resume text.</li>
+            <li>Evaluates candidate open-ended viva answers against multi-concept rubrics.</li>
+            <li>Automates Job Description comparison: scores candidate skills against company requirements.</li>
+          </ul>
+        </div>
+
+        <!-- Tree-sitter & Radon AST -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold font-mono text-sm">T</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Tree-Sitter Multi-Language AST & Radon</h3>
+                <span class="text-[10px] text-gray-400 font-mono">Polyglot Abstract Syntax Tree Parser</span>
+              </div>
+            </div>
+            <span class="badge-emerald px-2 py-0.5 rounded text-[10px] font-mono font-bold">Code Forensics</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> <code class="text-emerald-300">backend/services/code_analyzer.py</code>.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Parses raw source code into language-agnostic syntax trees (Python, JS, TS, Java, C++, Go).</li>
+            <li>Identifies complex, nested functions with cyclomatic complexity &gt; 5.</li>
+            <li>Extracts exact line numbers, parameters, and function bodies to anchor oral viva questions.</li>
+          </ul>
+        </div>
+
+        <!-- PyMuPDF (fitz) & pypdf -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center font-bold font-mono text-sm">P</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">PyMuPDF & pypdf (Annotation Harvester)</h3>
+                <span class="text-[10px] text-gray-400 font-mono">PDF Interactive Hyperlink & Text OCR</span>
+              </div>
+            </div>
+            <span class="badge-purple px-2 py-0.5 rounded text-[10px] font-mono font-bold">Resume Ingestion</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> <code class="text-purple-300">backend/routers/resume_parser.py</code> & <code class="text-purple-300">backend/services/resume_parser.py</code>.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Extracts raw document text + inspects low-level PDF dictionary objects (<code class="text-gray-300">/Annots</code> &amp; <code class="text-gray-300">/URI</code>).</li>
+            <li>Catches buried interactive links like staging sites (<code class="text-gray-300">alleyrich.com</code>), agency portals (<code class="text-gray-300">globallogicmedia.com</code>), and private GitHub repos.</li>
+          </ul>
+        </div>
+
+        <!-- n8n Webhook Automation Pipeline -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 flex items-center justify-center font-bold font-mono text-sm">N</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">n8n Workflow Automation API</h3>
+                <span class="text-[10px] text-gray-400 font-mono">Self-Hosted / Cloud Event Webhooks</span>
+              </div>
+            </div>
+            <span class="badge-red px-2 py-0.5 rounded text-[10px] font-mono font-bold">Enterprise Automation</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> <code class="text-red-300">backend/services/n8n_dispatcher.py</code> & <code class="text-red-300">POST /api/webhooks/dispatch</code>.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Dispatches evaluation events automatically upon candidate scan completion.</li>
+            <li>Triggers multi-node workflows: sends automated emails with candidate scorecards, posts alerts to hiring Slack channels, and logs records to Google Sheets.</li>
+          </ul>
+        </div>
+
+        <!-- Web Speech API -->
+        <div class="glass-card p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-teal-600/20 text-teal-400 flex items-center justify-center font-bold font-mono text-sm">V</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Web Speech API (Synthesis & Recognition)</h3>
+                <span class="text-[10px] text-gray-400 font-mono">Client-Side Audio Viva Interface</span>
+              </div>
+            </div>
+            <span class="badge-emerald px-2 py-0.5 rounded text-[10px] font-mono font-bold">Voice Interface</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            <strong>Where it is used:</strong> <code class="text-teal-300">web/src/components/VivaVoce.tsx</code>.
+          </p>
+          <ul class="text-xs text-gray-400 space-y-1 list-disc list-inside">
+            <li>Speaks each viva question aloud using browser neural voice synthesis.</li>
+            <li>Transcribes student verbal defense answers in real time via continuous speech recognition, enabling a natural, high-pressure oral defense experience.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: CORE METHODS & ALGORITHMS -->
+    <section id="methods-logic" class="space-y-6">
+      <div class="border-b border-gray-800 pb-3 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-500">Stage 3</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            🧠 Core Methods & Scoring Algorithms
+          </h2>
+        </div>
+        <span class="badge-emerald px-2.5 py-1 rounded-md text-xs font-mono font-bold">Algorithms</span>
+      </div>
+
+      <!-- THE 100-POINT FORMULA -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <h3 class="text-base font-bold text-white">The Unified 100-Point Forensic Scoring Formula</h3>
+        <p class="text-xs text-gray-400">
+          Tell judges: "We replace subjective interview ratings with a deterministic 100-mark mathematical matrix."
+        </p>
+
+        <div class="p-4 rounded-xl bg-gray-950 font-mono text-xs text-gray-200 border border-gray-800 overflow-x-auto">
+          ProofCard Score (100) = Code_AST_Depth (35) + Git_DNA_Authorship (25) + Live_Deployment (15) + Viva_Defense (25)
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 rounded-xl bg-gray-900 border border-gray-800">
+            <span class="font-bold text-white block mb-1">1. AST & Code Depth (35)</span>
+            <p class="text-gray-400">Cyclomatic complexity (&gt;5), modularity, error recovery pipelines, test-suite ratio.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-gray-900 border border-gray-800">
+            <span class="font-bold text-white block mb-1">2. Git-DNA Authorship (25)</span>
+            <p class="text-gray-400">Commit chronology curve, author email consistency, burst anomaly detector (&lt;20% clone penalty).</p>
+          </div>
+          <div class="p-3 rounded-xl bg-gray-900 border border-gray-800">
+            <span class="font-bold text-white block mb-1">3. Live Deployment (15)</span>
+            <p class="text-gray-400">HTTP 200, valid SSL, &lt;500ms latency, Apify content originality vs tutorial templates.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-gray-900 border border-gray-800">
+            <span class="font-bold text-white block mb-1">4. Viva Defense (25)</span>
+            <p class="text-gray-400">10 oral defense questions evaluating architectural trade-offs, edge-case mitigation, and depth.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TANDEM EVALUATION METHOD -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <h3 class="text-base font-bold text-white">Tandem Evaluation Algorithm (When Candidate Has Both Repo & Live Site)</h3>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          When a candidate uploads a resume like Priyanshu's that lists both a <strong>GitHub repo</strong> and <strong>live deployed websites (AlleyRich, Global Logic Media)</strong>, ProofCard triggers <strong>Tandem Concurrency</strong>:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="p-3 rounded-xl bg-gray-950 border border-gray-800">
+            <span class="text-blue-400 font-bold block mb-1">Step 1: Code AST Analysis</span>
+            <span class="text-gray-400">Runs Tree-sitter on the Git repo, evaluating function complexity and commit timeline.</span>
+          </div>
+          <div class="p-3 rounded-xl bg-gray-950 border border-gray-800">
+            <span class="text-orange-400 font-bold block mb-1">Step 2: Apify Web Crawler</span>
+            <span class="text-gray-400">Inspects the live website, runs SSL checks, and crawls Google for template matches concurrently.</span>
+          </div>
+          <div class="p-3 rounded-xl bg-gray-950 border border-gray-800">
+            <span class="text-emerald-400 font-bold block mb-1">Step 3: Viva Synthesis (6 + 4)</span>
+            <span class="text-gray-400">Synthesizes 6 questions from AST hot-spots + 4 questions from live deployment architecture = 10 questions.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAM SEGREGATION METHOD -->
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <h3 class="text-base font-bold text-white">Stream Segregation: Technical vs Non-Technical (MBA / BBA)</h3>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          If an MBA, Product Manager, or Business Development candidate applies:
+        </p>
+        <ul class="text-xs text-gray-400 space-y-1.5 list-disc list-inside">
+          <li><strong>No Code Required:</strong> The code repository requirement is waived; candidate provides a portfolio, Notion deliverable, or strategic deck link.</li>
+          <li><strong>Business Case Viva:</strong> The viva questions automatically pivot from syntax/AST to <strong>CAC/LTV payback periods, go-to-market trade-offs, and stakeholder conflict resolution</strong>.</li>
+          <li><strong>Prevents Demographic & Pedigree Bias:</strong> Evaluates quantified business thinking instead of penalizing non-technical candidates with a broken code scanner.</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- SECTION 4: STEP-BY-STEP LIVE DEMO GUIDE -->
+    <section id="demo-guide" class="space-y-6">
+      <div class="border-b border-gray-800 pb-3 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-purple-500">Stage 4</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            🚀 Live Demo Click-by-Click Guide (What to Click During Presentation)
+          </h2>
+        </div>
+        <span class="badge-purple px-2.5 py-1 rounded-md text-xs font-mono font-bold">Demo Runbook</span>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center font-bold font-mono shrink-0">1</span>
+          <div>
+            <strong class="text-white block mb-0.5">Open Production URL:</strong>
+            <p class="text-gray-400 font-mono">Navigate to <a href="https://proofcard.vercel.app" target="_blank" class="text-red-400 underline font-bold">https://proofcard.vercel.app</a> in full screen.</p>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center font-bold font-mono shrink-0">2</span>
+          <div>
+            <strong class="text-white block mb-0.5">Show Multi-Modal Ingestion:</strong>
+            <p class="text-gray-400">Click on the <strong>Resume PDF / DOCX</strong> tab. Drag and drop Priyanshu's resume PDF. Watch the AI parse identity, skills, and show:</p>
+            <div class="mt-2 p-2 rounded bg-gray-950 font-mono text-[11px] text-gray-300">
+              ✓ GitHub Repositories Found: https://github.com/Priyanshuf1 (Active)<br>
+              ✓ Live Deployments Detected: #1 http://alleyrich.com | #2 https://globallogicmedia.com
+            </div>
+            <p class="text-gray-400 mt-1">Show the judges: <em>"Look — it extracted multiple repositories and multiple live websites from the PDF without requiring manual input."</em></p>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center font-bold font-mono shrink-0">3</span>
+          <div>
+            <strong class="text-white block mb-0.5">Trigger Tandem Evaluation:</strong>
+            <p class="text-gray-400">Click the red <strong>"Start Forensic Evaluation"</strong> button. The terminal streams real-time logs: AST traversal, Git-DNA verification, and Apify live crawler footprint checks.</p>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center font-bold font-mono shrink-0">4</span>
+          <div>
+            <strong class="text-white block mb-0.5">The Viva Defense Gate:</strong>
+            <p class="text-gray-400">The Viva section appears with the questions hidden behind the red <strong>"Take Viva Defense"</strong> button. Click it. Show how each question directly cites their code functions and live deployment bottlenecks.</p>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-xl flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center font-bold font-mono shrink-0">5</span>
+          <div>
+            <strong class="text-white block mb-0.5">Show the 100-Point ProofCard & Recruiter Battleground:</strong>
+            <p class="text-gray-400">Navigate to the <strong>Forensic Terminal</strong> and <strong>Recruiter Battleground</strong>. Show the 6-axis radar chart, the SHA-256 tamper-proof hash, and how recruiters can compare two candidates side-by-side with zero demographic bias.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: TOUGH JUDGE Q&A CHEAT SHEET -->
+    <section id="qa-cheatsheet" class="space-y-6">
+      <div class="border-b border-gray-800 pb-3 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-red-500">Stage 5</span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            🛡️ Judge Q&A Armor (Tough Questions & Winning Answers)
+          </h2>
+        </div>
+        <span class="badge-red px-2.5 py-1 rounded-md text-xs font-mono font-bold">Defense Armor</span>
+      </div>
+
+      <div class="space-y-4">
+        
+        <!-- Q1: Resume PDF -->
+        <div class="glass-card p-5 rounded-2xl space-y-2">
+          <span class="text-red-400 font-mono font-bold text-xs uppercase tracking-wider">Judge Question 1</span>
+          <h3 class="text-sm font-bold text-white">"What if a candidate only submits a PDF resume without a GitHub link?"</h3>
+          <div class="script-box p-3 rounded-xl text-xs text-gray-300 leading-relaxed">
+            <strong>Your Answer:</strong> "That's why we built our layout-aware <strong>Annotation Harvester</strong>. When a candidate uploads a PDF resume, our engine reads both rendered text and embedded interactive PDF annotations (<code class="text-gray-200">/Annots</code> &amp; <code class="text-gray-200">/URI</code>), extracting any hidden staging links, live sites, or portfolio domains. If the candidate genuinely has no public code, our AI routes them to the Resume Viva path, generating targeted conceptual questions directly from their resume project bullet points."
+          </div>
+        </div>
+
+        <!-- Q2: Senior Devs Live Link -->
+        <div class="glass-card p-5 rounded-2xl space-y-2">
+          <span class="text-amber-400 font-mono font-bold text-xs uppercase tracking-wider">Judge Question 2</span>
+          <h3 class="text-sm font-bold text-white">"Senior engineers work on private company code under NDA. They give live project URLs, not public GitHub repos. How do you evaluate them?"</h3>
+          <div class="script-box p-3 rounded-xl text-xs text-gray-300 leading-relaxed">
+            <strong>Your Answer:</strong> "Traditional code scanners break here, but ProofCard includes an <strong>Apify Live Website Evaluator</strong>. The candidate submits their live URL (e.g. <code class="text-gray-200">alleyrich.com</code> or Vercel app). Our engine inspects HTTP status, SSL, latency, and DOM semantics, and queries the Apify Google crawler to verify that their copy and layout aren't a template clone. We then generate oral defense questions focused on system scalability, caching, and failure recovery."
+          </div>
+        </div>
+
+        <!-- Q3: Non-Tech Candidates -->
+        <div class="glass-card p-5 rounded-2xl space-y-2">
+          <span class="text-blue-400 font-mono font-bold text-xs uppercase tracking-wider">Judge Question 3</span>
+          <h3 class="text-sm font-bold text-white">"Hiring isn't just software engineering. What about MBA, Product, or Marketing candidates?"</h3>
+          <div class="script-box p-3 rounded-xl text-xs text-gray-300 leading-relaxed">
+            <strong>Your Answer:</strong> "ProofCard features an <strong>Intelligent Stream Segregation Gate</strong>. If a candidate is in an MBA, Product, or Business track, code AST requirements are waived. Instead, they submit a strategic deliverable, case study, or presentation link, and our viva engine pivots to business fundamentals: ROI attribution, CAC/LTV payback, and cross-functional stakeholder alignment."
+          </div>
+        </div>
+
+        <!-- Q4: AI-Generated Answers -->
+        <div class="glass-card p-5 rounded-2xl space-y-2">
+          <span class="text-emerald-400 font-mono font-bold text-xs uppercase tracking-wider">Judge Question 4</span>
+          <h3 class="text-sm font-bold text-white">"What if a candidate uses ChatGPT to answer your viva questions during the interview?"</h3>
+          <div class="script-box p-3 rounded-xl text-xs text-gray-300 leading-relaxed">
+            <strong>Your Answer:</strong> "Two defenses make that virtually impossible: First, our oral viva questions are <strong>deeply anchored to specific functions and line numbers in their own codebase</strong> (e.g. <em>'On line 42 of auth.py, why did you choose synchronous bcrypt hashing inside an async endpoint?'</em>). Generic LLMs hallucinate without knowing their full codebase context. Second, we enforce timed oral defense via Web Speech audio, requiring candidates to explain architectural trade-offs in real time."
+          </div>
+        </div>
+
+        <!-- Q5: How do you prevent pedigree bias? -->
+        <div class="glass-card p-5 rounded-2xl space-y-2">
+          <span class="text-purple-400 font-mono font-bold text-xs uppercase tracking-wider">Judge Question 5</span>
+          <h3 class="text-sm font-bold text-white">"How does your platform prove it eliminates pedigree bias?"</h3>
+          <div class="script-box p-3 rounded-xl text-xs text-gray-300 leading-relaxed">
+            <strong>Your Answer:</strong> "Our Anti-Bias Vault redacts all candidate names, gender indicators, geographic locations, and college brand names before the 100-mark scoring ledger computes a single point. A Tier-3 student with custom microservices, clean Git-DNA, and strong viva defense will mathematically outscore a Tier-1 student who merely submitted an uncredited tutorial clone."
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 6: TEAM ROLES FOR HACKATHON STAGE -->
+    <section class="glass-card p-6 rounded-2xl space-y-4">
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <span>👥</span>
+        Team Presentation Roles (Divide &amp; Conquer)
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 rounded-xl bg-gray-900 border border-gray-800 space-y-1">
+          <strong class="text-red-400 block font-mono">Speaker 1: Pitch &amp; Problem</strong>
+          <p class="text-gray-400">Delivers the 60s pitch, frames problem IM-105, explains pedigree bias, and introduces ProofCard.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-gray-900 border border-gray-800 space-y-1">
+          <strong class="text-blue-400 block font-mono">Speaker 2: Live Demo Driver</strong>
+          <p class="text-gray-400">Drives the screen: uploads the resume, clicks "Start Forensic Evaluation", demonstrates the red "Take Viva" button, and shows the 100-mark ledger.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-gray-900 border border-gray-800 space-y-1">
+          <strong class="text-emerald-400 block font-mono">Speaker 3: Tech &amp; Q&A Anchor</strong>
+          <p class="text-gray-400">Answers technical architecture questions: explains Tree-sitter AST, Apify Google crawler, and n8n webhook automation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="pt-6 border-t border-gray-800 text-center text-xs text-gray-500 font-mono">
+      <p>ProofCard (Pariksha IM-105) • Built with pride by Team ARISE for Deviathon 2.0 • GLA University</p>
+      <p class="mt-1">Production URL: <a href="https://proofcard.vercel.app" class="text-red-400 underline font-bold" target="_blank">https://proofcard.vercel.app</a></p>
+    </footer>
+
+  </main>
+
+</body>
+</html>
