@@ -447,6 +447,32 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
         const detectedLiveUrl = (liveSiteUrl.trim() || resumeData?.live_url || '').trim();
         if (repoUrl && repoUrl.includes('github.com')) {
           profile = await analyzeGithubUrl(repoUrl, candidateName || resumeData?.name || 'Candidate', college || resumeData?.college || 'University', consentGranted, undefined, emailParam);
+          // If candidate resume or input also contains a live site, evaluate both in tandem!
+          if (detectedLiveUrl) {
+            try {
+              const liveEval = await evaluateLiveSite({
+                url: detectedLiveUrl,
+                candidate_name: candidateName || resumeData?.name || 'Candidate',
+                candidate_email: emailParam,
+                college: college || resumeData?.college || 'University',
+                stream_track: candidateStream,
+                apify_token: apifyToken.trim() || undefined,
+              });
+              if (liveEval.live_site_audit) {
+                profile.live_site_audit = liveEval.live_site_audit;
+              }
+              if (liveEval.portfolio_url) {
+                profile.portfolio_url = liveEval.portfolio_url;
+              }
+              // Merge questions: up to 6 from repo AST + up to 4 from live deployment for comprehensive 10 viva questions
+              if (liveEval.viva_questions && liveEval.viva_questions.length > 0) {
+                const existingRepoQ = profile.viva_questions || [];
+                profile.viva_questions = [...existingRepoQ.slice(0, 6), ...liveEval.viva_questions.slice(0, 4)];
+              }
+            } catch (err) {
+              console.warn('Live site supplementary evaluation skipped:', err);
+            }
+          }
         } else if (detectedLiveUrl) {
           profile = await evaluateLiveSite({
             url: detectedLiveUrl,
@@ -657,6 +683,15 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       }
 
       // Authoritative n8n dispatch is handled by backend to provide luxury HTML payload
+
+      if (profile) {
+        if (resumeData?.all_github_urls && resumeData.all_github_urls.length > 0) {
+          profile.available_repos = resumeData.all_github_urls;
+        }
+        if (resumeData?.all_live_urls && resumeData.all_live_urls.length > 0) {
+          profile.all_live_urls = resumeData.all_live_urls;
+        }
+      }
 
       clearInterval(stepInterval);
       setIsScanning(false);

@@ -466,14 +466,22 @@ class ResumeParserService:
                 phone = p.strip()
                 break
 
-        gh_match = GITHUB_REGEX.search(raw_text)
-        github_url = f"https://github.com/{gh_match.group(1)}" if gh_match else None
+        all_github_urls = []
+        for m in GITHUB_REGEX.finditer(raw_text):
+            val = f"https://github.com/{m.group(1)}" if m.group(1) else m.group(0)
+            if val not in all_github_urls:
+                all_github_urls.append(val)
+        github_url = all_github_urls[0] if all_github_urls else None
 
         li_match = LINKEDIN_REGEX.search(raw_text)
         linkedin_url = f"https://linkedin.com/in/{li_match.group(1)}" if li_match else None
 
-        port_match = PORTFOLIO_REGEX.search(raw_text)
-        portfolio_url = port_match.group(0) if port_match else None
+        all_live_urls = []
+        for m in PORTFOLIO_REGEX.finditer(raw_text):
+            val = m.group(0)
+            if val not in all_live_urls and "github.com" not in val.lower():
+                all_live_urls.append(val)
+        portfolio_url = all_live_urls[0] if all_live_urls else None
 
         all_urls = re.findall(r"https?:\/\/[^\s,;()\"'>]+", raw_text)
         other_links = [u for u in all_urls if u not in (github_url, linkedin_url, portfolio_url)][:5]

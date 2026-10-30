@@ -187,6 +187,7 @@ export interface CandidateProfile {
   available_repos?: string[];
   live_analyzed?: boolean;
   portfolio_url?: string;
+  all_live_urls?: string[];
   live_site_audit?: LiveSiteAudit;
   analysis_status?: string;
   analysis_confidence?: number;
