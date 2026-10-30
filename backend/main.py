@@ -87,7 +87,8 @@ from backend.routers import (
     forensics,
     grading,
     resume_parser,
-    ai_tolerance
+    ai_tolerance,
+    admin_auth
 )
 
 
@@ -137,6 +138,7 @@ app.include_router(forensics.router)
 app.include_router(grading.router)
 app.include_router(resume_parser.router)
 app.include_router(ai_tolerance.router)
+app.include_router(admin_auth.router)
 
 
 @app.get("/health")

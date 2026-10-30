@@ -8,23 +8,10 @@ import { RecruiterBattle } from './components/RecruiterBattle';
 import { BiasMirror } from './components/BiasMirror';
 import { ImatsApiModal } from './components/ImatsApiModal';
 import { N8nAutomationModal } from './components/N8nAutomationModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
+import { Building2, ShieldCheck, ArrowRight, Lock, Key, Users, Award, Zap, Sliders, Cpu, Terminal, Swords, Scale, ChevronDown, Sparkles, Globe, FileCheck } from 'lucide-react';
 import { CandidateProfile } from './types';
 import { OFFLINE_DEMO_PROFILES } from './data/offlineDemoData';
-import { 
-  ArrowRight, 
-  ShieldCheck, 
-  Cpu, 
-  Terminal, 
-  Zap, 
-  Award, 
-  Swords, 
-  Scale, 
-  ChevronDown,
-  Sparkles,
-  Lock,
-  Globe,
-  FileCheck
-} from 'lucide-react';
 
 function resolveInitialCandidate(): CandidateProfile {
   if (typeof window !== 'undefined') {
@@ -111,6 +98,49 @@ export const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('hero');
   const [isImatsOpen, setIsImatsOpen] = useState<boolean>(false);
   const [isN8nOpen, setIsN8nOpen] = useState<boolean>(false);
+  
+  // Portal Mode: 'candidate' (Student) | 'admin' (Company / Recruiter)
+  const [portalMode, setPortalMode] = useState<'candidate' | 'admin'>('candidate');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return Boolean(sessionStorage.getItem('pariksha_admin_auth'));
+    }
+    return false;
+  });
+  const [showAdminLogin, setShowAdminLogin] = useState<boolean>(false);
+
+  const handleSwitchPortal = (mode: 'candidate' | 'admin') => {
+    if (mode === 'admin') {
+      if (!isAdminAuthenticated) {
+        setShowAdminLogin(true);
+        return;
+      }
+      setPortalMode('admin');
+      setActiveSection('admin-home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setPortalMode('candidate');
+      setActiveSection('hero');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleAdminLoginSuccess = (token: string, user: string) => {
+    setIsAdminAuthenticated(true);
+    setShowAdminLogin(false);
+    setPortalMode('admin');
+    setActiveSection('admin-home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('pariksha_admin_auth');
+    sessionStorage.removeItem('pariksha_admin_user');
+    setIsAdminAuthenticated(false);
+    setPortalMode('candidate');
+    setActiveSection('hero');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Smooth scroll handler
   const handleNavigateToSection = (sectionId: string) => {
@@ -207,198 +237,333 @@ export const App: React.FC = () => {
         onClose={() => setIsN8nOpen(false)}
       />
 
-      {/* Floating Glass Pill Navigation Bar */}
+      {/* Admin Authentication Security Gateway Modal */}
+      <AdminLoginModal
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onLoginSuccess={handleAdminLoginSuccess}
+      />
+
+      {/* Floating Glass Pill Navigation Bar with Portal Segregation */}
       <Navbar
         activeSection={activeSection}
         onNavigateToSection={handleNavigateToSection}
         onOpenImatsModal={() => setIsImatsOpen(true)}
         onOpenN8nModal={() => setIsN8nOpen(true)}
         currentCandidate={currentCandidate}
+        portalMode={portalMode}
+        onSwitchPortal={handleSwitchPortal}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onAdminLogout={handleAdminLogout}
       />
 
       {/* MAIN CONTINUOUS VERTICAL SCROLL BODY */}
       <main className="relative z-10 flex-1 flex flex-col pt-24">
-        
-        {/* ====================================================================
-            HERO SECTION (#hero) - Global Logic Media Inspired Luxury Styling
-            ==================================================================== */}
-        <section id="hero" className="min-h-[65vh] flex flex-col items-center justify-center px-4 sm:px-6 text-center pt-10 pb-16 bg-white">
-          <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-
-            {/* Pariksha Real Product Headline */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-[#111827] tracking-tight leading-[1.08] font-sans">
-              Verify Real Code. <br className="hidden sm:inline" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#e20001] via-[#d90429] to-[#b80001]">
-                Eliminate Resume Fraud.
-              </span>
-            </h1>
-
-            {/* Pariksha Real Subtitle */}
-            <p className="text-base sm:text-lg text-[#4b5563] max-w-xl font-normal leading-relaxed">
-              Verify real code originality, interview candidates via AI viva, and eliminate hiring bias.
-            </p>
-
-            {/* Hero CTAs */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
-              <button 
-                onClick={() => handleNavigateToSection('scanner')}
-                className="btn-primary"
-              >
-                <span>Scan Candidate Code</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => handleNavigateToSection('proofcard')}
-                className="btn-secondary"
-              >
-                <span>View 3D ProofCard Ledger</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
 
         {/* ====================================================================
-            SECTION 01: INGESTION & RESUME PARSER (#scanner)
+            PORTAL 1: CANDIDATE / STUDENT PORTAL (Clean, Zero Recruiter Clutter)
             ==================================================================== */}
-        <section id="scanner" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Upload Candidate Resume & Code</h2>
-              <p className="glm-section-subtitle">
-                Upload PDF / DOCX resumes, inspect live application URLs, paste public GitHub repos, or upload ZIP archives with real-time SSRF shield protection.
-              </p>
-            </div>
+        {portalMode === 'candidate' ? (
+          <>
+            {/* HERO SECTION (#hero) */}
+            <section id="hero" className="min-h-[60vh] flex flex-col items-center justify-center px-4 sm:px-6 text-center pt-8 pb-14 bg-white">
+              <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-red-50 text-[#e20001] border border-red-200">
+                  <span>🎓 Student & Candidate Evaluation Portal</span>
+                </span>
 
-            <div className="w-full">
-              <CandidateIngestion
-                onScanComplete={handleScanComplete}
-                onNavigateToTab={handleNavigateToSection}
-                onSelectCandidate={(cand) => {
-                  setCurrentCandidate(cand);
-                  handleNavigateToSection('terminal');
-                }}
-                cohort={cohort}
-                onUpdateCohort={setCohort}
-              />
-            </div>
-          </div>
-        </section>
+                <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-[#111827] tracking-tight leading-[1.08] font-sans">
+                  Verify Real Code. <br className="hidden sm:inline" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#e20001] via-[#d90429] to-[#b80001]">
+                    Eliminate Resume Fraud.
+                  </span>
+                </h1>
 
+                <p className="text-base sm:text-lg text-[#4b5563] max-w-xl font-normal leading-relaxed">
+                  Submit your public code repository, project ZIP, or multi-domain resume. Complete your live verbal viva to claim an immutable, verified 3D ProofCard.
+                </p>
 
-        {/* ====================================================================
-            SECTION 02: FORENSIC TERMINAL & GIT-DNA (#terminal)
-            ==================================================================== */}
-        <section id="terminal" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Code & Git History Analysis</h2>
-              <p className="glm-section-subtitle">
-                Detect copy-pasted tutorial repos across 1,200+ signatures, examine commit timestamp cadence, burst ratios, and structural code signatures.
-              </p>
-            </div>
+                <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
+                  <button 
+                    onClick={() => handleNavigateToSection('scanner')}
+                    className="btn-primary"
+                  >
+                    <span>Submit Code / Resume &rarr;</span>
+                  </button>
+                  <button 
+                    onClick={() => handleNavigateToSection('proofcard')}
+                    className="btn-secondary"
+                  >
+                    <span>Inspect ProofCard Credential</span>
+                  </button>
+                </div>
+              </div>
+            </section>
 
-            <div className="w-full">
-              <ForensicTerminal
-                candidate={currentCandidate}
-                onNavigateToTab={handleNavigateToSection}
-                onSelectCandidate={setCurrentCandidate}
-                cohort={cohort}
-              />
-            </div>
-          </div>
-        </section>
+            {/* SECTION 01: INGESTION & SUBMISSION (#scanner) */}
+            <section id="scanner" className="glm-section">
+              <div className="max-w-6xl mx-auto">
+                <div className="glm-section-header">
+                  <h2 className="glm-section-title">Submit Candidate Resume & Code</h2>
+                  <p className="glm-section-subtitle">
+                    Upload PDF / DOCX resumes, inspect live project URLs, or link public GitHub repositories.
+                  </p>
+                </div>
+                <div className="w-full">
+                  <CandidateIngestion
+                    onScanComplete={handleScanComplete}
+                    onNavigateToTab={handleNavigateToSection}
+                    onSelectCandidate={(cand) => {
+                      setCurrentCandidate(cand);
+                      handleNavigateToSection('proofcard');
+                    }}
+                    cohort={cohort}
+                    onUpdateCohort={setCohort}
+                  />
+                </div>
+              </div>
+            </section>
 
+            {/* SECTION 02: CODE DEFENSE VIVA (#viva) */}
+            <section id="viva" className="glm-section">
+              <div className="max-w-6xl mx-auto">
+                <div className="glm-section-header">
+                  <h2 className="glm-section-title">Live Candidate Code Defense Viva</h2>
+                  <p className="glm-section-subtitle">
+                    Defend your implementation in real time with our browser-native Web Speech API viva evaluator.
+                  </p>
+                </div>
+                <div className="w-full">
+                  <VivaArena
+                    candidate={currentCandidate}
+                    onUpdateVivaScore={handleUpdateVivaScore}
+                    onNavigateToTab={handleNavigateToSection}
+                    onSelectCandidate={setCurrentCandidate}
+                    cohort={cohort}
+                  />
+                </div>
+              </div>
+            </section>
 
-        {/* ====================================================================
-            SECTION 03: CODE DEFENSE VIVA & AI GATE (#viva)
-            ==================================================================== */}
-        <section id="viva" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Candidate Viva & AI Limit</h2>
+            {/* SECTION 03: VERIFIED 3D PROOFCARD (#proofcard) */}
+            <section id="proofcard" className="glm-section">
+              <div className="max-w-6xl mx-auto">
+                <div className="glm-section-header">
+                  <h2 className="glm-section-title">Verified ProofCard Credential Ledger</h2>
+                  <p className="glm-section-subtitle">
+                    Cryptographically sealed with Ed25519 & SHA-256 tamper-evident ledger hash.
+                  </p>
+                </div>
+                <div className="w-full">
+                  <ProofCard3D
+                    candidate={currentCandidate}
+                    onNavigateToTab={handleNavigateToSection}
+                    onSelectCandidate={setCurrentCandidate}
+                    cohort={cohort}
+                  />
+                </div>
+              </div>
+            </section>
+          </>
+        ) : (
+          /* ====================================================================
+             PORTAL 2: ENTERPRISE COMPANY / ADMIN PORTAL (Secured & Authenticated)
+             ==================================================================== */
+          <>
+            {!isAdminAuthenticated ? (
+              /* High-Security Admin Gateway Screen */
+              <section className="min-h-[70vh] flex flex-col items-center justify-center px-4 sm:px-6 text-center py-16 bg-white">
+                <div className="max-w-lg mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-8 sm:p-10 shadow-lg text-center space-y-5">
+                  <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-[#e20001] mx-auto shadow-sm">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-[#111827] tracking-tight">
+                      Enterprise Admin Access Required
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1 font-mono">
+                      Restricted to authorized hiring managers and company recruiters
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    This portal includes candidate cohort triage, job requirements studio, forensic AST code inspection, recruiter battle arena, and EEOC bias auditing.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminLogin(true)}
+                      className="w-full btn-primary text-sm py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                    >
+                      <Key className="w-4 h-4" />
+                      <span>Authenticate with Admin Credentials</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPortalMode('candidate')}
+                      className="w-full py-2.5 text-xs text-gray-500 hover:text-gray-800 font-bold mt-2 cursor-pointer"
+                    >
+                      ← Return to Student Portal
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ) : (
+              /* Authenticated Enterprise Admin Console */
+              <>
+                {/* ADMIN OVERVIEW BANNER (#admin-home) */}
+                <section id="admin-home" className="min-h-[40vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-6 pb-10 bg-white">
+                  <div className="max-w-6xl mx-auto w-full space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gray-50 border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-[#e20001] flex items-center justify-center text-white font-bold text-xl shadow-md">
+                          <Building2 className="w-7 h-7" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight font-sans">
+                              Enterprise Admin Console
+                            </h1>
+                            <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
+                              AUTHENTICATED
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1 font-sans">
+                            Company candidate triage, job alignment studio, deep code forensics, and EEOC bias auditing
+                          </p>
+                        </div>
+                      </div>
 
-            </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setIsImatsOpen(true)}
+                          className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-[#111827] hover:border-[#e20001] transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-[#e20001]" />
+                          <span>IMATS ATS Sandbox</span>
+                        </button>
+                        <button
+                          onClick={() => setIsN8nOpen(true)}
+                          className="px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-bold text-[#111827] hover:border-[#e20001] transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Sliders className="w-3.5 h-3.5 text-[#e20001]" />
+                          <span>n8n Webhooks</span>
+                        </button>
+                        <button
+                          onClick={handleAdminLogout}
+                          className="px-4 py-2 rounded-full bg-red-50 border border-red-200 text-xs font-bold text-red-700 hover:bg-red-100 transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
 
-            <div className="w-full">
-              <VivaArena
-                candidate={currentCandidate}
-                onUpdateVivaScore={handleUpdateVivaScore}
-                onNavigateToTab={handleNavigateToSection}
-                onSelectCandidate={setCurrentCandidate}
-                cohort={cohort}
-              />
-            </div>
-          </div>
-        </section>
+                    {/* KPI Metric Summary Row */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                      <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Total Screened</span>
+                        <div className="text-2xl font-black text-[#111827] font-mono">{cohort.length} Candidates</div>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                        <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">Authentic Builders</span>
+                        <div className="text-2xl font-black text-emerald-700 font-mono">{cohort.filter(c => (c.authenticity_score || 0) >= 60 && !c.is_clone).length}</div>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                        <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider block mb-1">Tutorial Clones Flagged</span>
+                        <div className="text-2xl font-black text-red-600 font-mono">{cohort.filter(c => c.is_clone).length}</div>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+                        <span className="text-[11px] font-bold text-[#e20001] uppercase tracking-wider block mb-1">EEOC Disparity Ratio</span>
+                        <div className="text-2xl font-black text-[#e20001] font-mono">0.93 (Fair)</div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
+                {/* ADMIN CANDIDATE TRIAGE & JOB STUDIO (#admin-triage) */}
+                <section id="admin-triage" className="glm-section">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="glm-section-header">
+                      <h2 className="glm-section-title">Candidate Cohort Triage & Job Studio</h2>
+                      <p className="glm-section-subtitle">
+                        Configure target job requirements, ingest batches via Sandbox API, and segregate applicants into Technical vs Non-Technical branches.
+                      </p>
+                    </div>
+                    <div className="w-full">
+                      <CandidateIngestion
+                        onScanComplete={handleScanComplete}
+                        onNavigateToTab={handleNavigateToSection}
+                        onSelectCandidate={(cand) => {
+                          setCurrentCandidate(cand);
+                          handleNavigateToSection('terminal');
+                        }}
+                        cohort={cohort}
+                        onUpdateCohort={setCohort}
+                      />
+                    </div>
+                  </div>
+                </section>
 
-        {/* ====================================================================
-            SECTION 04: VERIFIED 3D PROOFCARD LEDGER (#proofcard)
-            ==================================================================== */}
-        <section id="proofcard" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Verified 3D ProofCard</h2>
+                {/* SECTION 02: FORENSIC CODE ANALYSIS (#terminal) */}
+                <section id="terminal" className="glm-section">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="glm-section-header">
+                      <h2 className="glm-section-title">Deep Code Forensics & AST Parsing</h2>
+                      <p className="glm-section-subtitle">
+                        Inspect candidate cyclomatic complexity, MOSS Winnowing plagiarism matches, and Git-DNA commit dispersion.
+                      </p>
+                    </div>
+                    <div className="w-full">
+                      <ForensicTerminal
+                        candidate={currentCandidate}
+                        onNavigateToTab={handleNavigateToSection}
+                        onSelectCandidate={setCurrentCandidate}
+                        cohort={cohort}
+                      />
+                    </div>
+                  </div>
+                </section>
 
-            </div>
+                {/* SECTION 03: RECRUITER BATTLE ARENA (#battle) */}
+                <section id="battle" className="glm-section">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="glm-section-header">
+                      <h2 className="glm-section-title">Head-to-Head Recruiter Battle Arena</h2>
+                      <p className="glm-section-subtitle">
+                        Benchmark candidates side-by-side against 30 standard enterprise job descriptions with auditable rationales.
+                      </p>
+                    </div>
+                    <div className="w-full">
+                      <RecruiterBattle
+                        currentCandidate={currentCandidate}
+                        onNavigateToTab={handleNavigateToSection}
+                        onSelectCandidate={setCurrentCandidate}
+                        cohort={cohort}
+                      />
+                    </div>
+                  </div>
+                </section>
 
-            <div className="w-full">
-              <ProofCard3D
-                candidate={currentCandidate}
-                onNavigateToTab={handleNavigateToSection}
-                onSelectCandidate={setCurrentCandidate}
-                cohort={cohort}
-              />
-            </div>
-          </div>
-        </section>
-
-
-        {/* ====================================================================
-            SECTION 05: RECRUITER BATTLE ARENA (#battle)
-            ==================================================================== */}
-        <section id="battle" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Candidate Comparison & Battle</h2>
-
-            </div>
-
-            <div className="w-full">
-              <RecruiterBattle
-                currentCandidate={currentCandidate}
-                onNavigateToTab={handleNavigateToSection}
-                onSelectCandidate={setCurrentCandidate}
-                cohort={cohort}
-              />
-            </div>
-          </div>
-        </section>
-
-
-        {/* ====================================================================
-            SECTION 06: FAIRNESS & BIAS MIRROR (#bias)
-            ==================================================================== */}
-        <section id="bias" className="glm-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="glm-section-header">
-              <h2 className="glm-section-title">Hiring Bias Rate & Fairness Audit</h2>
-              <p className="glm-section-subtitle">
-                Measure disparate impact ratios, audit college tier discrimination, and ensure hiring decisions comply with the EEOC 80% rule.
-              </p>
-            </div>
-
-            <div className="w-full">
-              <BiasMirror 
-                cohort={cohort}
-              />
-            </div>
-          </div>
-        </section>
-
-
-        
+                {/* SECTION 04: FAIRNESS & BIAS MIRROR (#bias) */}
+                <section id="bias" className="glm-section">
+                  <div className="max-w-6xl mx-auto">
+                    <div className="glm-section-header">
+                      <h2 className="glm-section-title">EEOC Four-Fifths Compliance & Bias Mirror</h2>
+                      <p className="glm-section-subtitle">
+                        Audit college pedigree discrimination, view Tier-1 vs Tier-3 selection ratios, and dispatch automated hiring decisions.
+                      </p>
+                    </div>
+                    <div className="w-full">
+                      <BiasMirror 
+                        cohort={cohort}
+                      />
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
+          </>
+        )}
 
       </main>
 
