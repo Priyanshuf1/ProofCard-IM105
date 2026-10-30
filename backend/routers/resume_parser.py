@@ -152,16 +152,36 @@ def extract_with_regex(text: str) -> dict:
     ]
     found_skills = [s for s in skill_keywords if re.search(r'\b' + re.escape(s) + r'\b', text, re.IGNORECASE)]
     
+    # Extract candidate projects heuristic
+    detected_projects = []
+    proj_section = re.search(r'(?:PROJECTS|KEY PROJECTS|CLIENT WORK|HACKATHON)[^\n]*\n([\s\S]{50,800}?)(?:\n[A-Z\s]{4,}|\Z)', text)
+    if proj_section:
+        sec_lines = [l.strip() for l in proj_section.group(1).split('\n') if l.strip()]
+        for l in sec_lines:
+            m = re.match(r'^([A-Za-z0-9\s]{3,35})\s*[-–—|:]\s*(.+)', l)
+            if m and not any(skip in m.group(1).lower() for skip in ['built', 'developed', 'integrated', 'designed', 'github', 'live', 'technologies', 'tools', 'key achievements']):
+                detected_projects.append({"name": m.group(1).strip(), "description": m.group(2).strip()[:150], "tech": []})
+                if len(detected_projects) >= 3:
+                    break
+
     # Detect role type
     role_type = "Software Engineer"
     text_lower = text.lower()
-    if any(k in text_lower for k in ["mba", "bba", "marketing", "finance", "accounting", "business administration", "management", "consulting"]):
+    # Match specific business degrees, business roles, or corporate functional areas
+    business_patterns = [
+        r'\b(?:mba|bba|pgdm)\b',
+        r'\b(?:master|bachelor)\s+of\s+business\s+administration\b',
+        r'\b(?:brand\s+strategy|product\s+marketing|financial\s+modeling|gtm\s+strategy)\b',
+        r'\b(?:corporate\s+finance|investment\s+banking|business\s+analyst|management\s+consulting)\b',
+        r'\b(?:marketing\s+manager|finance\s+manager|business\s+development)\b'
+    ]
+    if any(re.search(pat, text_lower) for pat in business_patterns):
         role_type = "Business/MBA"
-    elif any(k in text_lower for k in ["product manager", "product management", "pm ", "roadmap", "stakeholder"]):
+    elif any(re.search(pat, text_lower) for pat in [r'\bproduct\s+manager\b', r'\bproduct\s+management\b', r'\bpm\b', r'\broadmap\b', r'\bstakeholder\b']):
         role_type = "Product Manager"
-    elif any(k in text_lower for k in ["figma", "ui/ux", "ux design", "graphic design", "adobe", "wireframe"]):
+    elif any(re.search(pat, text_lower) for pat in [r'\bfigma\b', r'\bui/ux\b', r'\bux\s+design\b', r'\bgraphic\s+design\b', r'\badobe\b', r'\bwireframe\b']):
         role_type = "Designer"
-    elif any(k in text_lower for k in ["data science", "data scientist", "machine learning engineer", "deep learning"]):
+    elif any(re.search(pat, text_lower) for pat in [r'\bdata\s+science\b', r'\bdata\s+scientist\b', r'\bmachine\s+learning\s+engineer\b', r'\bdeep\s+learning\b']):
         role_type = "Data Scientist"
 
     return {
@@ -172,6 +192,7 @@ def extract_with_regex(text: str) -> dict:
         "linkedin_url": detected_linkedin,
         "live_url": detected_live_url,
         "skills": found_skills[:20],
+        "projects": detected_projects,
         "role_type": role_type,
     }
 

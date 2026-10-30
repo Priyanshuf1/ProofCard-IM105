@@ -163,17 +163,17 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#110a07] border border-[#D4AF37]/50 shadow-2xl p-5 text-neutral-200">
+      <div className="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#110a07] border border-gray-200 shadow-2xl p-5 text-gray-800">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3A2F27] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#8B1E1E]/50 border border-[#D4AF37]/60 flex items-center justify-center">
-              <Server className="w-4 h-4 text-[#FFD166]" />
+            <div className="w-8 h-8 rounded-xl bg-red-100 border border-amber-300 flex items-center justify-center">
+              <Server className="w-4 h-4 text-[#b45309]" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white">Integraminds ATS Connector</h2>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-[11px] text-gray-500">
                 Direct integration with Integraminds Applicant Tracking System (IMATS).
               </p>
             </div>
@@ -181,22 +181,22 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
 
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 border border-[#D4AF37]/30 flex items-center justify-center text-neutral-300 hover:text-white transition cursor-pointer text-xs"
+            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 border border-gray-200 flex items-center justify-center text-neutral-300 hover:text-white transition cursor-pointer text-xs"
           >
             ✕
           </button>
         </div>
 
         {/* ATS API Configuration */}
-        <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2.5 mb-4">
+        <div className="p-3.5 rounded-xl bg-white border border-gray-200 space-y-2.5 mb-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#D4AF37] flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-[#FFD166]" />
+            <span className="text-xs font-bold text-[#b45309] flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-[#b45309]" />
               <span>ATS Endpoint & API Credentials:</span>
             </span>
             <button
               onClick={handleSaveApi}
-              className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#8B1E1E] text-white hover:bg-[#8B1E1E]/80 transition cursor-pointer flex items-center gap-1 font-bold"
+              className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#e20001] text-white hover:bg-[#e20001]/80 transition cursor-pointer flex items-center gap-1 font-bold"
             >
               {isApiSaved ? <Check className="w-3 h-3 text-emerald-400" /> : null}
               <span>{isApiSaved ? 'Saved!' : 'Save Credentials'}</span>
@@ -205,27 +205,27 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
             <div>
-              <label className="text-[10px] text-neutral-400 block mb-0.5">ATS Endpoint URL:</label>
+              <label className="text-[10px] text-gray-500 block mb-0.5">ATS Endpoint URL:</label>
               <input
                 type="text"
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
                 placeholder="https://api.integraminds.com/v1"
-                className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
+                className="w-full bg-black border border-gray-200 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none"
               />
             </div>
 
             <div>
-              <label className="text-[10px] text-neutral-400 block mb-0.5">ATS API Key / Token:</label>
+              <label className="text-[10px] text-gray-500 block mb-0.5">ATS API Key / Token:</label>
               <div className="relative">
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="imats_live_sec_token_..."
-                  className="w-full bg-black border border-[#3A2F27] focus:border-[#D4AF37] rounded-lg px-2.5 py-1.5 text-white text-xs outline-none pr-8"
+                  className="w-full bg-black border border-gray-200 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none pr-8"
                 />
-                <KeyRound className="w-3.5 h-3.5 text-neutral-500 absolute right-2.5 top-2" />
+                <KeyRound className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2" />
               </div>
             </div>
           </div>
@@ -235,9 +235,9 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
         <button
           onClick={handleRunBenchmark}
           disabled={isBenchmarking}
-          className="w-full btn-dev-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold cursor-pointer shadow-md rounded-xl mb-3"
+          className="w-full btn-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold cursor-pointer shadow-md rounded-xl mb-3"
         >
-          {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#FFD166]" />}
+          {isBenchmarking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-[#b45309]" />}
           <span>{isBenchmarking ? 'Evaluating 400 Candidates...' : 'Run Benchmark (400 Candidates across 30 Jobs)'}</span>
         </button>
 
@@ -253,19 +253,19 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                 </span>
               </div>
 
-              <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27]">
-                <span className="text-[10px] text-[#FFD166] font-bold block">Fairness (No College Bias)</span>
+              <div className="p-2 rounded-lg bg-white border border-gray-200">
+                <span className="text-[10px] text-[#b45309] font-bold block">Fairness (No College Bias)</span>
                 <span className="text-lg font-bold text-white">PASS (100%)</span>
               </div>
             </div>
 
             {/* Candidate Shortlist & Send to ATS */}
-            <div className="p-2.5 rounded-xl bg-black/60 border border-[#3A2F27] space-y-2">
+            <div className="p-2.5 rounded-xl bg-white border border-gray-200 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <select
                   value={selectedJdId}
                   onChange={(e) => setSelectedJdId(e.target.value)}
-                  className="bg-black border border-[#D4AF37]/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none flex-1 truncate max-w-[280px]"
+                  className="bg-black border border-gray-200 rounded-lg px-2 py-1 text-xs text-white focus:outline-none flex-1 truncate max-w-[280px]"
                 >
                   {benchmarkResult.jd_breakdown?.slice(0, 10).map((jd: any) => (
                     <option key={jd.jd_id} value={jd.jd_id}>
@@ -277,7 +277,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                 <button
                   onClick={handlePushToImats}
                   disabled={isPushing}
-                  className="btn-dev-primary text-xs px-3 py-1 flex items-center gap-1.5 font-bold cursor-pointer shrink-0"
+                  className="btn-primary text-xs px-3 py-1 flex items-center gap-1.5 font-bold cursor-pointer shrink-0"
                 >
                   {isPushing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   <span>Send Shortlist to ATS</span>
@@ -297,7 +297,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
                     <span className="font-bold text-white truncate max-w-[220px]">{c.name} ({c.college})</span>
                     <div className="flex items-center gap-2 font-mono text-[11px]">
                       <span className="text-emerald-400">{c.authenticity_score}% Auth</span>
-                      <span className="text-[#FFD166]">{c.viva_score}/10 Viva</span>
+                      <span className="text-[#b45309]">{c.viva_score}/10 Viva</span>
                     </div>
                   </div>
                 ))}
@@ -307,7 +307,7 @@ export const ImatsApiModal: React.FC<ImatsApiModalProps> = ({ isOpen, onClose })
         )}
 
         {/* Minimal Footer */}
-        <div className="border-t border-[#3A2F27] pt-3 mt-4 flex justify-end">
+        <div className="border-t border-gray-200 pt-3 mt-4 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold cursor-pointer"

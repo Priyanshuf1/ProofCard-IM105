@@ -112,7 +112,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   // Plain English constructive feedback generator for candidate rejection notices
   const getRejectionReasonText = (reasonCode: string, candidate: CandidateProfile) => {
     if (reasonCode === 'VIVA_INCOMPLETE') {
-      return `Your project repository is authentic and demonstrates good engineering structure. However, our technical evaluation process requires candidates to complete a brief 3-minute Technical Viva Defense to verify code authorship and system comprehension. Because your Technical Viva Defense was not completed prior to our screening review, we are unable to advance your application for this cycle.`;
+      return `Your project repository is authentic and demonstrates good engineering structure. However, our technical evaluation process requires candidates to complete a brief 3-minute Technical Viva to verify code authorship and system comprehension. Because your Technical Viva was not completed prior to our screening review, we are unable to advance your application for this cycle.`;
     }
     if (reasonCode === 'JUNIOR_SCOPE') {
       return `Your project is clean, authentic, and demonstrates strong fundamentals. However, for this particular opening, our team needs demonstrated hands-on experience with production-scale challenges, such as asynchronous worker queues, caching layers, database indexing, and automated testing suites.`;
@@ -243,7 +243,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
     });
 
     setManualDecisions(newDecisions);
-    setToastMessage(`✓ De-biased Selection Applied: Disparity Ratio is 1.00 (Zero Pedigree Bias)!`);
+    setToastMessage(`✓ De-biased Selection Applied: Disparity Ratio is 1.00 (Zero College Bias)!`);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
@@ -333,7 +333,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         email: emailToSend
       };
       await sendVivaInvitation(candidateToSend, customVivaNote);
-      setToastMessage(`✓ Viva Defense link successfully sent to ${emailToSend}!`);
+      setToastMessage(`✓ Viva link successfully sent to ${emailToSend}!`);
       setActiveVivaInviteCandidate(null);
     } catch (e) {
       setToastMessage(`Viva invitation link dispatched to delivery queue.`);
@@ -358,11 +358,11 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
       }
     }));
     setActiveVivaInviteCandidate(null);
-    setToastMessage(`✓ ${candidate.name} completed oral defense with score ${simulatedScore} / 10! Live ranking updated.`);
+    setToastMessage(`✓ ${candidate.name} completed viva with score ${simulatedScore} / 10! Live ranking updated.`);
     setTimeout(() => setToastMessage(null), 4500);
   };
 
-  // Dispatch Async Viva Defense Invites to entire cohort
+  // Dispatch Async Viva Invites to entire cohort
   const handleDispatchCohortVivaInvites = async () => {
     const pendingCandidates = candidatePool.filter(isPendingViva);
     if (pendingCandidates.length === 0) {
@@ -459,32 +459,32 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#1f120c] border border-[#D4AF37] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 font-sans text-xs animate-bounce">
-          <Sparkles className="w-4 h-4 text-[#FFD166]" />
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-gray-200 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 font-sans text-xs animate-bounce">
+          <Sparkles className="w-4 h-4 text-[#4b5563]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header Card */}
-      <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
+      <div className="p-6 rounded-2xl mb-6 bg-white backdrop-blur-md border border-gray-200 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Scale className="w-5 h-5 text-[#D4AF37]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#FFD166]">
+              <Scale className="w-5 h-5 text-[#4b5563]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#4b5563]">
                 Equal Opportunity Audit Engine
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight font-sans">
               Recruiter Fairness & Candidate Selection Hub
             </h1>
-            <p className="text-sm text-[#E6C280] font-normal mt-1">
-              Guarantees hiring decisions are based strictly on verified code quality and viva defense — never college pedigree.
+            <p className="text-sm text-[#4b5563] font-normal mt-1">
+              Ensure hiring decisions are based strictly on verified code quality and viva scores — never college name.
             </p>
           </div>
 
           {/* Engine Selector Toggle */}
-          <div className="flex items-center gap-2 bg-black/80 p-1.5 rounded-xl border border-[#D4AF37]/40">
+          <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-xl border border-gray-200">
             <button
               onClick={() => {
                 setActiveEngine('traditional_ats');
@@ -492,12 +492,12 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               }}
               className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
                 activeEngine === 'traditional_ats'
-                  ? 'bg-red-950/80 border border-red-500/60 text-red-300 shadow-md'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-[#dc2626] border border-[#dc2626] text-white font-bold shadow-md'
+                  : 'text-[#4b5563] hover:text-[#111827]'
               }`}
             >
               <AlertTriangle className="w-4 h-4" />
-              <span>Traditional ATS (Pedigree Biased)</span>
+              <span>Traditional ATS (College Biased)</span>
             </button>
             <button
               onClick={() => {
@@ -506,8 +506,8 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               }}
               className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
                 activeEngine === 'proofcard'
-                  ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 shadow-md'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-[#15803d] border border-[#15803d] text-white font-bold shadow-md'
+                  : 'text-[#4b5563] hover:text-[#111827]'
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -518,69 +518,65 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
       </div>
 
       {/* Live Disparity Banner (4/5ths Rule EEOC Standard) */}
-      <div className={`p-5 rounded-2xl mb-8 border backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 ${
+      <div className={`p-5 rounded-2xl mb-8 border flex flex-col md:flex-row items-center justify-between gap-4 ${
         auditMetrics.hasAdverseImpact
-          ? 'bg-red-950/40 border-red-500/50 text-red-200'
-          : 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+          ? 'bg-red-50 border-red-200 text-red-900'
+          : 'bg-emerald-50 border-emerald-200 text-emerald-900'
       }`}>
         <div className="flex items-center gap-3">
           {auditMetrics.hasAdverseImpact ? (
-            <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
+            <AlertTriangle className="w-6 h-6 text-red-600 shrink-0" />
           ) : (
-            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
           )}
           <div>
-            <h3 className="font-bold text-sm text-white">
+            <h3 className="font-bold text-sm text-[#111827]">
               {auditMetrics.hasAdverseImpact 
-                ? 'Institutional Pedigree Disparity Alert (4/5ths Rule Violation)' 
-                : 'Equal Opportunity Parity Verified (0.0% Pedigree Bias)'}
+                ? 'College Bias Alert (Disproportionate Filtering)' 
+                : 'Equal Opportunity Verified (Zero College Bias)'}
             </h3>
-            <p className="text-xs text-neutral-300 mt-0.5">
-              Tier-1 Shortlist Rate: <strong>{auditMetrics.tier1Rate}%</strong> ({auditMetrics.tier1Shortlisted}/{auditMetrics.tier1Total}) · 
-              Tier-2/3 Shortlist Rate: <strong>{auditMetrics.tier3Rate}%</strong> ({auditMetrics.tier3Shortlisted}/{auditMetrics.tier3Total}) · 
-              Disparity Ratio: <strong className="font-mono">{auditMetrics.disparityRatio}</strong> (Threshold: 0.80)
-            </p>
+
           </div>
         </div>
         <div className="text-right shrink-0">
           <span className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono border ${
             auditMetrics.hasAdverseImpact 
-              ? 'bg-red-900/60 border-red-400 text-red-200' 
-              : 'bg-emerald-900/60 border-emerald-400 text-emerald-200'
+              ? 'bg-red-50 border border-red-300 text-red-800' 
+              : 'bg-[#15803d] border border-[#15803d] text-white font-bold shadow-sm'
           }`}>
-            {auditMetrics.hasAdverseImpact ? 'DISPARITY DETECTED' : 'FAIRNESS CERTIFIED'}
+            {auditMetrics.hasAdverseImpact ? 'BIAS DETECTED' : 'FAIRNESS VERIFIED'}
           </span>
         </div>
       </div>
 
       {/* Candidate Decision Pool Table */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#3A2F27] pb-4 mb-5 gap-2">
+      <div className="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 mb-5 gap-2">
           <div>
-            <span className="text-xs uppercase font-bold text-[#FFD166] block mb-1">
+            <span className="text-xs uppercase font-bold text-[#4b5563] block mb-1">
               Active Candidate Cohort ({candidatePool.length} Applicants)
             </span>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-[#111827]">
               {activeEngine === 'traditional_ats' 
-                ? 'Traditional Simulation: Pedigree Brands Automatically Favored'
+                ? 'Traditional Simulation: Top Colleges Automatically Favored'
                 : 'Pariksha Merit Ledger: Accept / Reject Based on Verified Code Quality'}
             </h2>
           </div>
-          <span className="text-xs text-[#E6C280] font-sans">
+          <span className="text-xs text-[#4b5563] font-sans">
             Click <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Email</strong> to customize decisions.
           </span>
         </div>
 
         {/* Candidate Segmentation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 mb-5 border-b border-[#3A2F27] pb-3">
-          <span className="text-xs uppercase font-bold text-neutral-400 mr-2">Filter Pool:</span>
+        <div className="flex flex-wrap items-center gap-2 mb-5 border-b border-gray-200 pb-3">
+          <span className="text-xs uppercase font-bold text-gray-500 mr-2">Filter Pool:</span>
           
           <button
             onClick={() => setPoolFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
               poolFilter === 'all'
-                ? 'bg-[#D4AF37] text-black shadow-md'
-                : 'bg-black/50 border border-[#3A2F27] text-neutral-300 hover:text-white'
+                ? 'bg-[#e20001] text-white shadow-md font-bold'
+                : 'bg-gray-50 border border-gray-200 text-gray-700 hover:text-[#111827]'
             }`}
           >
             All Candidates ({candidatePool.length})
@@ -590,12 +586,12 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             onClick={() => setPoolFilter('live')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               poolFilter === 'live'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-black/50 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/40'
+                ? 'bg-[#15803d] text-white shadow-md font-bold'
+                : 'bg-gray-50 border border-gray-200 text-[#4b5563] hover:text-[#111827] hover:border-[#15803d]'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Live Defended ({liveCount})</span>
+            <span>Live Viva ({liveCount})</span>
           </button>
 
           <button
@@ -603,11 +599,11 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               poolFilter === 'pending'
                 ? 'bg-amber-600 text-white shadow-md'
-                : 'bg-black/50 border border-amber-500/40 text-amber-300 hover:bg-amber-950/40'
+                : 'bg-gray-50 border border-gray-200/40 text-amber-800 hover:bg-amber-950/40'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Awaiting Defense ({pendingCount})</span>
+            <span>Awaiting Viva ({pendingCount})</span>
           </button>
 
           <button
@@ -615,7 +611,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               poolFilter === 'clones'
                 ? 'bg-red-700 text-white shadow-md'
-                : 'bg-black/50 border border-red-500/40 text-red-300 hover:bg-red-950/40'
+                : 'bg-gray-50 border border-red-500/40 text-red-800 hover:bg-red-950/40'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -627,7 +623,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               poolFilter === 'injections'
                 ? 'bg-red-900 text-red-100 border border-red-500 shadow-md font-extrabold'
-                : 'bg-black/50 border border-red-600/50 text-red-300 hover:bg-red-950/50'
+                : 'bg-gray-50 border border-red-600/50 text-red-800 hover:bg-red-950/50'
             }`}
           >
             <span>🚨</span>
@@ -636,12 +632,12 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         </div>
 
         {/* Recruiter Auto-Approve & De-Biased Action Toolbar */}
-        <div className="p-4 rounded-xl bg-black/60 border border-[#D4AF37]/30 mb-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-lg">
+        <div className="p-4 rounded-xl bg-white border border-gray-200 mb-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-lg">
           
           {/* Left: Auto-Approve Top N controls */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase text-[#FFD166] flex items-center gap-1.5 mr-1 font-sans">
-              <Zap className="w-4 h-4 text-[#D4AF37]" />
+            <span className="text-xs font-bold uppercase text-[#4b5563] flex items-center gap-1.5 mr-1 font-sans">
+              <Zap className="w-4 h-4 text-[#4b5563]" />
               <span>Auto-Approve Top:</span>
             </span>
 
@@ -649,7 +645,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               <button
                 key={n}
                 onClick={() => handleAutoShortlistTopN(n)}
-                className="px-2.5 py-1.5 rounded-lg bg-[#1f120c] border border-[#D4AF37]/50 text-xs font-bold text-white hover:bg-[#D4AF37]/20 hover:border-[#D4AF37] transition cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-[#111827] hover:bg-amber-50 hover:border-gray-200 transition cursor-pointer"
                 title={`Auto-approve top ${n} candidates by merit`}
               >
                 Top {n}
@@ -657,19 +653,19 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             ))}
 
             {/* Custom N input */}
-            <div className="flex items-center gap-1.5 bg-[#140b08] px-2 py-1 rounded-lg border border-[#3A2F27]">
-              <span className="text-[11px] text-neutral-400 font-mono">Custom:</span>
+            <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
+              <span className="text-[11px] text-gray-500 font-mono">Custom:</span>
               <input
                 type="number"
                 min="1"
                 max={candidatePool.length}
                 value={customTopN}
                 onChange={(e) => setCustomTopN(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-10 bg-transparent text-white font-mono text-xs text-center border-b border-[#D4AF37] focus:outline-none"
+                className="w-10 bg-transparent text-[#111827] font-mono text-xs text-center border-b border-gray-200 focus:outline-none"
               />
               <button
                 onClick={() => handleAutoShortlistTopN(customTopN)}
-                className="px-2 py-1 rounded bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 text-[#FFD166] text-xs font-bold transition cursor-pointer"
+                className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-[#4b5563] text-xs font-bold transition cursor-pointer"
               >
                 Apply
               </button>
@@ -682,17 +678,17 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             {/* Unbiased De-biased Select Button */}
             <button
               onClick={handleUnbiasedSelection}
-              className="px-3 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/70 text-emerald-200 hover:bg-emerald-900/80 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow"
+              className="px-3.5 py-1.5 rounded-lg bg-[#15803d] hover:bg-[#166534] border border-[#15803d] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
               title="Apply EEOC 4/5ths compliant selection algorithm"
             >
-              <Scale className="w-3.5 h-3.5 text-emerald-400" />
+              <Scale className="w-3.5 h-3.5 text-white" />
               <span>⚖ Unbiased Selection</span>
             </button>
 
             {/* Invert Decisions */}
             <button
               onClick={handleInvertDecisions}
-              className="px-2.5 py-1.5 rounded-lg bg-black/60 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-medium transition cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:text-[#111827] text-xs font-medium transition cursor-pointer"
               title="Invert current selections"
             >
               ⇄ Invert
@@ -701,7 +697,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             {/* Reset to Default */}
             <button
               onClick={handleResetDecisions}
-              className="px-2.5 py-1.5 rounded-lg bg-black/60 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-medium transition cursor-pointer flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:text-[#111827] text-xs font-medium transition cursor-pointer flex items-center gap-1"
               title="Reset all manual decisions"
             >
               <RotateCcw className="w-3 h-3" />
@@ -712,8 +708,8 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             <button
               onClick={handleDispatchCohortVivaInvites}
               disabled={isDispatchingInvites}
-              className="px-3 py-1.5 rounded-lg bg-[#200e07] border border-[#E85D04]/60 text-[#ff9f1c] hover:bg-[#E85D04]/20 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-              title="Email personalized async Viva Defense links to awaiting candidates"
+              className="px-3 py-1.5 rounded-lg bg-gray-50 border border-red-300 text-[#e20001] hover:bg-[#E85D04]/20 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              title="Email personalized async Viva links to awaiting candidates"
             >
               <Mail className="w-3.5 h-3.5" />
               <span>{isDispatchingInvites ? 'Sending...' : 'Dispatch Viva Invites'}</span>
@@ -722,7 +718,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             {/* Info toggle for CSV Viva explanation */}
             <button
               onClick={() => setShowVivaExplanation(!showVivaExplanation)}
-              className="p-1.5 rounded-lg bg-black/50 border border-neutral-700 text-[#FFD166] hover:bg-white/5 transition cursor-pointer"
+              className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#4b5563] hover:bg-gray-50 transition cursor-pointer"
               title="Explain how Viva & Ranking work for uploaded CSVs"
             >
               <Info className="w-4 h-4" />
@@ -732,36 +728,36 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
         {/* Explanatory Banner: How Viva & Ranking Work for Uploaded CSVs */}
         {showVivaExplanation && (
-          <div className="p-4 rounded-xl bg-[#140b08] border border-[#D4AF37]/40 mb-6 text-xs text-neutral-200 font-sans leading-relaxed animate-fadeIn">
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6 text-xs text-gray-800 font-sans leading-relaxed animate-fadeIn">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-[#FFD166] text-sm flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#D4AF37]" />
+              <span className="font-bold text-[#4b5563] text-sm flex items-center gap-2">
+                <Info className="w-4 h-4 text-[#4b5563]" />
                 How Viva Scores & Remote Candidates Work:
               </span>
               <button
                 onClick={() => setShowVivaExplanation(false)}
-                className="text-neutral-400 hover:text-white text-xs"
+                className="text-gray-500 hover:text-[#111827] text-xs"
               >
                 ✕ Close
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-              <div className="p-3 rounded-lg bg-black/60 border border-[#3A2F27]">
-                <strong className="text-white block mb-1">1. Live Defended vs. Awaiting Defense</strong>
-                <p className="text-neutral-300 text-[11px]">
-                  Candidates who tested interactively have verified viva scores. Candidates uploaded via batch CSV initially show <strong>Awaiting Defense</strong> without fake scores.
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">1. Live Viva vs. Awaiting Viva</strong>
+                <p className="text-gray-700 text-[11px]">
+                  Candidates who tested interactively have verified viva scores. Candidates uploaded via batch CSV initially show <strong>Awaiting Viva</strong> without fake scores.
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-black/60 border border-[#3A2F27]">
-                <strong className="text-white block mb-1">2. Transparent Viva Link Dispatch</strong>
-                <p className="text-neutral-300 text-[11px]">
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">2. Transparent Viva Link Dispatch</strong>
+                <p className="text-gray-700 text-[11px]">
                   Clicking <em>"Send Link"</em> or <em>"Dispatch Viva Invites"</em> allows 1-click dispatch via your native email client (mailto:), direct link copy, or n8n webhooks.
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-black/60 border border-[#3A2F27]">
-                <strong className="text-white block mb-1">3. Live Score Synchronization</strong>
-                <p className="text-neutral-300 text-[11px]">
-                  When candidates complete their 3-minute oral defense, their scores and ProofCards automatically populate into this ledger in real time.
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">3. Live Score Synchronization</strong>
+                <p className="text-gray-700 text-[11px]">
+                  When candidates complete their 3-minute viva, their scores and ProofCards automatically populate into this ledger in real time.
                 </p>
               </div>
             </div>
@@ -769,56 +765,56 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         )}
 
         {/* Permanent Evaluation Tracks & Candidate Differentiation Guide */}
-        <div className="mb-4 p-4 rounded-xl bg-black/60 border border-[#D4AF37]/30 text-xs font-sans">
+        <div className="mb-4 p-4 rounded-xl bg-white border border-gray-200 text-xs font-sans">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-            <span className="font-bold text-[#FFD166] text-xs uppercase tracking-wider flex items-center gap-2 font-mono">
+            <span className="font-bold text-[#4b5563] text-xs uppercase tracking-wider flex items-center gap-2 font-mono">
               <span>📋 Candidate Evaluation Tracks & Workflow Guide</span>
             </span>
-            <span className="text-[11px] text-neutral-400">
+            <span className="text-[11px] text-gray-500">
               Clear differentiation between Live interactive testing and Batch CSV screening
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40">
-              <div className="flex items-center gap-1.5 text-emerald-300 font-bold mb-1">
+            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-bold mb-1">
                 <span>👤 Live In-Person Verified</span>
               </div>
-              <p className="text-[11px] text-neutral-300 leading-snug">
-                Single applicant who pasted GitHub repo & completed live oral defense in Viva Arena. Full viva score certified.
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Single applicant who pasted GitHub repo & completed live viva in Viva Arena. Full viva score certified.
               </p>
             </div>
-            <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40">
-              <div className="flex items-center gap-1.5 text-amber-300 font-bold mb-1">
+            <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+              <div className="flex items-center gap-1.5 text-amber-800 font-bold mb-1">
                 <span>🌐 Async Remote (Batch Ingestion)</span>
               </div>
-              <p className="text-[11px] text-neutral-300 leading-snug">
-                Uploaded via CSV. Code quality is verified; currently awaiting 3-min oral defense. Click <strong>"Send Link"</strong> to dispatch viva invitation.
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Uploaded via CSV. Code quality is verified; currently awaiting 3-min viva. Click <strong>"Send Link"</strong> to dispatch viva invitation.
               </p>
             </div>
-            <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/40">
-              <div className="flex items-center gap-1.5 text-red-300 font-bold mb-1">
+            <div className="p-2.5 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-center gap-1.5 text-red-800 font-bold mb-1">
                 <span>✕ Disqualified (Tutorial Clone)</span>
               </div>
-              <p className="text-[11px] text-neutral-300 leading-snug">
-                Plagiarized video tutorial codebase or prompt injection detected. Blocked from viva defense to protect hiring integrity.
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Plagiarized video tutorial codebase or prompt injection detected. Blocked from viva to protect hiring integrity.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
-          <table className="w-full text-left text-sm text-neutral-200">
-            <thead className="bg-[#140b08] uppercase font-bold text-xs text-[#FFD166] border-b border-[#3A2F27]">
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-left text-sm text-gray-800">
+            <thead className="bg-gray-50 uppercase font-bold text-xs text-[#4b5563] border-b border-gray-200">
               <tr>
                 <th className="py-3 px-4">Candidate & Project</th>
                 <th className="py-3 px-4">College & Tier</th>
                 <th className="py-3 px-4 text-center">Code Quality</th>
-                <th className="py-3 px-4 text-center">Viva Defense</th>
+                <th className="py-3 px-4 text-center">Viva</th>
                 <th className="py-3 px-4 text-center">Screening Status</th>
                 <th className="py-3 px-4 text-center">Recruiter Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2A241B] font-mono text-xs">
+            <tbody className="divide-y divide-gray-200 font-mono text-xs">
               {displayedPool.map((c, idx) => {
                 const auth = c.authenticity_score || 0;
                 const tierInfo = classifyCollegeTier(c.college || c.college_tier);
@@ -826,32 +822,32 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                 const hasManualOverride = Boolean(manualDecisions[c.candidate_id || '']);
 
                 return (
-                  <tr key={c.candidate_id || idx} className="hover:bg-white/5 transition">
+                  <tr key={c.candidate_id || idx} className="hover:bg-gray-50 transition">
                     
                     {/* Candidate Name & Project */}
                     <td className="py-3.5 px-4 font-sans">
                       <div className="flex items-center gap-2">
-                        <div className="font-bold text-white text-sm">{c.name}</div>
+                        <div className="font-bold text-[#111827] text-sm">{c.name}</div>
                         {isLiveDefended(c) ? (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/50">
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-500/50">
                             👤 Live
                           </span>
                         ) : isPendingViva(c) ? (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-gray-200/50">
                             🌐 Remote
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-red-950 text-red-300 border border-red-500/50">
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-red-50 text-red-800 border border-red-500/50">
                             ✕ Clone
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-neutral-400 truncate max-w-xs">{c.project_name || c.project_type}</div>
+                      <div className="text-[11px] text-gray-500 truncate max-w-xs">{c.project_name || c.project_type}</div>
                     </td>
 
                     {/* College & Tier Badge */}
                     <td className="py-3.5 px-4 font-sans">
-                      <div className="text-white text-xs font-medium">{c.college}</div>
+                      <div className="text-[#111827] text-xs font-semibold">{c.college}</div>
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${tierInfo.badgeColor}`}>
                         {tierInfo.label}
                       </span>
@@ -859,11 +855,11 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
                     {/* Code Quality Authenticity */}
                     <td className="py-3.5 px-4 text-center">
-                      <span className={`font-bold ${auth >= 70 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <span className={`font-bold ${auth >= 70 ? 'text-emerald-700' : 'text-red-700'}`}>
                         {auth}%
                       </span>
                       {c.is_clone && (
-                        <span className="block text-[10px] text-red-400 font-bold">Tutorial Clone</span>
+                        <span className="block text-[10px] text-red-700 font-bold">Tutorial Clone</span>
                       )}
                     </td>
 
@@ -871,29 +867,29 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                     <td className="py-3.5 px-4 text-center">
                       {isCloneCandidate(c) ? (
                         <div className="flex flex-col items-center">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/80 border border-red-500/50 text-red-400">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/80 border border-red-500/50 text-red-700">
                             ✕ Disqualified
                           </span>
-                          <span className="text-[9px] text-neutral-400 mt-0.5">Tutorial Clone</span>
+                          <span className="text-[9px] text-gray-500 mt-0.5">Tutorial Clone</span>
                         </div>
                       ) : isLiveDefended(c) ? (
                         <div className="flex flex-col items-center">
-                          <span className="text-emerald-400 font-bold text-sm flex items-center gap-1">
+                          <span className="text-emerald-700 font-bold text-sm flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             {c.viva_score} / 10
                           </span>
-                          <span className="text-[9px] text-emerald-300/80 uppercase font-sans font-semibold">Defended (Live)</span>
+                          <span className="text-[9px] text-emerald-800/80 uppercase font-sans font-semibold">Defended (Live)</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 border border-amber-500/50 text-amber-300">
-                            ⏳ Awaiting Defense
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 border border-gray-200/50 text-amber-800">
+                            ⏳ Awaiting Viva
                           </span>
                           <button
                             type="button"
                             onClick={() => handleOpenVivaInviteModal(c)}
-                            className="text-[10px] text-[#FFD166] hover:text-white underline cursor-pointer flex items-center gap-1"
-                            title="Send candidate their direct viva defense link"
+                            className="text-[10px] text-[#4b5563] hover:text-[#111827] underline cursor-pointer flex items-center gap-1"
+                            title="Send candidate their direct viva link"
                           >
                             <Mail className="w-2.5 h-2.5" />
                             <span>Send Link</span>
@@ -909,15 +905,15 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                         onClick={() => handleToggleStatus(c)}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer hover:scale-105 active:scale-95 ${
                           isShortlisted
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-500/60 hover:bg-emerald-900'
-                            : 'bg-red-950 text-red-300 border-red-500/60 hover:bg-red-900'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-500/60 hover:bg-emerald-900'
+                            : 'bg-red-50 text-red-800 border-red-500/60 hover:bg-red-900'
                         }`}
                         title="Click to toggle between Shortlisted and Passed Over"
                       >
                         {isShortlisted ? '✓ Shortlisted' : '✕ Passed Over'}
                       </button>
                       {hasManualOverride && (
-                        <span className="block text-[9px] text-[#FFD166] mt-0.5 uppercase tracking-wider">Manual Choice</span>
+                        <span className="block text-[9px] text-[#4b5563] mt-0.5 uppercase tracking-wider">Manual Choice</span>
                       )}
                     </td>
 
@@ -929,14 +925,14 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                         <button
                           type="button"
                           onClick={() => handleToggleDecision(c, 'SHORTLISTED')}
-                          className={`p-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                             isShortlisted
-                              ? 'bg-emerald-900 border-emerald-400 text-emerald-200'
-                              : 'bg-black/50 border-neutral-700 text-neutral-400 hover:text-emerald-300 hover:border-emerald-600'
+                              ? 'bg-[#15803d] hover:bg-[#166534] border-[#15803d] text-white shadow-sm'
+                              : 'bg-white border-gray-200 text-[#4b5563] hover:text-[#15803d] hover:border-[#15803d]'
                           }`}
                           title="Shortlist candidate"
                         >
-                          <ThumbsUp className="w-3.5 h-3.5" />
+                          <ThumbsUp className={`w-3.5 h-3.5 ${isShortlisted ? 'text-white' : 'text-gray-400'}`} />
                           <span className="hidden sm:inline">Accept</span>
                         </button>
 
@@ -947,7 +943,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                           className={`p-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
                             !isShortlisted
                               ? 'bg-red-900 border-red-400 text-red-200'
-                              : 'bg-black/50 border-neutral-700 text-neutral-400 hover:text-red-300 hover:border-red-600'
+                              : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-red-800 hover:border-red-600'
                           }`}
                           title="Pass over / reject candidate"
                         >
@@ -959,7 +955,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenEmailModal(c, isShortlisted ? 'SHORTLISTED' : 'REJECTED')}
-                          className="p-1.5 rounded-lg bg-black/60 border border-[#D4AF37]/40 text-[#FFD166] hover:bg-[#D4AF37]/20 transition cursor-pointer flex items-center gap-1"
+                          className="p-1.5 rounded-lg bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 transition cursor-pointer flex items-center gap-1"
                           title="Review & dispatch decision notice"
                         >
                           <Mail className="w-3.5 h-3.5" />
@@ -978,23 +974,23 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
       </div>
 
       {/* Interactive Fairness Simulator */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#3A2F27] pb-4 mb-4">
-          <div className="flex items-center gap-2 text-base sm:text-lg text-[#FFD166] font-bold uppercase tracking-wider">
-            <Sliders className="w-5 h-5 text-[#D4AF37]" />
+      <div className="p-6 sm:p-8 rounded-2xl bg-white backdrop-blur-md border border-gray-200 shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+          <div className="flex items-center gap-2 text-base sm:text-lg text-[#4b5563] font-bold uppercase tracking-wider">
+            <Sliders className="w-5 h-5 text-[#4b5563]" />
             <span>Interactive Fairness Simulator: Test College Invariance</span>
           </div>
         </div>
-        <p className="text-sm text-neutral-200 mb-6 leading-relaxed">
+        <p className="text-sm text-gray-800 mb-6 leading-relaxed">
           Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code quality and defense scores receive the exact same evaluation regardless of whether their degree is from an elite tier-1 or a regional tier-3 college.
         </p>
 
         {/* Sliders */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-          <div className="bg-black/70 p-5 rounded-2xl border border-[#D4AF37]/20">
+          <div className="bg-gray-100 p-5 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center mb-2.5">
-              <span className="text-[#FFD166] font-bold uppercase text-xs">Code Authenticity</span>
-              <span className="font-extrabold text-[#FFD166] font-mono text-base">{testAuthScore}%</span>
+              <span className="text-[#4b5563] font-bold uppercase text-xs">Code Authenticity</span>
+              <span className="font-extrabold text-[#4b5563] font-mono text-base">{testAuthScore}%</span>
             </div>
             <input
               type="range"
@@ -1006,10 +1002,10 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             />
           </div>
 
-          <div className="bg-black/70 p-5 rounded-2xl border border-[#D4AF37]/20">
+          <div className="bg-gray-100 p-5 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center mb-2.5">
-              <span className="text-[#FFD166] font-bold uppercase text-xs">Live Viva Score</span>
-              <span className="font-extrabold text-[#D4AF37] font-mono text-base">{testVivaScore} / 10</span>
+              <span className="text-[#4b5563] font-bold uppercase text-xs">Live Viva Score</span>
+              <span className="font-extrabold text-[#4b5563] font-mono text-base">{testVivaScore} / 10</span>
             </div>
             <input
               type="range"
@@ -1024,31 +1020,31 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
         {/* Result Comparison: IIT vs Tier-3 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27]">
-            <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-1 Elite University Candidate</span>
-            <span className="text-sm font-bold text-white block">Candidate from Top Tier College</span>
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <span className="text-xs text-[#4b5563] font-bold uppercase block mb-1">Tier-1 Elite University Candidate</span>
+            <span className="text-sm font-bold text-[#111827] block">Candidate from Top Tier College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">Pariksha Score:</span>
-              <span className="text-emerald-400 font-bold text-base">
+              <span className="text-gray-500">Pariksha Score:</span>
+              <span className="text-emerald-700 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27]">
-            <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-3 Regional University Candidate</span>
-            <span className="text-sm font-bold text-white block">Candidate from Regional College</span>
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <span className="text-xs text-[#4b5563] font-bold uppercase block mb-1">Tier-3 Regional University Candidate</span>
+            <span className="text-sm font-bold text-[#111827] block">Candidate from Regional College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">Pariksha Score:</span>
-              <span className="text-emerald-400 font-bold text-base">
+              <span className="text-gray-500">Pariksha Score:</span>
+              <span className="text-emerald-700 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
           <span>
             <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. Pariksha completely decouples pedigree bias from hiring.
           </span>
@@ -1057,45 +1053,45 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
       {/* DEDICATED VIVA INVITATION MODAL */}
       {activeVivaInviteCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#140b08] border border-[#D4AF37] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100 backdrop-blur-md animate-fadeIn">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-[#1e100a] border-b border-[#D4AF37]/30 flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#1e100a] border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Clock className="w-5 h-5 text-[#D4AF37]" />
-                <h3 className="font-bold text-white text-base">
-                  Dispatch 3-Minute Viva Defense Invitation
+                <Clock className="w-5 h-5 text-[#4b5563]" />
+                <h3 className="font-bold text-[#111827] text-base">
+                  Dispatch 3-Minute Viva Invitation
                 </h3>
               </div>
               <button
                 onClick={() => setActiveVivaInviteCandidate(null)}
-                className="text-neutral-400 hover:text-white transition p-1 cursor-pointer"
+                className="text-gray-500 hover:text-[#111827] transition p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-sm text-neutral-200 font-sans">
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-800 font-sans">
               
               {/* Candidate Info Banner */}
-              <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27] flex flex-wrap items-center justify-between gap-3">
+              <div className="p-4 rounded-xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-white font-bold text-base flex items-center gap-2">
+                  <div className="text-[#111827] font-bold text-base flex items-center gap-2">
                     <span>{activeVivaInviteCandidate.name}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-500/50">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-gray-200/50">
                       🌐 Remote Candidate
                     </span>
                   </div>
-                  <div className="text-xs text-[#E6C280] mt-0.5">
+                  <div className="text-xs text-[#4b5563] mt-0.5">
                     {activeVivaInviteCandidate.college} ({classifyCollegeTier(activeVivaInviteCandidate.college || activeVivaInviteCandidate.college_tier).label})
                   </div>
-                  <div className="text-xs text-neutral-400 font-mono mt-0.5">
+                  <div className="text-xs text-gray-500 font-mono mt-0.5">
                     Submission: {activeVivaInviteCandidate.project_name || activeVivaInviteCandidate.project_type}
                   </div>
                   <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[11px] text-[#FFD166] font-bold uppercase font-mono">To Email:</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold uppercase font-mono">To Email:</span>
                     <input
                       type="email"
                       value={vivaCandidateEmail}
@@ -1104,40 +1100,40 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                         try { localStorage.setItem('test_recruiter_email', e.target.value); } catch(_) {}
                       }}
                       placeholder="candidate@example.edu"
-                      className="bg-black/70 border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#D4AF37] w-64 shadow-inner"
+                      className="bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#111827] font-mono focus:outline-none focus:border-gray-200 w-64 shadow-inner"
                       title="Editable: enter your test email address to test viva delivery"
                     />
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-amber-300 font-bold block">⏳ Viva Defense Pending</span>
-                  <span className="text-[10px] text-neutral-400 block">Awaiting 3-min oral screening</span>
+                  <span className="text-xs text-amber-800 font-bold block">⏳ Viva Pending</span>
+                  <span className="text-[10px] text-gray-500 block">Awaiting 3-min oral screening</span>
                 </div>
               </div>
 
               {/* Delivery Channels Explanatory Box */}
-              <div className="p-3.5 rounded-xl bg-[#1b0f0a] border border-[#D4AF37]/40 text-xs space-y-2">
-                <div className="flex items-center gap-2 text-[#FFD166] font-bold uppercase tracking-wider text-[11px]">
-                  <Mail className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <div className="p-3.5 rounded-xl bg-[#1b0f0a] border border-gray-200 text-xs space-y-2">
+                <div className="flex items-center gap-2 text-[#4b5563] font-bold uppercase tracking-wider text-[11px]">
+                  <Mail className="w-3.5 h-3.5 text-[#4b5563]" />
                   <span>Multi-Channel Email Dispatch (No SMTP Setup Required)</span>
                 </div>
-                <p className="text-neutral-300 text-[11px] leading-relaxed">
+                <p className="text-gray-700 text-[11px] leading-relaxed">
                   Choose how you want to invite the candidate. You can launch your native email app directly (Gmail / Outlook), copy the formatted invite text for WhatsApp/Slack, or dispatch via automated API/n8n webhook.
                 </p>
               </div>
 
-              {/* Direct Viva Defense URL Box */}
+              {/* Direct Viva URL Box */}
               {(() => {
                 const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
-                const subject = `Invitation: 3-Minute Technical Defense Viva - ${activeVivaInviteCandidate.name}`;
-                const fullBody = `Hello ${activeVivaInviteCandidate.name},\n\nThank you for submitting your project (${activeVivaInviteCandidate.project_name || 'Software Project'}). As part of our merit-based technical screening process, you are invited to complete your 3-minute Technical Defense Viva.\n\nDirect Viva Link:\n${vivaUrl}\n\nWhat to Expect:\n- 3 targeted questions derived from key functions extracted from your code.\n- 3 minutes total via microphone or text in browser.\n- Instant verified credential issued upon completion.\n\n${customVivaNote ? `Recruiter Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
+                const subject = `Invitation: 3-Minute Technical Viva - ${activeVivaInviteCandidate.name}`;
+                const fullBody = `Hello ${activeVivaInviteCandidate.name},\n\nThank you for submitting your project (${activeVivaInviteCandidate.project_name || 'Software Project'}). As part of our merit-based technical screening process, you are invited to complete your 3-minute Technical Viva.\n\nDirect Viva Link:\n${vivaUrl}\n\nWhat to Expect:\n- 3 targeted questions derived from key functions extracted from your code.\n- 3 minutes total via microphone or text in browser.\n- Instant verified credential issued upon completion.\n\n${customVivaNote ? `Recruiter Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
 
                 return (
                   <div className="space-y-3">
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-[#FFD166]">
-                          Candidate's Unique Viva Defense Link:
+                        <label className="text-xs font-bold uppercase tracking-wider text-[#4b5563]">
+                          Candidate's Unique Viva Link:
                         </label>
                         <div className="flex items-center gap-2">
                           <button
@@ -1149,7 +1145,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                                 setTimeout(() => setCopiedVivaLink(false), 2500);
                               }
                             }}
-                            className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                            className="text-xs text-[#4b5563] hover:underline flex items-center gap-1 font-bold cursor-pointer"
                           >
                             <Copy className="w-3 h-3" />
                             <span>{copiedVivaLink ? 'Link Copied!' : 'Copy Link'}</span>
@@ -1164,19 +1160,19 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                                 setTimeout(() => setCopiedVivaBody(false), 2500);
                               }
                             }}
-                            className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                            className="text-xs text-[#4b5563] hover:underline flex items-center gap-1 font-bold cursor-pointer"
                           >
                             <Copy className="w-3 h-3" />
                             <span>{copiedVivaBody ? 'Full Invite Copied!' : 'Copy Full Email Text'}</span>
                           </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 bg-black/80 border border-[#3A2F27] rounded-xl p-2.5">
+                      <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl p-2.5">
                         <input
                           type="text"
                           readOnly
                           value={vivaUrl}
-                          className="bg-transparent text-xs text-emerald-300 font-mono flex-1 focus:outline-none"
+                          className="bg-transparent text-xs text-emerald-800 font-mono flex-1 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1185,9 +1181,9 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               })()}
 
               {/* What Happens in the Defense Viva */}
-              <div className="p-3.5 rounded-xl bg-black/60 border border-[#3A2F27] text-xs space-y-1.5">
-                <span className="font-bold text-[#FFD166] block">Candidate Viva Experience:</span>
-                <ul className="list-disc pl-4 space-y-1 text-neutral-300 text-[11px]">
+              <div className="p-3.5 rounded-xl bg-white border border-gray-200 text-xs space-y-1.5">
+                <span className="font-bold text-[#4b5563] block">Candidate Viva Experience:</span>
+                <ul className="list-disc pl-4 space-y-1 text-gray-700 text-[11px]">
                   <li><strong>3 Targeted Code Questions:</strong> Derived directly from key functions extracted from candidate's code.</li>
                   <li><strong>3 Minutes Total:</strong> Answer via microphone or browser text.</li>
                   <li><strong>Instant Score Population:</strong> Completing the defense updates their verified ProofCard and live recruiter ranking.</li>
@@ -1196,7 +1192,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
               {/* Custom Optional Note */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-1">
                   Optional Custom Note for Candidate (appended to invitation)
                 </label>
                 <textarea
@@ -1204,34 +1200,34 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                   onChange={(e) => setCustomVivaNote(e.target.value)}
                   placeholder="e.g. Please complete your viva by this Friday 5:00 PM to be included in our technical shortlist review."
                   rows={2}
-                  className="w-full bg-black/60 border border-[#3A2F27] rounded-xl p-3 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#D4AF37] font-sans"
+                  className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs text-[#111827] placeholder-neutral-500 focus:outline-none focus:border-gray-200 font-sans"
                 />
               </div>
 
               {/* Recruiter Sandbox Test Box */}
-              <div className="p-3.5 rounded-xl bg-black/60 border border-emerald-500/30 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-white border border-emerald-500/30 flex items-center justify-between gap-3">
                 <div>
-                  <span className="text-xs font-bold text-emerald-300 block">Recruiter Quick-Test:</span>
-                  <span className="text-[11px] text-neutral-400">Simulate candidate taking the viva right now to test the live ranking update.</span>
+                  <span className="text-xs font-bold text-emerald-800 block">Recruiter Quick-Test:</span>
+                  <span className="text-[11px] text-gray-500">Simulate candidate taking the viva right now to test the live ranking update.</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleSimulateCandidateDefense(activeVivaInviteCandidate)}
                   className="px-3 py-1.5 rounded-lg bg-emerald-950 border border-emerald-500/60 text-emerald-200 hover:bg-emerald-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
                 >
-                  <Play className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Simulate Defense</span>
+                  <Play className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Simulate Viva</span>
                 </button>
               </div>
 
             </div>
 
             {/* Modal Footer with Direct Send Options */}
-            <div className="px-6 py-4 bg-[#1e100a] border-t border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-6 py-4 bg-[#1e100a] border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setActiveVivaInviteCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white transition cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-[#111827] transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1240,8 +1236,8 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                 {/* Direct mailto: Fallback Button */}
                 {(() => {
                   const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
-                  const subject = `Invitation to 3-Minute Technical Defense Viva: ${activeVivaInviteCandidate.name}`;
-                  const body = `Hello ${activeVivaInviteCandidate.name},\n\nYou are invited to complete your 3-minute Technical Defense Viva for your project submission: ${activeVivaInviteCandidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\n${customVivaNote ? `Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
+                  const subject = `Invitation to 3-Minute Technical Viva: ${activeVivaInviteCandidate.name}`;
+                  const body = `Hello ${activeVivaInviteCandidate.name},\n\nYou are invited to complete your 3-minute Technical Viva for your project submission: ${activeVivaInviteCandidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\n${customVivaNote ? `Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
                   const mailtoLink = `mailto:${encodeURIComponent(activeVivaInviteCandidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                   
                   return (
@@ -1249,7 +1245,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                       href={mailtoLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-black/60 border border-[#D4AF37]/50 text-[#FFD166] hover:bg-[#D4AF37]/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                       title="Open in your default email client (Gmail, Outlook)"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -1277,53 +1273,53 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
       {/* DECISION & OFFICIAL CANDIDATE EVALUATION MODAL */}
       {activeModalCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#140b08] border border-[#D4AF37] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100 backdrop-blur-md animate-fadeIn">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-[#1e100a] border-b border-[#D4AF37]/30 flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#1e100a] border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Mail className="w-5 h-5 text-[#D4AF37]" />
-                <h3 className="font-bold text-white text-base">
+                <Mail className="w-5 h-5 text-[#4b5563]" />
+                <h3 className="font-bold text-[#111827] text-base">
                   Dispatch Official Candidate Evaluation Notice
                 </h3>
               </div>
               <button
                 onClick={() => setActiveModalCandidate(null)}
-                className="text-neutral-400 hover:text-white transition p-1 cursor-pointer"
+                className="text-gray-500 hover:text-[#111827] transition p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Scrollable Body */}
-            <div className="p-6 overflow-y-auto space-y-5 text-sm text-neutral-200">
+            <div className="p-6 overflow-y-auto space-y-5 text-sm text-gray-800">
               
               {/* Candidate Quick Banner */}
-              <div className="p-3.5 rounded-xl bg-black/50 border border-[#3A2F27] flex flex-wrap items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-white font-bold text-base">{activeModalCandidate.name}</div>
-                  <div className="text-xs text-[#E6C280]">{activeModalCandidate.college} ({classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).label})</div>
+                  <div className="text-[#111827] font-bold text-base">{activeModalCandidate.name}</div>
+                  <div className="text-xs text-[#4b5563]">{activeModalCandidate.college} ({classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).label})</div>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="text-[11px] text-[#FFD166] font-bold uppercase font-mono">To Email:</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold uppercase font-mono">To Email:</span>
                     <input
                       type="email"
                       value={modalCandidateEmail}
                       onChange={(e) => setModalCandidateEmail(e.target.value)}
                       placeholder="candidate@example.edu"
-                      className="bg-black/70 border border-[#D4AF37]/50 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#D4AF37] w-64 shadow-inner"
+                      className="bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#111827] font-mono focus:outline-none focus:border-gray-200 w-64 shadow-inner"
                       title="Editable: enter your test email address to test deliverability"
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-right">
-                  <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27] text-center">
-                    <span className="text-[10px] uppercase text-neutral-400 block font-bold">Code Quality</span>
-                    <span className="font-mono font-bold text-emerald-400">{activeModalCandidate.authenticity_score ?? 0}%</span>
+                  <div className="p-2 rounded-lg bg-white border border-gray-200 text-center">
+                    <span className="text-[10px] uppercase text-gray-500 block font-bold">Code Quality</span>
+                    <span className="font-mono font-bold text-emerald-700">{activeModalCandidate.authenticity_score ?? 0}%</span>
                   </div>
-                  <div className="p-2 rounded-lg bg-black/60 border border-[#3A2F27] text-center">
-                    <span className="text-[10px] uppercase text-neutral-400 block font-bold">Viva Defense</span>
-                    <span className="font-mono font-bold text-[#D4AF37]">
+                  <div className="p-2 rounded-lg bg-white border border-gray-200 text-center">
+                    <span className="text-[10px] uppercase text-gray-500 block font-bold">Viva</span>
+                    <span className="font-mono font-bold text-[#4b5563]">
                       {isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10` : 'Pending'}
                     </span>
                   </div>
@@ -1332,7 +1328,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
               {/* Decision Toggle */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#FFD166] mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-2">
                   Official Decision
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -1342,7 +1338,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                     className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                       modalDecisionType === 'SHORTLISTED'
                         ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-md'
-                        : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-[#111827]'
                     }`}
                   >
                     <ThumbsUp className="w-4 h-4" />
@@ -1355,7 +1351,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                     className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                       modalDecisionType === 'REJECTED'
                         ? 'bg-red-950/80 border-red-500 text-red-200 shadow-md'
-                        : 'bg-black/40 border-[#3A2F27] text-neutral-400 hover:text-white'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-[#111827]'
                     }`}
                   >
                     <ThumbsDown className="w-4 h-4" />
@@ -1367,15 +1363,15 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
               {/* If Rejected: Clear, Empathetic, Professional Reason Selector */}
               {modalDecisionType === 'REJECTED' && (
                 <div className="space-y-2 bg-[#1b0f0a] p-4 rounded-xl border border-red-500/30">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-red-300">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-red-800">
                     Constructive Feedback Topic (Politely explained in Plain English)
                   </label>
                   <select
                     value={modalRejectionReason}
                     onChange={(e) => setModalRejectionReason(e.target.value)}
-                    className="w-full bg-black/70 border border-[#3A2F27] rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-[#D4AF37] font-sans cursor-pointer"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-gray-200 font-sans cursor-pointer"
                   >
-                    <option value="VIVA_INCOMPLETE">🎓 Technical Defense Viva Incomplete (Oral defense required for screening)</option>
+                    <option value="VIVA_INCOMPLETE">🎓 Technical Viva Incomplete (Viva required for screening)</option>
                     <option value="JUNIOR_SCOPE">📉 Engineering Depth (Current project scope is junior for target role)</option>
                     <option value="JD_MISMATCH">🧩 Stack Alignment (Role requires deeper production cloud/infrastructure experience)</option>
                     <option value="CLONE_DETECTED">⚠️ Code Originality (Project closely matches public tutorial codebases)</option>
@@ -1387,7 +1383,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
               {/* Custom Note Textarea */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4AF37] mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-1">
                   Optional Recruiter Note (Appends to Email)
                 </label>
                 <textarea
@@ -1395,22 +1391,22 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                   onChange={(e) => setModalCustomNote(e.target.value)}
                   placeholder="e.g. Great enthusiasm in your project. We recommend expanding your automated test suite and re-applying for our next intake."
                   rows={2}
-                  className="w-full bg-black/60 border border-[#3A2F27] rounded-xl p-3 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#D4AF37] font-sans"
+                  className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs text-[#111827] placeholder-neutral-500 focus:outline-none focus:border-gray-200 font-sans"
                 />
               </div>
 
               {/* Email Preview Section */}
-              <div className="border border-[#3A2F27] rounded-xl overflow-hidden bg-black/40">
-                <div className="bg-[#190d08] border-b border-[#3A2F27] px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#FFD166] uppercase tracking-wider">
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="bg-[#190d08] border-b border-gray-200 px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#4b5563] uppercase tracking-wider">
                     Candidate Email Format Preview
                   </span>
-                  <div className="flex items-center gap-1 bg-black/60 p-0.5 rounded-lg border border-[#3A2F27]">
+                  <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-gray-200">
                     <button
                       type="button"
                       onClick={() => setEmailTab('html')}
                       className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
-                        emailTab === 'html' ? 'bg-[#D4AF37] text-black' : 'text-neutral-400 hover:text-white'
+                        emailTab === 'html' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
                       }`}
                     >
                       Executive View
@@ -1419,7 +1415,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                       type="button"
                       onClick={() => setEmailTab('text')}
                       className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
-                        emailTab === 'text' ? 'bg-[#D4AF37] text-black' : 'text-neutral-400 hover:text-white'
+                        emailTab === 'text' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
                       }`}
                     >
                       Plain Text
@@ -1428,7 +1424,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                       type="button"
                       onClick={() => setEmailTab('payload')}
                       className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
-                        emailTab === 'payload' ? 'bg-[#D4AF37] text-black' : 'text-neutral-400 hover:text-white'
+                        emailTab === 'payload' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
                       }`}
                     >
                       Webhook JSON
@@ -1438,28 +1434,28 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
                 <div className="p-4 max-h-60 overflow-y-auto">
                   {emailTab === 'html' && (
-                    <div className="bg-[#0c0604] border border-[#D4AF37]/40 rounded-xl p-5 text-xs space-y-3 font-sans">
-                      <div className="text-center pb-3 border-b border-[#3A2F27]">
-                        <span className="text-xs font-bold text-[#D4AF37] tracking-widest uppercase">PARIKSHA MERIT PLATFORM</span>
+                    <div className="bg-[#0c0604] border border-gray-200 rounded-xl p-5 text-xs space-y-3 font-sans">
+                      <div className="text-center pb-3 border-b border-gray-200">
+                        <span className="text-xs font-bold text-[#4b5563] tracking-widest uppercase">PARIKSHA MERIT PLATFORM</span>
                         <h4 className="text-sm font-extrabold text-white mt-1">Official Technical Evaluation Notice</h4>
                       </div>
                       <div className="p-2.5 rounded-lg bg-[#180e09] border border-[#3d2516] flex justify-between items-center">
-                        <span className="font-bold text-white">{activeModalCandidate.name}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${modalDecisionType === 'SHORTLISTED' ? 'bg-emerald-950 text-emerald-300 border-emerald-500' : 'bg-red-950 text-red-300 border-red-500'}`}>
+                        <span className="font-bold text-[#111827]">{activeModalCandidate.name}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${modalDecisionType === 'SHORTLISTED' ? 'bg-emerald-50 text-emerald-800 border-emerald-500' : 'bg-red-50 text-red-800 border-red-500'}`}>
                           {modalDecisionType === 'SHORTLISTED' ? 'CANDIDATE SHORTLISTED' : 'TECHNICAL SCREENING NOTICE'}
                         </span>
                       </div>
-                      <div className="text-neutral-300 text-xs leading-relaxed">
+                      <div className="text-gray-700 text-xs leading-relaxed">
                         {modalDecisionType === 'SHORTLISTED' 
                           ? `Congratulations ${activeModalCandidate.name}, your project submission has passed our merit-based technical screening threshold based on genuine code authorship and demonstrated engineering capability.`
                           : getRejectionReasonText(modalRejectionReason, activeModalCandidate)}
                       </div>
                       {modalCustomNote && (
-                        <div className="p-2.5 rounded bg-black/50 border border-[#3A2F27] text-neutral-300 italic text-[11px]">
+                        <div className="p-2.5 rounded bg-gray-50 border border-gray-200 text-gray-700 italic text-[11px]">
                           "{modalCustomNote}"
                         </div>
                       )}
-                      <div className="pt-2 border-t border-[#3A2F27] flex items-center justify-between text-[11px] text-[#FFD166]">
+                      <div className="pt-2 border-t border-gray-200 flex items-center justify-between text-[11px] text-[#4b5563]">
                         <span>Verified ProofCard credential attached</span>
                         <span className="font-bold underline cursor-pointer">Live Ledger URL</span>
                       </div>
@@ -1467,7 +1463,7 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
                   )}
 
                   {emailTab === 'text' && (
-                    <pre className="text-[11px] font-mono text-neutral-300 whitespace-pre-wrap leading-relaxed">
+                    <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap leading-relaxed">
                       {`================================================================================
 PARIKSHA: CANDIDATE TECHNICAL EVALUATION & FEEDBACK
 ================================================================================
@@ -1484,8 +1480,8 @@ ${modalDecisionType === 'SHORTLISTED'
 
 TECHNICAL SCORECARD:
 - Code Quality Score:   ${activeModalCandidate.authenticity_score ?? 0} / 100
-- Viva Defense Status:  ${isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10 (Defended)` : 'Pending Remote Defense'}
-- Zero Pedigree Bias:   Evaluated strictly on code quality and technical merit
+- Viva Status:  ${isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10 (Defended)` : 'Pending Remote Defense'}
+- Zero College Bias:   Evaluated strictly on code quality and technical merit
 
 View verified credential on live ledger:
 https://proofcard.vercel.app/?verify=${encodeURIComponent(activeModalCandidate.candidate_id || '')}
@@ -1494,7 +1490,7 @@ https://proofcard.vercel.app/?verify=${encodeURIComponent(activeModalCandidate.c
                   )}
 
                   {emailTab === 'payload' && (
-                    <pre className="text-[11px] font-mono text-emerald-300 whitespace-pre-wrap">
+                    <pre className="text-[11px] font-mono text-emerald-800 whitespace-pre-wrap">
                       {JSON.stringify({
                         event: "DECISION_EMAIL_DISPATCH",
                         candidate_id: activeModalCandidate.candidate_id,
@@ -1517,11 +1513,11 @@ https://proofcard.vercel.app/?verify=${encodeURIComponent(activeModalCandidate.c
             </div>
 
             {/* Modal Footer with Direct mailto: Fallback */}
-            <div className="px-6 py-4 bg-[#1e100a] border-t border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-6 py-4 bg-[#1e100a] border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setActiveModalCandidate(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white transition cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-[#111827] transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1542,7 +1538,7 @@ https://proofcard.vercel.app/?verify=${encodeURIComponent(activeModalCandidate.c
                       href={mailtoLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-black/60 border border-[#D4AF37]/50 text-[#FFD166] hover:bg-[#D4AF37]/20 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                       title="Open in your default email client"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />

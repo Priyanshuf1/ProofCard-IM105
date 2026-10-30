@@ -74,7 +74,7 @@ const RadarSkillChart: React.FC<{
     },
     { 
       id: 'viva', 
-      label: viva > 0 ? 'Viva Defense' : 'Viva (Pending)', 
+      label: viva > 0 ? 'Viva' : 'Viva (Pending)', 
       val: vViva, 
       angle: 198,
       desc: viva > 0 ? 'Verbal conceptual clarity, technical justification, and deep design reasoning.' : 'Oral technical defense pending candidate completion.' 
@@ -98,14 +98,14 @@ const RadarSkillChart: React.FC<{
   const activeAxisObj = axes.find(a => a.id === hoveredAxis) || null;
 
   return (
-    <div className="bg-black/60 rounded-2xl border border-[#3A2F27] p-4 sm:p-5 flex flex-col items-center justify-between shadow-2xl relative w-full h-full">
+    <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 flex flex-col items-center justify-between shadow-2xl relative w-full h-full">
       {/* Top Header */}
       <div className="flex items-center justify-between w-full mb-2">
-        <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#FFD166] font-mono flex items-center gap-1.5">
+        <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#4b5563] font-mono flex items-center gap-1.5">
           <span>Competency Radar</span>
-          <span className="text-[10px] text-neutral-400 font-normal">(5-Axis AST)</span>
+          <span className="text-[10px] text-gray-500 font-normal">(5-Axis AST)</span>
         </span>
-        <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
+        <span className="text-[11px] font-mono text-emerald-700 font-bold bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>Live Polygon</span>
         </span>
@@ -288,19 +288,19 @@ const RadarSkillChart: React.FC<{
       </div>
 
       {/* Dynamic Interactive Explanation Tooltip & At-A-Glance Metric Strip */}
-      <div className="w-full mt-2 pt-3 border-t border-[#3A2F27] flex flex-col gap-2">
+      <div className="w-full mt-2 pt-3 border-t border-gray-200 flex flex-col gap-2">
         {activeAxisObj ? (
-          <div className="animate-fadeIn p-2.5 rounded-xl bg-black/60 border border-[#D4AF37]/40 text-xs">
+          <div className="animate-fadeIn p-2.5 rounded-xl bg-white border border-gray-200 text-xs">
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-[#FFD166] text-sm flex items-center gap-1.5">
+              <span className="font-bold text-[#4b5563] text-sm flex items-center gap-1.5">
                 <span>{activeAxisObj.label}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-[#8B1E1E]/50 border border-[#D4AF37]/50 text-white font-mono">
+                <span className="text-xs px-2 py-0.5 rounded bg-red-100 border border-gray-200 text-[#111827] font-mono">
                   {activeAxisObj.val}% Verified
                 </span>
               </span>
-              <span className="text-[10px] text-neutral-400 font-mono">Axis Telemetry</span>
+              <span className="text-[10px] text-gray-500 font-mono">Axis Telemetry</span>
             </div>
-            <p className="text-neutral-200 font-sans leading-relaxed text-xs">
+            <p className="text-gray-800 font-sans leading-relaxed text-xs">
               {activeAxisObj.desc}
             </p>
           </div>
@@ -312,14 +312,14 @@ const RadarSkillChart: React.FC<{
                 <button
                   key={a.id}
                   onClick={() => setHoveredAxis(hoveredAxis === a.id ? null : a.id)}
-                  className="p-1 rounded-lg bg-black/50 border border-[#3A2F27] hover:border-[#D4AF37]/60 transition cursor-pointer"
+                  className="p-1 rounded-lg bg-gray-50 border border-gray-200 hover:border-amber-300 transition cursor-pointer"
                 >
-                  <div className="text-[9px] text-neutral-300 truncate uppercase font-bold">{a.label.split(' ')[0]}</div>
-                  <div className="text-xs font-mono font-black text-[#FFD166]">{a.val}%</div>
+                  <div className="text-[9px] text-[#111827] truncate uppercase font-bold">{a.label.split(' ')[0]}</div>
+                  <div className="text-xs font-mono font-black text-[#4b5563]">{a.val}%</div>
                 </button>
               ))}
             </div>
-            <div className="text-[11px] text-neutral-400 font-sans flex items-center justify-center gap-1">
+            <div className="text-[11px] text-gray-500 font-sans flex items-center justify-center gap-1">
               <span>💡</span>
               <span>Click or hover any vertex on the polygon to inspect verified evidence.</span>
             </div>
@@ -340,19 +340,19 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   if (!candidate) {
     return (
       <div className="max-w-4xl mx-auto py-16 px-4 text-center">
-        <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#8B1E1E]/20 border border-[#D4AF37]/40 flex items-center justify-center">
-            <Award className="w-8 h-8 text-[#D4AF37]" />
+        <div className="p-8 sm:p-12 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 border border-gray-200 flex items-center justify-center">
+            <Award className="w-8 h-8 text-[#4b5563]" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#111827] mb-2 font-sans">
             No Pariksha Card Generated
           </h2>
-          <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
+          <p className="text-sm text-gray-600 max-w-md mx-auto mb-6">
             A candidate must undergo repository scanning and technical defense evaluation to issue a verified Pariksha card credential.
           </p>
           <button
             onClick={() => onNavigateToTab('ingestion')}
-            className="btn-dev-primary text-xs flex items-center gap-2 px-6 py-3.5 mx-auto shadow-lg cursor-pointer font-bold"
+            className="btn-primary text-xs flex items-center gap-2 px-6 py-3.5 mx-auto shadow-lg cursor-pointer font-bold"
           >
             <span>Go to Ingestion Scanner</span>
             <ArrowRight className="w-4 h-4" />
@@ -447,35 +447,35 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
       {/* Header */}
-      <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
+      <div className="p-6 rounded-2xl mb-6 bg-white border border-gray-200 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight font-sans">
               Academic Credential Ledger
             </h1>
-            <p className="text-xs text-[#E6C280] mt-1 font-sans">
-              Cryptographically verified engineering competency report · Zero Pedigree Bias
+            <p className="text-xs text-[#4b5563] mt-1 font-sans">
+              Cryptographically verified engineering competency report · Zero College Bias
             </p>
           </div>
 
           {/* Action Buttons & Candidate Switcher */}
           <div className="flex flex-wrap items-center gap-2">
             {onSelectCandidate && cohort && cohort.length > 0 && (
-              <div className="flex items-center gap-2 bg-black/60 border border-[#D4AF37]/40 px-3.5 py-2 rounded-xl">
-                <span className="text-xs text-[#FFD166] font-bold uppercase">Inspect:</span>
+              <div className="flex items-center gap-2 bg-white border border-gray-200 px-3.5 py-2 rounded-xl">
+                <span className="text-xs text-[#4b5563] font-bold uppercase">Inspect:</span>
                 <select
                   value={candidate.candidate_id}
                   onChange={(e) => {
                     const selected = cohort.find(c => c.candidate_id === e.target.value);
                     if (selected) onSelectCandidate(selected);
                   }}
-                  className="bg-transparent text-sm text-[#FFD166] font-semibold focus:outline-none cursor-pointer max-w-[180px]"
+                  className="bg-transparent text-sm text-[#4b5563] font-semibold focus:outline-none cursor-pointer max-w-[180px]"
                 >
-                  <option value={candidate.candidate_id} className="bg-neutral-900 text-white">
+                  <option value={candidate.candidate_id} className="bg-white text-[#111827]">
                     {candidate.name} ({candidate.authenticity_score}%)
                   </option>
                   {cohort.filter(c => c.candidate_id !== candidate.candidate_id).slice(0, 15).map(c => (
-                    <option key={c.candidate_id} value={c.candidate_id} className="bg-neutral-900 text-white">
+                    <option key={c.candidate_id} value={c.candidate_id} className="bg-white text-[#111827]">
                       {c.name} · {c.college.split(' ')[0]} ({c.authenticity_score}%)
                     </option>
                   ))}
@@ -485,9 +485,9 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
             <button
               onClick={() => window.print()}
-              className="btn-dev-outline text-xs sm:text-sm flex items-center gap-1.5 px-4 py-2 cursor-pointer font-bold"
+              className="btn-secondary text-xs sm:text-sm flex items-center gap-1.5 px-4 py-2 cursor-pointer font-bold"
             >
-              <Printer className="w-4 h-4 text-[#D4AF37]" />
+              <Printer className="w-4 h-4 text-[#4b5563]" />
               <span>Print PDF</span>
             </button>
 
@@ -496,10 +496,10 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               className={`text-xs sm:text-sm flex items-center gap-1.5 px-5 py-2 rounded-full border transition cursor-pointer font-bold ${
                 copied
                   ? 'bg-emerald-950/80 border-emerald-400 text-emerald-300'
-                  : 'btn-dev-primary'
+                  : 'btn-primary'
               }`}
             >
-              {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-700" /> : <Share2 className="w-4 h-4" />}
               <span>{copied ? 'Link Copied!' : 'Share Public Link'}</span>
             </button>
           </div>
@@ -507,89 +507,89 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       </div>
 
       {/* The De-Nucleated Pariksha Card */}
-      <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl relative overflow-hidden">
+      <div className="proofcard-printable p-7 sm:p-9 rounded-3xl bg-white border border-gray-200 shadow-sm relative overflow-hidden">
         {/* Amber Ambient Vignette */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-gray-50 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Institutional Verification Stamp */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-2.5 rounded-xl relative z-10">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-xl relative z-10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#8B1E1E] border border-[#D4AF37] flex items-center justify-center text-sm text-[#FFD166] font-bold shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-[#e20001] border border-gray-200 flex items-center justify-center text-sm text-[#4b5563] font-bold shadow-sm">
               🏛️
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-bold text-white tracking-wider uppercase">
+              <div className="text-xs sm:text-sm font-bold text-[#111827] tracking-wider uppercase">
                 {candidate.college || 'Verified Academic Institution'}
               </div>
-              <div className="text-xs text-[#E6C280] font-sans font-medium mt-0.5">
+              <div className="text-xs text-[#4b5563] font-sans font-medium mt-0.5">
                 Academic Credential
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-xs font-mono font-bold text-[#FFD166] bg-black/60 px-3 py-1 rounded-lg border border-[#D4AF37]/30">
+          <div className="flex items-center gap-1 text-xs font-mono font-bold text-[#4b5563] bg-white px-3 py-1 rounded-lg border border-gray-200">
             <span>✓ VERIFIED CANDIDATE</span>
           </div>
         </div>
 
         {/* Top Header Row of Card */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#3A2F27] pb-5 mb-5 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-gray-200 pb-5 mb-5 relative z-10">
           <div className="flex items-center gap-3.5">
             {isPromptInjected ? (
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950 text-red-300 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] shrink-0">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950 text-red-700 border-2 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] shrink-0">
                 🚨
               </div>
             ) : isClone ? (
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950/50 text-red-400 border border-red-500/50 shrink-0">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl bg-red-950/50 text-red-700 border border-red-500/50 shrink-0">
                 ⚠️
               </div>
             ) : (
               <img 
                 src="/pariksha-logo.jpg" 
                 alt="Pariksha Verified Official Logo" 
-                className="w-12 h-12 rounded-xl object-cover border border-[#D4AF37]/60 shadow-[0_0_14px_rgba(255,140,0,0.35)] shrink-0" 
+                className="w-12 h-12 rounded-xl object-cover border border-amber-300 shadow-[0_0_14px_rgba(255,140,0,0.35)] shrink-0" 
               />
             )}
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="text-xl sm:text-2xl font-bold text-white tracking-wide font-sans">{candidate.name}</span>
+                <span className="text-xl sm:text-2xl font-bold text-[#111827] tracking-wide font-sans">{candidate.name}</span>
                 <span className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-full border ${
                   isPromptInjected
                     ? 'bg-red-950 text-red-200 border-red-500 font-extrabold shadow-sm' 
                     : isClone
-                    ? 'bg-red-900/40 text-red-300 border-red-500/40'
-                    : 'bg-[#8B1E1E]/40 text-[#FFD166] border-[#D4AF37]/50'
+                    ? 'bg-red-900/40 text-red-700 border-red-500/40'
+                    : 'bg-red-50 text-[#4b5563] border-gray-200'
                 }`}>
                   {isPromptInjected ? 'FLAGGED: PROMPT INJECTION' : (isClone ? 'FLAGGED: TUTORIAL CLONE' : 'VERIFIED ENGINEER')}
                 </span>
               </div>
-              <p className="text-sm text-neutral-200 mt-1 font-medium font-sans">
-                Skill Track: <strong className="text-white">{candidate.project_type || 'Full Stack Engineer'}</strong>
+              <p className="text-sm text-gray-800 mt-1 font-medium font-sans">
+                Skill Track: <strong className="text-[#111827]">{candidate.project_type || 'Full Stack Engineer'}</strong>
               </p>
             </div>
           </div>
 
           {/* Scores Overview */}
-          <div className="flex items-center gap-4 font-mono bg-black/60 px-5 py-3 rounded-xl border border-[#3A2F27]">
+          <div className="flex items-center gap-4 font-mono bg-white px-5 py-3 rounded-xl border border-gray-200">
             <div className="text-right">
-              <div className="text-xs text-neutral-300 uppercase font-bold">Code Quality</div>
-              <div className={`text-2xl font-black ${isAdversarial || isClone ? 'text-red-400' : 'text-[#FFD166]'}`}>
-                {candidate.authenticity_score} <span className="text-xs text-neutral-400 font-normal">/ 100</span>
+              <div className="text-xs text-gray-600 uppercase font-bold">Code Quality</div>
+              <div className={`text-2xl font-black ${isAdversarial || isClone ? 'text-red-700' : 'text-[#4b5563]'}`}>
+                {candidate.authenticity_score} <span className="text-xs text-gray-500 font-normal">/ 100</span>
               </div>
             </div>
-            <div className="h-9 w-[1px] bg-[#3A2F27]"></div>
+            <div className="h-9 w-[1px] bg-gray-200"></div>
             <div className="text-right">
-              <div className="text-xs text-neutral-300 uppercase font-bold">Viva Defense</div>
+              <div className="text-xs text-gray-600 uppercase font-bold">Viva Score</div>
               {hasCompletedViva ? (
-                <div className="text-2xl font-black text-[#D4AF37]">
-                  {candidate.viva_score} <span className="text-xs text-neutral-400 font-normal">/ 10</span>
+                <div className="text-2xl font-black text-[#4b5563]">
+                  {candidate.viva_score} <span className="text-xs text-gray-500 font-normal">/ 10</span>
                 </div>
               ) : isClone ? (
-                <div className="text-xs font-bold text-red-400 pt-1 uppercase">
+                <div className="text-xs font-bold text-red-700 pt-1 uppercase">
                   Disqualified
                 </div>
               ) : (
                 <div className="text-xs font-bold text-amber-300 pt-1 uppercase">
-                  Awaiting Defense
+                  Awaiting Viva
                 </div>
               )}
             </div>
@@ -602,11 +602,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             ? 'bg-red-950/70 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] border-l-8 border-l-red-500' 
             : isClone
             ? 'bg-red-950/50 border-red-500/60 border-l-8 border-l-red-500 shadow-md'
-            : 'bg-black/70 border-[#D4AF37]/40 border-l-8 border-l-[#FFD166] shadow-[0_4px_24px_rgba(0,0,0,0.6)]'
+            : 'bg-gray-100 border-gray-200 border-l-8 border-l-[#FFD166] shadow-[0_4px_24px_rgba(0,0,0,0.6)]'
         }`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <span className={`text-sm sm:text-base font-bold font-mono uppercase tracking-wider flex items-center gap-2 ${
-              isPromptInjected ? 'text-red-300' : isClone ? 'text-red-400' : 'text-[#FFD166]'
+              isPromptInjected ? 'text-red-700' : isClone ? 'text-red-700' : 'text-[#4b5563]'
             }`}>
               {isPromptInjected ? '🚨 SECURITY NOTICE: PROMPT INJECTION DIRECTIVE DETECTED' : 'FORENSIC VERDICT:'}
             </span>
@@ -620,7 +620,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                     href={candidate.matched_tutorial.source_url || candidate.matched_tutorial.youtube_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-[#FFD166] hover:underline inline-flex items-center gap-1 font-mono font-bold"
+                    className="text-xs text-[#4b5563] hover:underline inline-flex items-center gap-1 font-mono font-bold"
                   >
                     <span>View Tutorial Source</span>
                     <ExternalLink className="w-3 h-3" />
@@ -629,7 +629,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               </div>
             )}
           </div>
-          <p className="text-lg sm:text-xl text-white font-semibold leading-relaxed font-sans tracking-wide">
+          <p className="text-lg sm:text-xl text-[#111827] font-semibold leading-relaxed font-sans tracking-wide">
             "{cleanHeadline}"
           </p>
         </div>
@@ -649,19 +649,19 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           {/* Strengths & Recommended Next Steps */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             {/* Technical Strengths */}
-            <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
-              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-400 uppercase tracking-wider font-mono">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-700 uppercase tracking-wider font-mono">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Technical Strengths</span>
               </div>
-              <ul className="space-y-2 text-sm text-neutral-200 font-sans font-medium">
+              <ul className="space-y-2 text-sm text-gray-800 font-sans font-medium">
                 {(card.strengths && card.strengths.length > 0 ? card.strengths : [
                   'Demonstrated code originality with organic development cadence',
                   'Solid architecture and verified implementation of core application logic',
                   'Tamper-proof cryptographic commit ledger verification'
                 ]).map((str, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                    <span className="text-emerald-700 font-bold shrink-0">✓</span>
                     <span className="leading-snug">{str}</span>
                   </li>
                 ))}
@@ -669,15 +669,15 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
             </div>
 
             {/* Recommended Next Steps */}
-            <div className="bg-black/60 rounded-xl border border-[#3A2F27] p-5">
-              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#FFD166] uppercase tracking-wider font-mono">
-                <Zap className="w-4 h-4 text-[#D4AF37]" />
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#4b5563] uppercase tracking-wider font-mono">
+                <Zap className="w-4 h-4 text-[#4b5563]" />
                 <span>Recommended Next Steps</span>
               </div>
-              <div className="space-y-2.5 text-sm text-neutral-200 font-sans font-medium">
-                <p className="text-neutral-200"><strong className="text-[#FFD166]">Area for Growth:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
-                <div className="p-3 rounded-lg bg-[#2A241B]/60 border border-[#3A2F27]">
-                  <p className="text-[#F5E9C7] leading-snug"><strong className="text-[#D4AF37]">Action Item:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
+              <div className="space-y-2.5 text-sm text-gray-800 font-sans font-medium">
+                <p className="text-gray-800"><strong className="text-[#4b5563]">Area for Growth:</strong> {card.growth_area || 'Deepen automated end-to-end integration and load testing.'}</p>
+                <div className="p-3 rounded-lg bg-gray-100/60 border border-gray-200">
+                  <p className="text-[#111827] leading-snug"><strong className="text-[#4b5563]">Action Item:</strong> {card.specific_action || 'Ship automated CI/CD pipeline with comprehensive mock integration.'}</p>
                 </div>
               </div>
             </div>
@@ -686,39 +686,39 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
         {/* Oral Defense Banner if Pending */}
         {!hasCompletedViva && !isClone && (
-          <div className="mb-5 p-4 rounded-xl bg-[#2A180C] border border-[#D4AF37]/50 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+          <div className="mb-5 p-4 rounded-xl bg-red-50 border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
             <div>
-              <div className="text-xs uppercase font-bold text-[#FFD166] tracking-wider font-mono flex items-center gap-1.5">
-                <span>⏳ Oral Defense Pending</span>
+              <div className="text-xs uppercase font-bold text-[#4b5563] tracking-wider font-mono flex items-center gap-1.5">
+                <span>⏳ Viva Pending</span>
               </div>
-              <p className="text-xs text-neutral-200 mt-0.5 font-sans">
-                This candidate is awaiting their 3-minute technical defense viva to finalize their verified credential.
+              <p className="text-xs text-gray-800 mt-0.5 font-sans">
+                This candidate is awaiting their 3-minute technical viva to finalize their verified credential.
               </p>
             </div>
             <button
               onClick={() => onNavigateToTab('viva')}
-              className="btn-dev-primary text-xs px-4 py-2 font-bold cursor-pointer whitespace-nowrap"
+              className="btn-primary text-xs px-4 py-2 font-bold cursor-pointer whitespace-nowrap"
             >
-              Start Defense Viva &rarr;
+              Start Live Viva &rarr;
             </button>
           </div>
         )}
 
         {/* Footer Integrity Seal & REAL WORKING QR CODE & LINK */}
-        <div className="pt-4 border-t border-[#3A2F27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono relative z-10">
+        <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono relative z-10">
           <div>
-            <div className="flex items-center gap-2 text-neutral-300">
-              <Lock className="w-4 h-4 text-[#D4AF37]" />
-              <span className="font-bold text-white text-xs sm:text-sm">SHA-256:</span>
-              <span className="text-[#FFD166] text-xs sm:text-sm font-mono">{(card.tamper_proof_hash || '').substring(0, 28)}...</span>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Lock className="w-4 h-4 text-[#4b5563]" />
+              <span className="font-bold text-[#111827] text-xs sm:text-sm">SHA-256:</span>
+              <span className="text-[#4b5563] text-xs sm:text-sm font-mono">{(card.tamper_proof_hash || '').substring(0, 28)}...</span>
             </div>
-            <div className="mt-1 text-xs text-neutral-300 flex items-center gap-1.5 font-mono">
+            <div className="mt-1 text-xs text-gray-600 flex items-center gap-1.5 font-mono">
               <span>Public Link:</span>
               <a
                 href={publicVerifyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#FFD166] hover:underline truncate max-w-[240px] sm:max-w-xs inline-flex items-center gap-1 font-mono font-bold"
+                className="text-[#4b5563] hover:underline truncate max-w-[240px] sm:max-w-xs inline-flex items-center gap-1 font-mono font-bold"
                 title="Click to open public verified credential"
               >
                 <span className="truncate">{publicVerifyUrl}</span>
@@ -728,7 +728,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           </div>
 
           {/* Real Scannable & Clickable Barcode / QR Code */}
-          <div className="flex items-center gap-3 bg-black/60 p-3 rounded-xl border border-[#3A2F27] shrink-0">
+          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-gray-200 shrink-0">
             <a
               href={publicVerifyUrl}
               target="_blank"
@@ -747,11 +747,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
               )}
             </a>
             <div>
-              <span className="text-xs sm:text-sm text-white font-bold block">Scan or Click to Verify</span>
-              <span className="text-xs text-neutral-300 block">Opens public ledger credential</span>
+              <span className="text-xs sm:text-sm text-[#111827] font-bold block">Scan or Click to Verify</span>
+              <span className="text-xs text-gray-600 block">Opens public ledger credential</span>
               <button
                 onClick={handleShare}
-                className="text-xs text-[#FFD166] hover:underline flex items-center gap-1 mt-1 cursor-pointer font-bold font-sans"
+                className="text-xs text-[#4b5563] hover:underline flex items-center gap-1 mt-1 cursor-pointer font-bold font-sans"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>Copy Link</span>
@@ -765,7 +765,7 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
       <div className="mt-6 flex justify-center">
         <button
           onClick={() => onNavigateToTab('battle')}
-          className="btn-dev-primary text-sm flex items-center gap-2 shadow-xl cursor-pointer px-7 py-3.5 font-bold"
+          className="btn-primary text-sm flex items-center gap-2 shadow-xl cursor-pointer px-7 py-3.5 font-bold"
         >
           <span>Proceed to Recruiter Battle Arena</span>
           <ArrowRight className="w-4 h-4" />
