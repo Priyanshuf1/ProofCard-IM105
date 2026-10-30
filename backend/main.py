@@ -80,9 +80,17 @@ from backend.routers import (
     readiness,
     deployment,
     webhooks,
+    resumes,
+    sandbox,
+    gemini_ai,
+    jobs,
+    forensics,
+    grading,
     resume_parser,
-    ai_tolerance
+    ai_tolerance,
+    admin_auth
 )
+
 
 app = FastAPI(
     title="ProofCard API — Deviathon 2.0 (Integraminds IM-105)",
@@ -122,8 +130,15 @@ app.include_router(imats_sandbox.router)
 app.include_router(readiness.router)
 app.include_router(deployment.router)
 app.include_router(webhooks.router)
+app.include_router(resumes.router)
+app.include_router(sandbox.router)
+app.include_router(gemini_ai.router)
+app.include_router(jobs.router)
+app.include_router(forensics.router)
+app.include_router(grading.router)
 app.include_router(resume_parser.router)
 app.include_router(ai_tolerance.router)
+app.include_router(admin_auth.router)
 
 
 @app.get("/health")
@@ -139,7 +154,21 @@ def api_root():
         "problem_statement": "IM-105 (Integraminds)",
         "tagline": "Proof of skill, not a template resume",
         "status": "online",
-        "docs_url": "/docs"
+        "docs_url": "/docs",
+        "modules": [
+            "Resume Ingestion & Parsing (PDF, DOCX, DOC, TXT)",
+            "Sandbox API Enterprise Bulk Ingestion",
+            "Local ZIP & GitHub Ingestion",
+            "AST Structural & Radon Complexity",
+            "Winnowing Tutorial Clone Detection (20 templates)",
+            "Git-DNA Temporal Forensics",
+            "Dynamic Code Viva & Conceptual Scorer",
+            "Recruiter JD Battle Matrix",
+            "Recruiter Bias Mirror & Equal Opportunity Audit",
+            "Deployment Readiness Contract",
+            "n8n Automation & Continuous Webhooks",
+            "Offline 100% Demo Survival Mode"
+        ]
     }
 
 @app.get("/")
@@ -150,9 +179,6 @@ def root():
 dist_dir = Path(__file__).resolve().parent.parent / "web" / "dist"
 if dist_dir.exists() and (dist_dir / "assets").exists():
     app.mount("/assets", StaticFiles(directory=dist_dir / "assets"), name="assets")
-
-
-
 
 if __name__ == "__main__":
     import uvicorn

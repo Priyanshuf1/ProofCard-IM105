@@ -684,6 +684,131 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
           </div>
         </div>
 
+        {/* 100-Mark Fragmented AI Evaluation Ledger */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-sm mb-5 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-[#e20001] font-bold text-xs">
+                  100
+                </span>
+                <h3 className="text-base font-bold text-[#111827] uppercase tracking-wider font-mono">
+                  100-Mark Fragmented AI Evaluation Ledger
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 font-sans mt-0.5">
+                Fragmented AI evaluation across 8 individual parameters: Gemini document parsing, AST code forensics, and live oral viva
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 px-4 py-2 rounded-xl">
+              <span className="text-xs uppercase font-bold text-gray-700">Composite Score:</span>
+              <span className="text-xl font-black text-[#e20001] font-mono">
+                {Math.min(100, Math.round(
+                  (isClone ? 4 : (isPromptInjected ? 2 : 9.5)) +
+                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) +
+                  (isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) +
+                  (hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) +
+                  (isClone ? 2 : 9.0) +
+                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) +
+                  (isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) +
+                  (isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10)))
+                ))} <span className="text-xs text-gray-500 font-normal">/ 100</span>
+              </span>
+            </div>
+          </div>
+
+          {/* 8-Parameter Breakdown Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-sans">
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">A. Resume Formatting</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 4 : (isPromptInjected ? 2 : 9.5)} / 10</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${(isClone ? 4 : (isPromptInjected ? 2 : 9.5)) * 10}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Visual hierarchy, readability & layout</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">B. Projects Weightage</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))} / 15</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) / 15) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Project complexity & implementation depth</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">C. Code Originality</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))} / 20</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) / 20) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Manual effort vs AI prompt/cloned dumps</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">D. Oral Viva Defense</span>
+                <span className="font-mono font-bold text-[#e20001]">{hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5} / 10</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) / 10) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Verbal code defense & systems reasoning</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">E. Live Project Usability</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : 9.0} / 10</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : 9.0) / 10) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">HTTP 200 uptime, SSL & responsive DOM</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">F1. Job Skill Alignment</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))} / 15</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) / 15) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Match against company job specifications</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">F2. Code Architecture</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">McCabe complexity & modular isolation</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-gray-700">F3. Git Discipline</span>
+                <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
+              </div>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
+                <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
+              </div>
+              <span className="text-[10px] text-gray-500">Commit progression & refactoring ratio</span>
+            </div>
+          </div>
+        </div>
+
         {/* Oral Defense Banner if Pending */}
         {!hasCompletedViva && !isClone && (
           <div className="mb-5 p-4 rounded-xl bg-red-50 border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">

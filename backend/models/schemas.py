@@ -167,6 +167,23 @@ class BiasMirrorResponse(BaseModel):
     fairness_compliance_status: str
     remedy_recommendations: List[str]
 
+# -------------------------------------------------------------
+# Re-exports for Milestone 1 Resume Schemas Compatibility
+# -------------------------------------------------------------
+from backend.models.resume_schemas import (
+    CandidateContact,
+    EducationEntry,
+    WorkExperienceEntry,
+    ProjectEntry,
+    CandidateSkills,
+    ParsedResume,
+    ResumeUploadResponse,
+    BulkCandidateItem,
+    SandboxBulkIngestRequest,
+    IngestionResultItem,
+    SandboxBulkIngestResponse,
+)
+
 class LiveUrlVerificationRequest(BaseModel):
     url: Optional[str] = None
     live_url: Optional[str] = None
