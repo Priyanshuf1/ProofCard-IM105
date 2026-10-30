@@ -486,6 +486,8 @@ class ResumeParserService:
             github_url=github_url,
             portfolio_url=portfolio_url,
             other_links=other_links,
+            all_github_urls=all_github_urls,
+            all_live_urls=all_live_urls,
         )
 
         # 3. Summary

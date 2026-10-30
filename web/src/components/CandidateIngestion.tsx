@@ -133,7 +133,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       setIsSandboxUploading(false);
     }
   };
-  const [ingestMode, setIngestMode] = useState<'github' | 'zip' | 'resume' | 'live_site'>('github');
+  const [ingestMode, setIngestMode] = useState<'github' | 'zip' | 'resume'>('github');
   const [liveSiteUrl, setLiveSiteUrl] = useState('');
   const [apifyToken, setApifyToken] = useState((import.meta as any).env?.VITE_APIFY_API_TOKEN || '');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -249,6 +249,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       if (result.name && !candidateName) setCandidateName(result.name);
       if (result.email && !candidateEmail) setCandidateEmail(result.email);
       if (result.college && !college) setCollege(result.college);
+      // Set primary URLs
       if (result.github_url) {
         setGithubUrl(result.github_url);
       }
@@ -303,12 +304,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       return;
     }
 
-    if (ingestMode === 'live_site') {
-      if (!liveSiteUrl.trim()) {
-        setErrorMessage('Please enter a target live website URL to evaluate.');
-        return;
-      }
-    } else if (candidateStream === 'NON_TECHNICAL') {
+    if (candidateStream === 'NON_TECHNICAL') {
       if (!deliverableUrl.trim() && !resumeFile && !resumeData) {
         setErrorMessage('Please provide a portfolio / case study / deliverable URL (e.g. https://hritiksakpal.github.io/portfolio/).');
         return;
@@ -445,15 +441,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       } else if (ingestMode === 'zip') {
         profile = await uploadZipFile(selectedFile!, candidateName || 'Project Author', college || 'College', consentGranted, emailParam);
         profile.stream_track = 'TECHNICAL';
-      } else if (ingestMode === 'live_site') {
-        profile = await evaluateLiveSite({
-          url: liveSiteUrl.trim(),
-          candidate_name: candidateName.trim() || undefined,
-          candidate_email: emailParam,
-          college: college.trim() || undefined,
-          stream_track: candidateStream,
-          apify_token: apifyToken.trim() || undefined,
-        });
+
       } else if (ingestMode === 'resume') {
         const repoUrl = (githubUrl.trim() || resumeData?.github_url || '').trim();
         const detectedLiveUrl = (liveSiteUrl.trim() || resumeData?.live_url || '').trim();
@@ -947,7 +935,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       {scopeMode === 'single' && (
         <div className="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm">
           {/* Ingestion Mode Toggle Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
             <button
               onClick={() => setIngestMode('github')}
               className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
@@ -964,21 +952,6 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             </button>
 
             <button
-              onClick={() => setIngestMode('live_site')}
-              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                ingestMode === 'live_site'
-                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
-                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Globe className={`w-4 h-4 ${ingestMode === 'live_site' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
-                <span className="text-sm font-bold text-[#111827]">Live Website URL</span>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1">Direct Link • Apify Clone Scanner</p>
-            </button>
-
-            <button
               onClick={() => setIngestMode('resume')}
               className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
                 ingestMode === 'resume'
@@ -990,7 +963,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <FileText className={`w-4 h-4 ${ingestMode === 'resume' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-bold text-[#111827]">Resume PDF / DOCX</span>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">Auto-fill identity, skills & links</p>
+              <p className="text-[11px] text-gray-500 mt-1">Multi-domain auto-fill & viva</p>
             </button>
 
             <button
@@ -1116,7 +1089,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               </div>
             </div>
 
-            {candidateStream === 'NON_TECHNICAL' && ingestMode !== 'live_site' ? (
+            {candidateStream === 'NON_TECHNICAL' ? (
               <div className="space-y-4 p-5 rounded-2xl bg-purple-50/40 border border-purple-200">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-purple-900 font-sans flex items-center gap-1.5">
@@ -1193,7 +1166,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIngestMode('live_site')}
+                    onClick={() => setIngestMode('resume')}
                     className="text-[11px] font-bold text-red-700 hover:text-red-800 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Globe className="w-3.5 h-3.5" />
@@ -1217,7 +1190,6 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                       type="button"
                       onClick={() => {
                         setLiveSiteUrl(githubUrl);
-                        setIngestMode('live_site');
                       }}
                       className="text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded cursor-pointer shrink-0 ml-2"
                     >
@@ -1419,7 +1391,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                       {liveSiteUrl.trim() && (
                         <button
                           type="button"
-                          onClick={() => setIngestMode('live_site')}
+                          onClick={() => {}}
                           className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
                         >
                           Evaluate Link →
@@ -1534,38 +1506,73 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                       </div>
                     )}
 
-                    {/* Section 4: Routing & Evaluation Readiness */}
-                    {resumeData.live_url && (
-                      <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Globe className="w-4 h-4 text-blue-600 shrink-0" />
-                          <span>
-                            <strong>Live Deployment Detected:</strong> {resumeData.live_url}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLiveSiteUrl(resumeData.live_url || '');
-                            setIngestMode('live_site');
-                          }}
-                          className="text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded cursor-pointer transition"
-                        >
-                          Evaluate with Apify →
-                        </button>
+                    {/* Section 4: Live Links Detected from Resume */}
+                    {((resumeData.all_live_urls && resumeData.all_live_urls.length > 0) || resumeData.live_url) && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+                          Live Deployments Detected
+                          {(resumeData.all_live_urls?.length ?? 0) > 1 && (
+                            <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">
+                              {resumeData.all_live_urls!.length} links found
+                            </span>
+                          )}
+                        </span>
+                        {(resumeData.all_live_urls && resumeData.all_live_urls.length > 0
+                          ? resumeData.all_live_urls
+                          : [resumeData.live_url!]
+                        ).map((url, i) => (
+                          <div key={url} className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Globe className="w-4 h-4 text-blue-600 shrink-0" />
+                              <span className="truncate">
+                                {i === 0 && <strong className="mr-1">#{i + 1} (Primary):</strong>}
+                                {i > 0 && <strong className="mr-1">#{i + 1}:</strong>}
+                                <a href={url} target="_blank" rel="noreferrer" className="underline hover:text-blue-700 break-all">{url}</a>
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setLiveSiteUrl(url)}
+                              className="ml-2 text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded cursor-pointer transition shrink-0"
+                            >
+                              {liveSiteUrl === url ? 'Selected' : 'Use This'}
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    {resumeData.github_url ? (
-                      <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>
-                            <strong>GitHub Repository Found:</strong> {resumeData.github_url}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-mono bg-emerald-100 px-2 py-0.5 rounded text-emerald-800">
-                          Auto-Linked
-                        </span>
+                    {/* GitHub repos found in resume */}
+                    {(resumeData.all_github_urls && resumeData.all_github_urls.length > 0) || resumeData.github_url ? (
+                      <div className="space-y-2">
+                        {(resumeData.all_github_urls && resumeData.all_github_urls.length > 0
+                          ? resumeData.all_github_urls
+                          : [resumeData.github_url!]
+                        ).map((ghUrl, i) => (
+                          <div key={ghUrl} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span className="truncate">
+                                {i === 0 && <strong className="mr-1">Primary Repo:</strong>}
+                                {i > 0 && <strong className="mr-1">Repo #{i + 1}:</strong>}
+                                <a href={ghUrl} target="_blank" rel="noreferrer" className="underline hover:text-emerald-900 font-mono break-all">
+                                  {ghUrl.replace('https://github.com/', '')}
+                                </a>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                              {i === 0 && (
+                                <span className="text-[10px] font-mono bg-emerald-100 px-2 py-0.5 rounded text-emerald-800">Auto-Linked</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setGithubUrl(ghUrl)}
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition ${githubUrl === ghUrl ? 'bg-emerald-600 text-white' : 'bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50'}`}
+                              >
+                                {githubUrl === ghUrl ? 'Active' : 'Use'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-[#111827] flex items-center justify-between">
@@ -1649,7 +1656,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>
-                      {ingestMode === 'live_site' || (ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url))
+                      {ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url)
                         ? 'Auditing Live Website & Scanning Google via Apify...'
                         : candidateStream === 'TECHNICAL'
                         ? 'Scanning Code & Running Checks...'
@@ -1659,7 +1666,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 ) : (
                   <>
                     <span>
-                      {ingestMode === 'live_site' || (ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url) && !githubUrl.trim())
+                      {ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url) && !githubUrl.trim()
                         ? '🌐 Evaluate Live Website & Proceed to Viva'
                         : candidateStream === 'TECHNICAL'
                         ? '⚡ Scan Code & Proceed to Viva'

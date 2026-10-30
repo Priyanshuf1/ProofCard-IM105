@@ -1135,6 +1135,10 @@ export interface ResumeParseResult {
   github_url?: string;
   linkedin_url?: string;
   live_url?: string;
+  /** All GitHub repo / profile URLs found in resume (deduplicated) */
+  all_github_urls?: string[];
+  /** All live/portfolio URLs found in resume (deduplicated) */
+  all_live_urls?: string[];
   skills: string[];
   projects: Array<{ name: string; tech: string[]; description: string; url?: string }>;
   experience: Array<{ company: string; role: string; duration: string }>;
@@ -1176,9 +1180,12 @@ export async function parseResumePdf(file: File): Promise<ResumeParseResult> {
       .trim();
 
     const emailMatch = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const githubMatch = rawText.match(/https?:\/\/github\.com\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)?/i);
+    const githubMatches = Array.from(new Set(rawText.match(/https?:\/\/github\.com\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)?/gi) || []));
+    const githubMatch = githubMatches.length > 0 ? [githubMatches[0]] : null;
     const linkedinMatch = rawText.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+/i);
-    const liveMatch = rawText.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)+(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|github\.io|com|dev|io|app|ai|tech)(?:\/[^\s,)\]]*)?/i);
+    const livePattern = /https?:\/\/(?:[a-zA-Z0-9-]+\.)+(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|github\.io)(?:\/[^\s,)\]]*)?/gi;
+    const liveMatches = Array.from(new Set((rawText.match(livePattern) || []).filter(u => !u.includes('github.com'))));
+    const liveMatch = liveMatches.length > 0 ? [liveMatches[0]] : null;
     
     const skillBank = [
       'Python', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'FastAPI', 'Django',
@@ -1204,9 +1211,11 @@ export async function parseResumePdf(file: File): Promise<ResumeParseResult> {
       name: cleanNameFromFilename || 'Candidate',
       email: emailMatch ? emailMatch[0] : 'candidate@example.edu',
       college: collegeMatch ? collegeMatch[1] : 'Academic Institution',
-      github_url: githubMatch ? githubMatch[0] : (detectedRole === 'Software Engineer' ? 'https://github.com/Priyanshuf1/rabto' : undefined),
+      github_url: githubMatches[0] || (detectedRole === 'Software Engineer' ? 'https://github.com/Priyanshuf1/rabto' : undefined),
       linkedin_url: linkedinMatch ? linkedinMatch[0] : undefined,
-      live_url: liveMatch ? liveMatch[0] : undefined,
+      live_url: liveMatches[0] || undefined,
+      all_github_urls: githubMatches.length > 0 ? githubMatches : undefined,
+      all_live_urls: liveMatches.length > 0 ? liveMatches : undefined,
       skills: foundSkills.length > 0 ? foundSkills : (detectedRole.includes('MBA') ? ['Marketing', 'Finance', 'Financial Modeling', 'Excel', 'Strategic Planning'] : ['TypeScript', 'React', 'Node.js', 'FastAPI', 'SQL', 'Git']),
       projects: [
         { name: 'Core Project Initiative', tech: foundSkills.slice(0, 3), description: 'Analyzed architecture, implementation deliverables, and quantitative results.' }

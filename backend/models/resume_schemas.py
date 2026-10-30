@@ -19,6 +19,8 @@ class CandidateContact(BaseModel):
     github_url: Optional[str] = Field(None, description="GitHub account or primary repository URL")
     portfolio_url: Optional[str] = Field(None, description="Live portfolio or personal website URL")
     other_links: List[str] = Field(default_factory=list, description="Other links found in resume")
+    all_github_urls: List[str] = Field(default_factory=list, description="All GitHub repo/profile URLs found in resume")
+    all_live_urls: List[str] = Field(default_factory=list, description="All live/portfolio URLs found in resume")
 
     @field_validator("email")
     @classmethod
