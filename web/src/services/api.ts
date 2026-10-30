@@ -1086,3 +1086,129 @@ export async function sendVivaInvitation(
     }
   };
 }
+
+
+// ── Resume Parser & Multi-Domain Ingestion ────────────────────────────────
+export interface ResumeParseResult {
+  name?: string;
+  email?: string;
+  college?: string;
+  github_url?: string;
+  linkedin_url?: string;
+  live_url?: string;
+  skills: string[];
+  projects: Array<{ name: string; tech: string[]; description: string; url?: string }>;
+  experience: Array<{ company: string; role: string; duration: string }>;
+  role_type: string;
+  raw_text_snippet: string;
+  parse_confidence: number;
+  source: string;
+}
+
+export async function parseResumePdf(file: File): Promise<ResumeParseResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${BASE_URL}/api/resume/parse`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any)?.detail || `Resume parse failed (${res.status})`);
+  }
+  return res.json();
+}
+
+// ── AI Tolerance & Company Prompting Template Gate ─────────────────────────
+export interface PromptingTemplate {
+  id: string;
+  name: string;
+  max_ai_limit_percent: number;
+  description: string;
+  allowed_categories: string[];
+  prohibited_categories: string[];
+  penalty_action: string;
+}
+
+export interface AIToleranceResult {
+  ai_probability_percent: number;
+  tolerance_percent: number;
+  template_id?: string;
+  template_name?: string;
+  exceeded: boolean;
+  excess_percent?: number;
+  verdict: 'PASS' | 'WARN' | 'FAIL' | 'UNKNOWN';
+  badge: string;
+  badge_color: string;
+  message: string;
+  classification: string;
+  template_rules?: PromptingTemplate;
+}
+
+export async function fetchPromptingTemplates(): Promise<{ templates: PromptingTemplate[]; default_template_id: string }> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/ai-tolerance/templates`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn('Failed to fetch AI templates from backend:', e);
+  }
+  return {
+    templates: [
+      {
+        id: 'strict-core-logic',
+        name: 'Strict Human Core (FinTech / High-Assurance)',
+        max_ai_limit_percent: 20,
+        description: 'AI permitted only for syntax lookups and standard test fixtures. Core business logic must be 100% human-authored.',
+        allowed_categories: ['Boilerplate', 'Unit Test Syntax', 'Docstrings'],
+        prohibited_categories: ['Core Algorithms', 'Security Guards', 'State Machines'],
+        penalty_action: 'FLAG_HUMAN_INTERVIEW_MANDATORY'
+      },
+      {
+        id: 'balanced-copilot',
+        name: 'Balanced Copilot (Standard SaaS / Product Engineering)',
+        max_ai_limit_percent: 35,
+        description: 'Permits standard Copilot/ChatGPT scaffolding, UI templates, and CRUD operations up to 35%. Candidate must explain architectural trade-offs.',
+        allowed_categories: ['Scaffolding', 'CSS/Tailwind Styling', 'CRUD Routes', 'Documentation'],
+        prohibited_categories: ['System Architecture', 'Prompt Injection Bypasses', 'Unverified Code Dumps'],
+        penalty_action: 'PROMPT_FOR_ARCHITECTURAL_DEFENSE'
+      },
+      {
+        id: 'ai-native-builder',
+        name: 'AI-Native Builder (Speed & Modern AI Workflows)',
+        max_ai_limit_percent: 50,
+        description: 'Encourages prompt-engineering speed up to 50% AI assistance. Requires candidate to document prompt constraints and verify edge cases.',
+        allowed_categories: ['Full Functions with Review', 'Refactoring', 'API Integration', 'Data Mappings'],
+        prohibited_categories: ['Hallucinated Dependencies', 'Unchecked Secret Keys'],
+        penalty_action: 'REQUIRE_LIVE_DEBUGGING_SAMPLE'
+      }
+    ],
+    default_template_id: 'balanced-copilot'
+  };
+}
+
+export async function checkAiTolerance(
+  answerText: string,
+  tolerancePercent: number,
+  candidateName?: string,
+  questionIndex?: number,
+  templateId?: string
+): Promise<AIToleranceResult> {
+  const res = await fetch(`${BASE_URL}/api/ai-tolerance/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      answer_text: answerText,
+      tolerance_percent: tolerancePercent,
+      candidate_name: candidateName,
+      question_index: questionIndex,
+      template_id: templateId || 'balanced-copilot',
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any)?.detail || 'AI tolerance check failed');
+  }
+  return res.json();
+}

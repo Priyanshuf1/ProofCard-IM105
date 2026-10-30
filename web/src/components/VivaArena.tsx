@@ -18,7 +18,14 @@ import {
   Code
 } from 'lucide-react';
 import { CandidateProfile, VivaQuestion, ComplexFunction } from '../types';
-import { evaluateVivaAnswer, generateMoreVivaQuestions } from '../services/api';
+import { 
+  evaluateVivaAnswer, 
+  generateMoreVivaQuestions, 
+  checkAiTolerance, 
+  fetchPromptingTemplates, 
+  PromptingTemplate, 
+  AIToleranceResult 
+} from '../services/api';
 
 interface VivaArenaProps {
   candidate: CandidateProfile | null;
@@ -112,6 +119,65 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
   const [showCohortRoster, setShowCohortRoster] = useState(false);
   const [selectedFuncIndex, setSelectedFuncIndex] = useState<number>(0);
+
+  // Enterprise AI Prompting Policy & Tolerance Gate State
+  const [promptTemplates, setPromptTemplates] = useState<PromptingTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('balanced-copilot');
+  const [toleranceLimit, setToleranceLimit] = useState<number>(35);
+  const [liveToleranceResult, setLiveToleranceResult] = useState<AIToleranceResult | null>(null);
+  const [isAuditingTolerance, setIsAuditingTolerance] = useState<boolean>(false);
+
+  // Load templates on mount
+  useEffect(() => {
+    fetchPromptingTemplates().then(res => {
+      if (res?.templates?.length) {
+        setPromptTemplates(res.templates);
+        const def = res.templates.find(t => t.id === res.default_template_id) || res.templates[1];
+        if (def) {
+          setSelectedTemplateId(def.id);
+          setToleranceLimit(def.max_ai_limit_percent);
+        }
+      }
+    });
+  }, []);
+
+  const activeTemplate = promptTemplates.find(t => t.id === selectedTemplateId) || {
+    id: 'balanced-copilot',
+    name: 'Balanced Copilot (Standard SaaS)',
+    max_ai_limit_percent: 35,
+    description: 'Permits standard Copilot/ChatGPT scaffolding up to 35%. Candidate must explain architectural trade-offs.',
+    allowed_categories: ['Scaffolding', 'CSS/Tailwind Styling', 'CRUD Routes'],
+    prohibited_categories: ['System Architecture', 'Prompt Injection Bypasses'],
+    penalty_action: 'PROMPT_FOR_ARCHITECTURAL_DEFENSE'
+  };
+
+  const handleTemplateChange = (tmplId: string) => {
+    setSelectedTemplateId(tmplId);
+    const tmpl = promptTemplates.find(t => t.id === tmplId);
+    if (tmpl) {
+      setToleranceLimit(tmpl.max_ai_limit_percent);
+    }
+    setLiveToleranceResult(null);
+  };
+
+  const handleAuditAiTolerance = async () => {
+    if (!userAnswer.trim()) return;
+    setIsAuditingTolerance(true);
+    try {
+      const res = await checkAiTolerance(
+        userAnswer,
+        toleranceLimit,
+        candidate.name,
+        currentQuestionIndex,
+        selectedTemplateId
+      );
+      setLiveToleranceResult(res);
+    } catch (e) {
+      console.warn('AI tolerance audit error:', e);
+    } finally {
+      setIsAuditingTolerance(false);
+    }
+  };
 
 
 
@@ -794,6 +860,114 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         </div>
       </div>
 
+      {/* Enterprise AI Prompting Policy & Tolerance Gate */}
+      <div className="p-5 rounded-2xl mb-6 bg-black/45 backdrop-blur-md border border-[#D4AF37]/35 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#3A2F27] pb-3">
+          <div className="flex items-center gap-2.5">
+            <ShieldAlert className="w-5 h-5 text-[#FFD166]" />
+            <div>
+              <h3 className="text-sm font-bold text-white font-sans flex items-center gap-2">
+                <span>Enterprise AI Prompting Policy & Tolerance Gate</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#8B1E1E]/40 border border-[#D4AF37] text-[#FFD166]">
+                  Active Gate
+                </span>
+              </h3>
+              <p className="text-[11px] text-[#C9B89A]">
+                Allows AI prompting according to company template, but strictly penalizes code exceeding the AI limit
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-[#D4AF37] font-bold">Max AI Limit:</span>
+            <span className={`text-sm font-bold font-mono px-2.5 py-0.5 rounded-lg border ${
+              toleranceLimit <= 20 
+                ? 'bg-blue-950/60 border-blue-500 text-blue-300' 
+                : toleranceLimit <= 35 
+                  ? 'bg-amber-950/60 border-amber-500 text-amber-300' 
+                  : 'bg-purple-950/60 border-purple-500 text-purple-300'
+            }`}>
+              {toleranceLimit}%
+            </span>
+          </div>
+        </div>
+
+        {/* Template Selector Pills */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {[
+            { id: 'strict-core-logic', name: 'Strict Human Core', limit: 20, desc: 'AI for syntax only; logic must be 100% human' },
+            { id: 'balanced-copilot', name: 'Balanced Copilot', limit: 35, desc: 'Permits scaffolding/templates up to 35%' },
+            { id: 'ai-native-builder', name: 'AI-Native Builder', limit: 50, desc: 'Allows prompt-engineering velocity up to 50%' },
+          ].map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => handleTemplateChange(t.id)}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                selectedTemplateId === t.id
+                  ? 'bg-[#2c140a] border-[#E85D04] shadow-md ring-1 ring-[#E85D04]'
+                  : 'bg-[#140b08] border-[#3A2F27] hover:border-[#D4AF37]/40 text-neutral-400'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-white">{t.name}</span>
+                <span className="text-[10px] font-mono text-[#FFD166]">{t.limit}% Limit</span>
+              </div>
+              <p className="text-[10px] text-neutral-400 line-clamp-1">{t.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Interactive Limit Slider */}
+        <div className="p-3.5 rounded-xl bg-[#100603] border border-[#3A2F27] space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-[#E6C280] font-sans">
+              Custom Company Threshold Slider:
+            </span>
+            <span className="font-mono text-white font-bold">
+              {toleranceLimit}% Allowed AI-Assisted Code
+            </span>
+          </div>
+          <input
+            type="range"
+            min="5"
+            max="80"
+            step="5"
+            value={toleranceLimit}
+            onChange={(e) => {
+              setToleranceLimit(Number(e.target.value));
+              setLiveToleranceResult(null);
+            }}
+            className="w-full accent-[#E85D04] cursor-pointer"
+          />
+          <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
+            <span>5% (Zero AI Tolerance)</span>
+            <span>35% (Industry Standard)</span>
+            <span>80% (Permissive)</span>
+          </div>
+        </div>
+
+        {/* Policy Rules & Categories */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div className="p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-700/30">
+            <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-1">
+              ✓ Allowed Prompting in this Template:
+            </span>
+            <p className="text-[11px] text-neutral-300">
+              {(activeTemplate.allowed_categories || []).join(' • ')}
+            </p>
+          </div>
+          <div className="p-2.5 rounded-lg bg-red-950/20 border border-red-700/30">
+            <span className="text-[10px] uppercase font-bold text-red-400 block mb-1">
+              ✕ Flagged if Exceeding Limit:
+            </span>
+            <p className="text-[11px] text-neutral-300">
+              {(activeTemplate.prohibited_categories || []).join(' • ')} — Triggers mandatory viva defense!
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Main Question Defense Card */}
       <div className="p-6 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl">
         <div className="mb-4">
@@ -907,6 +1081,16 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                   {isListening ? <MicOff className="w-3.5 h-3.5 text-red-400" /> : <Mic className="w-3.5 h-3.5 text-[#D4AF37]" />}
                   <span>{isListening ? 'Stop listening' : voiceSupported === false ? 'Mic unavailable' : 'Voice Defense (Mic)'}</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleAuditAiTolerance}
+                  disabled={!userAnswer.trim() || isAuditingTolerance}
+                  className="px-3 py-1.5 rounded-lg border text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer bg-purple-950/40 border-purple-500/40 text-purple-200 hover:bg-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAuditingTolerance ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />}
+                  <span>Audit vs Company AI Policy</span>
+                </button>
               </div>
             )}
           </div>
@@ -931,6 +1115,32 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
               <Clock className="w-3.5 h-3.5" />
               <span>Time has expired. Answer input is locked and auto-submitted.</span>
             </p>
+          )}
+
+          {/* Live AI Policy Tolerance Audit Banner */}
+          {liveToleranceResult && (
+            <div className={`mt-3 p-3.5 rounded-xl border text-xs transition animate-fadeIn ${
+              liveToleranceResult.verdict === 'PASS'
+                ? 'bg-emerald-950/50 border-emerald-500/60 text-emerald-200'
+                : liveToleranceResult.verdict === 'WARN'
+                  ? 'bg-amber-950/50 border-amber-500/60 text-amber-200'
+                  : 'bg-red-950/60 border-red-500/80 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
+            }`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold flex items-center gap-2">
+                  <span>{liveToleranceResult.badge}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/60 border border-white/20">
+                    Template: {liveToleranceResult.template_name} ({liveToleranceResult.tolerance_percent}% Limit)
+                  </span>
+                </span>
+                <span className="font-mono text-[11px] font-bold">
+                  {liveToleranceResult.exceeded ? `Exceeded by +${liveToleranceResult.excess_percent}%` : 'Compliant'}
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-neutral-200">
+                {liveToleranceResult.message}
+              </p>
+            </div>
           )}
         </div>
 

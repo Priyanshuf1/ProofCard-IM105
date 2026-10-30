@@ -79,7 +79,9 @@ from backend.routers import (
     imats_sandbox,
     readiness,
     deployment,
-    webhooks
+    webhooks,
+    resume_parser,
+    ai_tolerance
 )
 
 app = FastAPI(
@@ -120,6 +122,8 @@ app.include_router(imats_sandbox.router)
 app.include_router(readiness.router)
 app.include_router(deployment.router)
 app.include_router(webhooks.router)
+app.include_router(resume_parser.router)
+app.include_router(ai_tolerance.router)
 
 
 @app.get("/health")
