@@ -33,6 +33,7 @@ interface VivaArenaProps {
   onNavigateToTab: (tab: string) => void;
   onSelectCandidate?: (candidate: CandidateProfile) => void;
   cohort?: CandidateProfile[];
+  portalMode?: 'candidate' | 'admin';
 }
 
 type SpeechRecognitionResultEventLike = {
@@ -81,7 +82,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
   onUpdateVivaScore,
   onNavigateToTab,
   onSelectCandidate,
-  cohort = []
+  cohort = [],
+  portalMode = 'candidate',
 }) => {
   // If no candidate is active, show clean high-tech empty state
   if (!candidate) {
@@ -573,8 +575,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
                 Verifiable Code Defense
               </span>
 
-              {/* Candidate Switcher Dropdown */}
-              {onSelectCandidate && cohort.length > 0 && (
+              {/* Candidate Switcher Dropdown (Admin Only) */}
+              {portalMode === 'admin' && onSelectCandidate && cohort.length > 0 && (
                 <div>
                   <select
                     value={candidate.candidate_id}
@@ -605,7 +607,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
             </h1>
           </div>
 
-          {cohort.length > 0 && (
+          {portalMode === 'admin' && cohort.length > 0 && (
             <button
               onClick={() => setShowCohortRoster(!showCohortRoster)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs sm:text-sm font-bold text-[#4b5563] hover:bg-red-50 transition cursor-pointer shrink-0"
@@ -617,8 +619,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         </div>
       </div>
 
-      {/* Cohort Viva Roster Drawer */}
-      {showCohortRoster && cohort.length > 0 && (
+      {/* Cohort Viva Roster Drawer (Admin Only) */}
+      {portalMode === 'admin' && showCohortRoster && cohort.length > 0 && (
         <div className="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm animate-in fade-in">
           <div className="flex items-center justify-between mb-3 text-xs font-sans">
             <span className="text-[#4b5563] font-bold uppercase tracking-wider flex items-center gap-2">
@@ -857,7 +859,8 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
         </div>
       </div>
 
-      {/* Enterprise AI Prompting Policy & Tolerance Gate */}
+      {/* Enterprise AI Prompting Policy & Tolerance Gate (Admin / Company Only) */}
+      {portalMode === 'admin' && (
       <div className="p-5 rounded-2xl mb-6 bg-white backdrop-blur-md border border-gray-200 shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
           <div className="flex items-center gap-2.5">
@@ -964,6 +967,7 @@ export const VivaArena: React.FC<VivaArenaProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Question Defense Card */}
       <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">

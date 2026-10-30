@@ -39,6 +39,7 @@ interface CandidateIngestionProps {
   onSelectCandidate?: (profile: CandidateProfile) => void;
   cohort?: CandidateProfile[];
   onUpdateCohort?: (cohort: CandidateProfile[]) => void;
+  portalMode?: 'candidate' | 'admin';
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -49,8 +50,9 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
   onSelectCandidate,
   cohort = [],
   onUpdateCohort,
+  portalMode = 'candidate',
 }) => {
-  const [scopeMode, setScopeMode] = useState<'single' | 'batch' | 'sandbox'>('single');
+  const [scopeMode, setScopeMode] = useState<'single' | 'batch' | 'sandbox'>(portalMode === 'admin' ? 'batch' : 'single');
   const [sandboxApiKey, setSandboxApiKey] = useState('sandbox_live_key_dev2');
   const [isSandboxUploading, setIsSandboxUploading] = useState(false);
   const [sandboxMessage, setSandboxMessage] = useState<string | null>(null);
@@ -560,49 +562,52 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#111827] font-sans tracking-tight">
-            Code Scanner & Candidate Ingestion
+            {portalMode === 'admin' ? 'Candidate Cohort Triage & Ingestion' : 'Submit Code & Resume'}
           </h1>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-gray-100 border border-gray-200">
-          <button
-            onClick={() => setScopeMode('single')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              scopeMode === 'single'
-                ? 'bg-[#e20001] text-white shadow-sm'
-                : 'text-gray-600 hover:text-[#111827]'
-            }`}
-          >
-            <GitBranch className="w-3.5 h-3.5 text-current" />
-            <span>Single Candidate</span>
-          </button>
-          <button
-            onClick={() => setScopeMode('batch')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              scopeMode === 'batch'
-                ? 'bg-[#e20001] text-white shadow-sm'
-                : 'text-gray-600 hover:text-[#111827]'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-current" />
-            <span>Batch CSV ({cohort.length})</span>
-          </button>
-          <button
-            onClick={() => setScopeMode('sandbox')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-              scopeMode === 'sandbox'
-                ? 'bg-[#e20001] text-white shadow-sm'
-                : 'text-gray-600 hover:text-[#111827]'
-            }`}
-          >
-            <Key className="w-3.5 h-3.5 text-current" />
-            <span>Sandbox API Key Intake</span>
-          </button>
-        </div>
+        {/* Mode Switcher (Admin Only) */}
+        {portalMode === 'admin' && (
+          <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-gray-100 border border-gray-200">
+            <button
+              onClick={() => setScopeMode('single')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                scopeMode === 'single'
+                  ? 'bg-[#e20001] text-white shadow-sm'
+                  : 'text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <GitBranch className="w-3.5 h-3.5 text-current" />
+              <span>Single Candidate</span>
+            </button>
+            <button
+              onClick={() => setScopeMode('batch')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                scopeMode === 'batch'
+                  ? 'bg-[#e20001] text-white shadow-sm'
+                  : 'text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-current" />
+              <span>Batch CSV ({cohort.length})</span>
+            </button>
+            <button
+              onClick={() => setScopeMode('sandbox')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                scopeMode === 'sandbox'
+                  ? 'bg-[#e20001] text-white shadow-sm'
+                  : 'text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <Key className="w-3.5 h-3.5 text-current" />
+              <span>Sandbox API Key Intake</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* SIMULTANEOUS JOB REQUIREMENT INPUT STUDIO */}
+      {/* SIMULTANEOUS JOB REQUIREMENT INPUT STUDIO (Admin Only) */}
+      {portalMode === 'admin' && (
       <div className="mb-6 p-5 sm:p-6 rounded-2xl bg-white border border-gray-200 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -746,6 +751,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {/* Error Notification Banner */}
       {errorMessage && (

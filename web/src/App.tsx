@@ -311,6 +311,7 @@ export const App: React.FC = () => {
                 </div>
                 <div className="w-full">
                   <CandidateIngestion
+                    portalMode="candidate"
                     onScanComplete={handleScanComplete}
                     onNavigateToTab={handleNavigateToSection}
                     onSelectCandidate={(cand) => {
@@ -335,6 +336,7 @@ export const App: React.FC = () => {
                 </div>
                 <div className="w-full">
                   <VivaArena
+                    portalMode="candidate"
                     candidate={currentCandidate}
                     onUpdateVivaScore={handleUpdateVivaScore}
                     onNavigateToTab={handleNavigateToSection}
@@ -491,6 +493,7 @@ export const App: React.FC = () => {
                     </div>
                     <div className="w-full">
                       <CandidateIngestion
+                        portalMode="admin"
                         onScanComplete={handleScanComplete}
                         onNavigateToTab={handleNavigateToSection}
                         onSelectCandidate={(cand) => {
