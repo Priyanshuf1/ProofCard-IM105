@@ -173,6 +173,16 @@ class ResumeParserService:
         for page in reader.pages:
             try:
                 txt = page.extract_text() or ""
+                if "/Annots" in page:
+                    for annot in page["/Annots"]:
+                        try:
+                            obj = annot.get_object()
+                            if "/A" in obj and "/URI" in obj["/A"]:
+                                uri = str(obj["/A"]["/URI"]).strip()
+                                if uri:
+                                    txt += f"\n{uri}"
+                        except Exception:
+                            pass
                 if not txt.strip():
                     empty_pages += 1
                 page_texts.append(txt)
@@ -481,6 +491,23 @@ class ResumeParserService:
             val = m.group(0)
             if val not in all_live_urls and "github.com" not in val.lower():
                 all_live_urls.append(val)
+
+        candidate_domains = re.findall(
+            r'\b([a-zA-Z0-9-]+\.(?:com|org|dev|io|me|app|tech|ai|site|net|co|in|agency|store))\b',
+            raw_text,
+            re.IGNORECASE
+        )
+        skip_domains = {
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'example.com',
+            'example.edu', 'example.org', 'github.com', 'linkedin.com', 'b.tech', 'm.tech', 'b.sc', 'm.sc'
+        }
+        for d in candidate_domains:
+            d_lower = d.lower()
+            if d_lower not in skip_domains and not re.search(r'[\w.+-]+@' + re.escape(d), raw_text, re.IGNORECASE):
+                u = f"https://{d}"
+                if not any(d_lower in existing.lower() for existing in all_live_urls):
+                    all_live_urls.append(u)
+
         portfolio_url = all_live_urls[0] if all_live_urls else None
 
         all_urls = re.findall(r"https?:\/\/[^\s,;()\"'>]+", raw_text)

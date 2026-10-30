@@ -23,6 +23,8 @@ class ResumeParseResult(BaseModel):
     github_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     live_url: Optional[str] = None
+    all_github_urls: List[str] = []
+    all_live_urls: List[str] = []
     skills: List[str] = []
     projects: List[dict] = []
     experience: List[dict] = []
@@ -33,37 +35,41 @@ class ResumeParseResult(BaseModel):
     source: str = "resume_pdf"
 
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extract text from PDF bytes using pymupdf (fitz)."""
+def extract_text_and_uris_from_pdf(file_bytes: bytes) -> tuple[str, list[str]]:
+    """Extract text and hyperlinked URIs from PDF bytes using pymupdf and pypdf."""
+    extracted_uris = []
+    text = ""
     try:
         import pymupdf as fitz
         doc = fitz.open(stream=file_bytes, filetype="pdf")
-        text = ""
         for page in doc:
-            text += page.get_text()
+            text += page.get_text() + "\n"
+            for link in page.get_links():
+                if "uri" in link and link["uri"]:
+                    extracted_uris.append(link["uri"].strip())
         doc.close()
-        return text.strip()
     except Exception as e:
         logger.warning(f"pymupdf extraction failed: {e}")
-        return ""
+
+    if not text.strip():
+        try:
+            import pypdf
+            import io
+            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+            for page in reader.pages:
+                text += (page.extract_text() or "") + "\n"
+                if "/Annots" in page:
+                    for annot in page["/Annots"]:
+                        obj = annot.get_object()
+                        if "/A" in obj and "/URI" in obj["/A"]:
+                            extracted_uris.append(str(obj["/A"]["/URI"]).strip())
+        except Exception as e:
+            logger.warning(f"pypdf fallback failed: {e}")
+
+    return text.strip(), list(dict.fromkeys(extracted_uris))
 
 
-def extract_text_fallback(file_bytes: bytes) -> str:
-    """Fallback: extract text using pypdf."""
-    try:
-        import pypdf
-        import io
-        reader = pypdf.PdfReader(io.BytesIO(file_bytes))
-        text = ""
-        for page in reader.pages:
-            text += (page.extract_text() or "") + "\n"
-        return text.strip()
-    except Exception as e:
-        logger.warning(f"pypdf fallback failed: {e}")
-        return ""
-
-
-def extract_with_regex(text: str) -> dict:
+def extract_with_regex(text: str, pdf_uris: Optional[List[str]] = None) -> dict:
     """Heuristic and regex fallback extraction when LLM is unavailable."""
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     
@@ -82,29 +88,37 @@ def extract_with_regex(text: str) -> dict:
 
     email_match = re.search(r'[\w.+-]+@[\w.-]+\.\w{2,}', text)
 
-    # GitHub URL extraction: supports scheme-less (github.com/user or github.com/user/repo) and http(s)
-    github_match = re.search(
-        r'(?:https?://)?(?:www\.)?github\.com/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?',
-        text,
-        re.IGNORECASE
-    )
-    detected_github = None
-    if github_match:
-        raw_gh = github_match.group(0).rstrip(".,;:)'\"")
-        detected_github = raw_gh if raw_gh.lower().startswith(("http://", "https://")) else f"https://{raw_gh}"
+    # 1. GitHub URLs extraction (both profile and specific repos)
+    all_github_urls: List[str] = []
+    if pdf_uris:
+        for u in pdf_uris:
+            if "github.com" in u.lower():
+                clean_gh = u.rstrip(".,;:)'\"/")
+                if clean_gh.lower() not in ["https://github.com", "http://github.com"] and clean_gh not in all_github_urls:
+                    all_github_urls.append(clean_gh)
 
-    # LinkedIn URL extraction: supports scheme-less (linkedin.com/in/...) and http(s)
-    linkedin_match = re.search(
-        r'(?:https?://)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9_.-]+/?',
-        text,
-        re.IGNORECASE
-    )
+    for raw in re.findall(r'(?:https?://)?(?:www\.)?github\.com/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?', text, re.IGNORECASE):
+        clean_gh = raw.rstrip(".,;:)'\"/")
+        formatted = clean_gh if clean_gh.lower().startswith(("http://", "https://")) else f"https://{clean_gh}"
+        if formatted.lower() not in ["https://github.com", "http://github.com"] and formatted not in all_github_urls:
+            all_github_urls.append(formatted)
+
+    detected_github = all_github_urls[0] if all_github_urls else None
+
+    # 2. LinkedIn URL extraction
     detected_linkedin = None
-    if linkedin_match:
-        raw_li = linkedin_match.group(0).rstrip(".,;:)'\"")
-        detected_linkedin = raw_li if raw_li.lower().startswith(("http://", "https://")) else f"https://{raw_li}"
+    if pdf_uris:
+        for u in pdf_uris:
+            if "linkedin.com/in/" in u.lower():
+                detected_linkedin = u.rstrip(".,;:)'\"/")
+                break
+    if not detected_linkedin:
+        linkedin_match = re.search(r'(?:https?://)?(?:www\.)?linkedin\.com/in/[A-Za-z0-9_.-]+/?', text, re.IGNORECASE)
+        if linkedin_match:
+            raw_li = linkedin_match.group(0).rstrip(".,;:)'\"")
+            detected_linkedin = raw_li if raw_li.lower().startswith(("http://", "https://")) else f"https://{raw_li}"
 
-    # College extraction heuristics: use horizontal whitespace [ \t] to prevent greedy newline capture of headers
+    # 3. College extraction heuristics
     college_match = re.search(
         r'(?:EDUCATION|ACADEMICS|ACADEMIC\s+BACKGROUND|QUALIFICATIONS|COLLEGE|UNIVERSITY)?[\s:\-–—]*\b(IIT[ \t]+[A-Za-z]+|IIM[ \t]+[A-Za-z]+|BITS[ \t]+[A-Za-z]+|GLA[ \t]+University|NIT[ \t]+[A-Za-z]+|[A-Z][A-Za-z \t]+(?:University|Institute[ \t]+of[ \t]+Technology|Engineering[ \t]+College|Business\s+School))\b',
         text,
@@ -116,32 +130,43 @@ def extract_with_regex(text: str) -> dict:
         clean_college = re.sub(r'^(?:EDUCATION|ACADEMICS|QUALIFICATIONS|COLLEGE)\s+', '', clean_college, flags=re.IGNORECASE).strip()
         detected_college = clean_college
 
-    # Live portfolio or deployed URL extraction: vercel.app, netlify.app, pages.dev, or custom domains
-    detected_live_url = None
-    plat_match = re.search(
+    # 4. Live deployment / portfolio URLs extraction (extract ALL, do not break after first)
+    all_live_urls: List[str] = []
+    if pdf_uris:
+        for u in pdf_uris:
+            u_clean = u.rstrip(".,;:)'\"/")
+            if not u_clean.startswith("mailto:") and not u_clean.startswith("tel:") and "github.com" not in u_clean.lower() and "linkedin.com" not in u_clean.lower():
+                if u_clean.startswith(("http://", "https://")) and u_clean not in all_live_urls:
+                    all_live_urls.append(u_clean)
+
+    plat_matches = re.findall(
         r'(?:https?://)?(?:[a-zA-Z0-9-]+\.)+(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|herokuapp\.com|github\.io)(?:/[^\s,)]*)?',
         text,
         re.IGNORECASE
     )
-    if plat_match:
-        raw_live = plat_match.group(0).rstrip(".,;:)'\"")
-        detected_live_url = raw_live if raw_live.lower().startswith(("http://", "https://")) else f"https://{raw_live}"
-    else:
-        # Search for custom domain mentions in projects (e.g. alleyrich.com, globallogicmedia.com, myportfolio.dev)
-        candidate_domains = re.findall(
-            r'\b([a-zA-Z0-9-]+\.(?:com|org|dev|io|me|app|tech|ai|site))\b',
-            text,
-            re.IGNORECASE
-        )
-        skip_domains = {
-            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'example.com',
-            'example.edu', 'example.org', 'github.com', 'linkedin.com', 'b.tech', 'm.tech', 'b.sc', 'm.sc'
-        }
-        for d in candidate_domains:
-            d_lower = d.lower()
-            if d_lower not in skip_domains and not re.search(r'[\w.+-]+@' + re.escape(d), text, re.IGNORECASE):
-                detected_live_url = f"https://{d}"
-                break
+    for p in plat_matches:
+        raw_live = p.rstrip(".,;:)'\"")
+        u = raw_live if raw_live.lower().startswith(("http://", "https://")) else f"https://{raw_live}"
+        if u not in all_live_urls:
+            all_live_urls.append(u)
+
+    candidate_domains = re.findall(
+        r'\b([a-zA-Z0-9-]+\.(?:com|org|dev|io|me|app|tech|ai|site|net|co|in|agency|store))\b',
+        text,
+        re.IGNORECASE
+    )
+    skip_domains = {
+        'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'example.com',
+        'example.edu', 'example.org', 'github.com', 'linkedin.com', 'b.tech', 'm.tech', 'b.sc', 'm.sc'
+    }
+    for d in candidate_domains:
+        d_lower = d.lower()
+        if d_lower not in skip_domains and not re.search(r'[\w.+-]+@' + re.escape(d), text, re.IGNORECASE):
+            u = f"https://{d}"
+            if not any(d_lower in existing.lower() for existing in all_live_urls):
+                all_live_urls.append(u)
+
+    detected_live_url = all_live_urls[0] if all_live_urls else None
 
     # Extract skills
     skill_keywords = [
@@ -192,6 +217,8 @@ def extract_with_regex(text: str) -> dict:
         "github_url": detected_github,
         "linkedin_url": detected_linkedin,
         "live_url": detected_live_url,
+        "all_github_urls": all_github_urls,
+        "all_live_urls": all_live_urls,
         "skills": found_skills[:20],
         "projects": detected_projects,
         "role_type": role_type,
@@ -259,12 +286,11 @@ async def parse_resume(file: UploadFile = File(...)):
     if len(file_bytes) > 10 * 1024 * 1024:  # 10MB limit
         raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
     
-    # Extract raw text
+    # Extract raw text and embedded hyperlink URIs
     raw_text = ""
+    pdf_uris = []
     if filename.endswith(".pdf"):
-        raw_text = extract_text_from_pdf(file_bytes)
-        if not raw_text:
-            raw_text = extract_text_fallback(file_bytes)
+        raw_text, pdf_uris = extract_text_and_uris_from_pdf(file_bytes)
     elif filename.endswith((".docx", ".doc")):
         try:
             import docx
@@ -278,7 +304,7 @@ async def parse_resume(file: UploadFile = File(...)):
         raise HTTPException(status_code=422, detail="Could not extract readable text from the file. Please ensure it is a text-based PDF (not a scanned image).")
     
     gemini_result = parse_with_gemini(raw_text)
-    regex_result = extract_with_regex(raw_text)
+    regex_result = extract_with_regex(raw_text, pdf_uris=pdf_uris)
     
     def pick(gemini_val, regex_val):
         if gemini_val and gemini_val != "null":
@@ -311,6 +337,14 @@ async def parse_resume(file: UploadFile = File(...)):
 
     logger.info(f"Resume parsed: name={name}, role={role_type}, stream={stream_track}, skills={len(skills)}, confidence={confidence}")
     
+    all_github_urls = regex_result.get("all_github_urls", [])
+    if github_url and github_url not in all_github_urls:
+        all_github_urls.insert(0, github_url)
+
+    all_live_urls = regex_result.get("all_live_urls", [])
+    if live_url and live_url not in all_live_urls:
+        all_live_urls.insert(0, live_url)
+
     return ResumeParseResult(
         name=name,
         email=email,
@@ -318,6 +352,8 @@ async def parse_resume(file: UploadFile = File(...)):
         github_url=github_url,
         linkedin_url=linkedin_url,
         live_url=live_url,
+        all_github_urls=all_github_urls,
+        all_live_urls=all_live_urls,
         skills=skills[:20],
         projects=projects[:5],
         experience=experience[:5],

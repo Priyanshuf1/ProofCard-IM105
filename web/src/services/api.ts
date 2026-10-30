@@ -1180,12 +1180,39 @@ export async function parseResumePdf(file: File): Promise<ResumeParseResult> {
       .trim();
 
     const emailMatch = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const githubMatches = Array.from(new Set(rawText.match(/https?:\/\/github\.com\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)?/gi) || []));
-    const githubMatch = githubMatches.length > 0 ? [githubMatches[0]] : null;
+    
+    // Extract all GitHub URLs (with or without protocol)
+    const rawGhMatches = rawText.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_.-]+)?/gi) || [];
+    const githubMatches: string[] = [];
+    for (const m of rawGhMatches) {
+      const clean = m.replace(/^[.,;:)'" ]+|[.,;:)'" ]+$/g, '');
+      const formatted = clean.toLowerCase().startsWith('http') ? clean : `https://${clean}`;
+      if (formatted.toLowerCase() !== 'https://github.com' && !githubMatches.includes(formatted)) {
+        githubMatches.push(formatted);
+      }
+    }
+
     const linkedinMatch = rawText.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_-]+/i);
-    const livePattern = /https?:\/\/(?:[a-zA-Z0-9-]+\.)+(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|github\.io)(?:\/[^\s,)\]]*)?/gi;
-    const liveMatches = Array.from(new Set((rawText.match(livePattern) || []).filter(u => !u.includes('github.com'))));
-    const liveMatch = liveMatches.length > 0 ? [liveMatches[0]] : null;
+    
+    // Extract all live project / portfolio links including custom domains (alleyrich.com, globallogicmedia.com, etc.)
+    const liveMatches: string[] = [];
+    const fullUrls = rawText.match(/https?:\/\/[^\s,)\]"']+/gi) || [];
+    for (const u of fullUrls) {
+      if (!u.includes('github.com') && !u.includes('linkedin.com') && !liveMatches.includes(u)) {
+        liveMatches.push(u);
+      }
+    }
+    const domainMatches = rawText.match(/\b([a-zA-Z0-9-]+\.(?:vercel\.app|netlify\.app|pages\.dev|onrender\.com|github\.io|com|dev|io|app|ai|tech|site|net|co|in|agency|store))\b/gi) || [];
+    const skipDomains = new Set(['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'example.com', 'example.edu', 'github.com', 'linkedin.com', 'b.tech', 'm.tech']);
+    for (const d of domainMatches) {
+      const dLower = d.toLowerCase();
+      if (!skipDomains.has(dLower) && !rawText.includes('@' + d)) {
+        const full = `https://${d}`;
+        if (!liveMatches.some(x => x.toLowerCase().includes(dLower))) {
+          liveMatches.push(full);
+        }
+      }
+    }
     
     const skillBank = [
       'Python', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'FastAPI', 'Django',
