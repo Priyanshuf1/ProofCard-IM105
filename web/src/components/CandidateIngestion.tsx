@@ -300,19 +300,26 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       return;
     }
 
-    if (ingestMode === 'github' && !githubUrl.trim()) {
-      setErrorMessage('Please enter a public GitHub repository link.');
-      return;
-    }
+    if (candidateStream === 'NON_TECHNICAL') {
+      if (!deliverableUrl.trim() && !resumeFile && !resumeData) {
+        setErrorMessage('Please provide a portfolio / case study / deliverable URL (e.g. https://hritiksakpal.github.io/portfolio/).');
+        return;
+      }
+    } else {
+      if (ingestMode === 'github' && !githubUrl.trim()) {
+        setErrorMessage('Please enter a public GitHub repository link.');
+        return;
+      }
 
-    if (ingestMode === 'zip' && !selectedFile) {
-      setErrorMessage('Please select a project ZIP file to upload.');
-      return;
-    }
+      if (ingestMode === 'zip' && !selectedFile) {
+        setErrorMessage('Please select a project ZIP file to upload.');
+        return;
+      }
 
-    if (ingestMode === 'resume' && !resumeFile && !resumeData) {
-      setErrorMessage('Please upload a candidate resume (PDF or DOCX) to proceed.');
-      return;
+      if (ingestMode === 'resume' && !resumeFile && !resumeData) {
+        setErrorMessage('Please upload a candidate resume (PDF or DOCX) to proceed.');
+        return;
+      }
     }
 
     setIsScanning(true);
@@ -375,29 +382,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           }
         ];
 
-        const synthesizedFunctions: ComplexFunction[] = [
-          {
-            file: 'strategy/business_case.md',
-            function_name: 'business_case_roi',
-            complexity: 8,
-            line_number: 14,
-            snippet: `# Strategic Business Case & ROI Attribution Framework\ndef business_case_roi(budget, revenue, attribution_rate):\n    incremental_margin = revenue * attribution_rate\n    roi = (incremental_margin - budget) / budget\n    return {"roi": roi, "payback_ratio": incremental_margin / budget}`
-          },
-          {
-            file: 'gtm/market_analysis.xlsx',
-            function_name: 'market_penetration_cac',
-            complexity: 7,
-            line_number: 28,
-            snippet: `# Market Penetration & CAC Payback Model\ndef market_penetration_cac(cac, ltv, retention_rate):\n    payback_months = cac / (ltv * retention_rate)\n    return {"payback_months": payback_months, "unit_margin": ltv - cac}`
-          },
-          {
-            file: 'operations/stakeholder_mgmt.doc',
-            function_name: 'executive_stakeholder_tradeoffs',
-            complexity: 9,
-            line_number: 45,
-            snippet: `# Executive Stakeholder Trade-off & Governance Protocol\ndef executive_stakeholder_tradeoffs(kpi_targets, roadmap_milestones):\n    alignment_score = evaluate_alignment(kpi_targets)\n    return mitigate_governance_risk(alignment_score, roadmap_milestones)`
-          }
-        ];
+        const synthesizedFunctions: ComplexFunction[] = [];
 
         const authScore = Math.min(96, Math.max(78, Math.round((resumeData?.parse_confidence || 0.88) * 100)));
         profile = {

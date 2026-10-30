@@ -442,6 +442,11 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
   );
   const isAdversarial = isPromptInjected;
 
+  const isNonTech = Boolean(
+    candidate.stream_track === 'NON_TECHNICAL' || 
+    /mba|business|product|marketing|recruiter|hr|design|sales|operations/i.test(candidate.project_type || '')
+  );
+
   const hasCompletedViva = Boolean(
     (candidate.live_analyzed || candidate.viva_status === 'COMPLETED' || candidate.defense_type === 'LIVE_DEFENDED') && 
     (candidate.viva_score || 0) > 0
@@ -688,18 +693,22 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
           {/* Strengths & Recommended Next Steps */}
           <div className="lg:col-span-6 flex flex-col gap-4">
-            {/* Technical Strengths */}
+            {/* Technical or Strategic Strengths */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-2 mb-3 text-sm font-bold text-emerald-700 uppercase tracking-wider font-mono">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Technical Strengths</span>
+                <span>{isNonTech ? 'Strategic & Domain Strengths' : 'Technical Strengths'}</span>
               </div>
               <ul className="space-y-2 text-sm text-gray-800 font-sans font-medium">
-                {(card.strengths && card.strengths.length > 0 ? card.strengths : [
+                {(card.strengths && card.strengths.length > 0 ? card.strengths : (isNonTech ? [
+                  'Demonstrated quantified business acumen with structured framework thinking',
+                  'Validated deliverable authenticity and zero resume template inflation',
+                  'Clear stakeholder diplomacy and agile roadmap prioritization'
+                ] : [
                   'Demonstrated code originality with organic development cadence',
                   'Solid architecture and verified implementation of core application logic',
                   'Tamper-proof cryptographic commit ledger verification'
-                ]).map((str, idx) => (
+                ])).map((str, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-emerald-700 font-bold shrink-0">✓</span>
                     <span className="leading-snug">{str}</span>
@@ -733,27 +742,36 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
                   100
                 </span>
                 <h3 className="text-base font-bold text-[#111827] uppercase tracking-wider font-mono">
-                  100-Mark Fragmented AI Evaluation Ledger
+                  100-Mark Fragmented AI Evaluation Ledger {isNonTech && <span className="text-xs text-purple-700 font-sans font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">Non-Technical Strategy Track</span>}
                 </h3>
               </div>
               <p className="text-xs text-gray-500 font-sans mt-0.5">
-                Fragmented AI evaluation across 8 individual parameters: Gemini document parsing, AST code forensics, and live oral viva
+                {isNonTech
+                  ? 'Fragmented business evaluation across 8 parameters: Document forensics, deliverable audit, unit economics, and live executive case defense'
+                  : 'Fragmented AI evaluation across 8 individual parameters: Gemini document parsing, AST code forensics, and live oral viva'}
               </p>
             </div>
             <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 px-4 py-2 rounded-xl">
               <span className="text-xs uppercase font-bold text-gray-700">Composite Score:</span>
-              <span className="text-xl font-black text-[#e20001] font-mono">
-                {Math.min(100, Math.round(
-                  (isClone ? 4 : (isPromptInjected ? 2 : 9.5)) +
-                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) +
-                  (isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) +
-                  (hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) +
-                  (isClone ? 2 : 9.0) +
-                  (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) +
-                  (isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) +
-                  (isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10)))
-                ))} <span className="text-xs text-gray-500 font-normal">/ 100</span>
-              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-[#e20001] font-mono">
+                  {Math.min(100, Math.round(
+                    (isClone ? 4 : (isPromptInjected ? 2 : 9.5)) +
+                    (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) +
+                    (isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) +
+                    (hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 0) +
+                    (isClone ? 2 : 9.0) +
+                    (isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) +
+                    (isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) +
+                    (isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10)))
+                  ))} <span className="text-xs text-gray-500 font-normal">/ 100</span>
+                </span>
+                {!hasCompletedViva && (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    +10 Viva Pending
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -772,79 +790,85 @@ export const ProofCard3D: React.FC<ProofCard3DProps> = ({
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">B. Projects Weightage</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'B. Business Impact Scope' : 'B. Projects Weightage'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))} / 15</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.15))) / 15) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Project complexity & implementation depth</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Quantified ROI, metrics & case study scope' : 'Project complexity & implementation depth'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">C. Code Originality</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'C. Deliverable Originality' : 'C. Code Originality'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))} / 20</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 4 : (isPromptInjected ? 0 : Math.min(20, Math.round(candidate.authenticity_score * 0.20)))) / 20) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Manual effort vs AI prompt/cloned dumps</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Authentic case synthesis vs AI template dump' : 'Manual effort vs AI prompt/cloned dumps'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">D. Oral Viva Defense</span>
-                <span className="font-mono font-bold text-[#e20001]">{hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5} / 10</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'D. Executive Case Viva' : 'D. Oral Viva Defense'}</span>
+                {hasCompletedViva ? (
+                  <span className="font-mono font-bold text-[#e20001]">{Math.min(10, Math.max(1, candidate.viva_score || 8.0))} / 10</span>
+                ) : (
+                  <span className="font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] border border-amber-200">
+                    0 / 10 (Pending)
+                  </span>
+                )}
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
-                <div className="bg-[#e20001] h-full" style={{ width: `${((hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 7.5) / 10) * 100}%` }}></div>
+                <div className="bg-[#e20001] h-full" style={{ width: `${((hasCompletedViva ? Math.min(10, Math.max(1, candidate.viva_score || 8.0)) : 0) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Verbal code defense & systems reasoning</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Situational business case defense & logic' : 'Verbal code defense & systems reasoning'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">E. Live Project Usability</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'E. Portfolio Usability' : 'E. Live Project Usability'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : 9.0} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : 9.0) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">HTTP 200 uptime, SSL & responsive DOM</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Live portfolio, Notion/deck layout & links' : 'HTTP 200 uptime, SSL & responsive DOM'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F1. Job Skill Alignment</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F1. Business Skill Fit' : 'F1. Job Skill Alignment'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))} / 15</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 5 : Math.min(15, Math.round(candidate.authenticity_score * 0.14))) / 15) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Match against company job specifications</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Match against Product/Strategy/GTM specs' : 'Match against company job specifications'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F2. Code Architecture</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F2. Strategic Problem Framing' : 'F2. Code Architecture'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 3 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">McCabe complexity & modular isolation</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Hypothesis rigor, MECE trees & unit economics' : 'McCabe complexity & modular isolation'}</span>
             </div>
 
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-gray-700">F3. Git Discipline</span>
+                <span className="font-bold text-gray-700">{isNonTech ? 'F3. Execution & Stakeholders' : 'F3. Git Discipline'}</span>
                 <span className="font-mono font-bold text-[#e20001]">{isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))} / 10</span>
               </div>
               <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden mb-1">
                 <div className="bg-[#e20001] h-full" style={{ width: `${((isClone ? 2 : Math.min(10, Math.round(candidate.authenticity_score * 0.10))) / 10) * 100}%` }}></div>
               </div>
-              <span className="text-[10px] text-gray-500">Commit progression & refactoring ratio</span>
+              <span className="text-[10px] text-gray-500">{isNonTech ? 'Milestone cadence & cross-functional alignment' : 'Commit progression & refactoring ratio'}</span>
             </div>
           </div>
         </div>
