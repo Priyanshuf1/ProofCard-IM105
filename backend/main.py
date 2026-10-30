@@ -76,8 +76,15 @@ from backend.routers import (
     imats_sandbox,
     readiness,
     deployment,
-    webhooks
+    webhooks,
+    resumes,
+    sandbox,
+    gemini_ai,
+    jobs,
+    forensics,
+    grading
 )
+
 
 app = FastAPI(
     title="ProofCard API — Deviathon 2.0 (Integraminds IM-105)",
@@ -117,6 +124,12 @@ app.include_router(imats_sandbox.router)
 app.include_router(readiness.router)
 app.include_router(deployment.router)
 app.include_router(webhooks.router)
+app.include_router(resumes.router)
+app.include_router(sandbox.router)
+app.include_router(gemini_ai.router)
+app.include_router(jobs.router)
+app.include_router(forensics.router)
+app.include_router(grading.router)
 
 @app.get("/")
 def root():
@@ -128,6 +141,8 @@ def root():
         "status": "online",
         "docs_url": "/docs",
         "modules": [
+            "Resume Ingestion & Parsing (PDF, DOCX, DOC, TXT)",
+            "Sandbox API Enterprise Bulk Ingestion",
             "Local ZIP & GitHub Ingestion",
             "AST Structural & Radon Complexity",
             "Winnowing Tutorial Clone Detection (20 templates)",
@@ -140,6 +155,7 @@ def root():
             "Offline 100% Demo Survival Mode"
         ]
     }
+
 
 @app.get("/health")
 def health_check():
