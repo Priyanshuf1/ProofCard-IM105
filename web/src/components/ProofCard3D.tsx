@@ -158,12 +158,12 @@ const RadarSkillChart: React.FC<{
         >
           <defs>
             <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.7)' : 'rgba(255,209,102,0.65)'} />
-              <stop offset="65%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.3)' : 'rgba(212,175,55,0.3)'} />
-              <stop offset="100%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.08)' : 'rgba(212,175,55,0.06)'} />
+              <stop offset="0%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.55)' : 'rgba(226,0,1,0.28)'} />
+              <stop offset="65%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.20)'} />
+              <stop offset="100%" stopColor={isClone || isAdversarial ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.04)'} />
             </radialGradient>
             <filter id="radarBloom" x="-25%" y="-25%" width="150%" height="150%">
-              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -181,20 +181,21 @@ const RadarSkillChart: React.FC<{
               <g key={lidx}>
                 <polygon
                   points={pts}
-                  fill={lvl === 1.0 ? 'rgba(212, 175, 55, 0.04)' : 'none'}
-                  stroke={lvl === 1.0 ? 'rgba(212, 175, 55, 0.65)' : 'rgba(212, 175, 55, 0.35)'}
-                  strokeWidth={lvl === 1.0 ? '1.8' : '1.2'}
+                  fill={lvl === 1.0 ? 'rgba(248, 250, 252, 0.85)' : 'none'}
+                  stroke={lvl === 1.0 ? '#94a3b8' : '#cbd5e1'}
+                  strokeWidth={lvl === 1.0 ? '2' : '1.2'}
                   strokeDasharray={lvl === 1.0 ? 'none' : '4,4'}
                 />
                 {/* Scale Ring Numeric Markers on Vertical Axis */}
                 <text
                   x={cx + 6}
                   y={cy - r * lvl + 4}
-                  fill="rgba(255, 209, 102, 0.75)"
-                  fontSize="9"
-                  fontWeight="700"
+                  fill="#475569"
+                  fontSize="10"
+                  fontWeight="800"
                   fontFamily="monospace"
                   className="select-none"
+                  style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '3px' }}
                 >
                   {Math.round(lvl * 100)}%
                 </text>
@@ -213,8 +214,8 @@ const RadarSkillChart: React.FC<{
                 y1={cy}
                 x2={pt.x}
                 y2={pt.y}
-                stroke={isTargeted ? '#FFD166' : 'rgba(212, 175, 55, 0.35)'}
-                strokeWidth={isTargeted ? 2 : 1.2}
+                stroke={isTargeted ? '#0f172a' : '#94a3b8'}
+                strokeWidth={isTargeted ? 2.5 : 1.4}
                 className="transition-colors duration-200"
               />
             );
@@ -224,7 +225,7 @@ const RadarSkillChart: React.FC<{
           <polygon
             points={polygonPoints}
             fill="url(#radarGlow)"
-            stroke={isClone || isAdversarial ? '#EF4444' : '#FFD166'}
+            stroke={isClone || isAdversarial ? '#dc2626' : '#e20001'}
             strokeWidth="3.5"
             filter="url(#radarBloom)"
             className="transition-all duration-300 cursor-pointer"
@@ -291,31 +292,32 @@ const RadarSkillChart: React.FC<{
                   cx={pt.x}
                   cy={pt.y}
                   r={isTargeted ? 8 : 6}
-                  fill={isTargeted ? '#FFFFFF' : (isClone || isAdversarial ? '#EF4444' : '#FFD166')}
-                  stroke="#000000"
-                  strokeWidth="2"
+                  fill={isTargeted ? '#ffffff' : (isClone || isAdversarial ? '#dc2626' : '#e20001')}
+                  stroke="#0f172a"
+                  strokeWidth="2.5"
                   className="transition-all duration-200"
                 />
 
-                {/* High-Contrast Crisp Text Label */}
+                {/* High-Contrast Crisp Black & Bold Text Label */}
                 <text
                   x={lblX}
                   y={lblY}
                   textAnchor={anchor}
-                  fontSize={isTargeted ? '13' : '12'}
+                  fontSize={isTargeted ? '13.5' : '12.5'}
                   fontFamily="system-ui, -apple-system, sans-serif"
-                  style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.95))' }}
-                  className="select-none transition-all duration-200"
+                  className="select-none transition-all duration-200 font-sans"
                 >
                   <tspan 
-                    fill={isTargeted ? '#FFD166' : '#FFFFFF'} 
-                    fontWeight={isTargeted ? '800' : '700'}
+                    fill={isTargeted ? '#e20001' : '#0f172a'} 
+                    fontWeight="800"
+                    style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '4px', strokeLinejoin: 'round' }}
                   >
                     {a.label}
                   </tspan>
                   <tspan 
-                    fill={isClone || isAdversarial ? '#FCA5A5' : '#FFD166'} 
-                    fontWeight="800"
+                    fill={isClone || isAdversarial ? '#dc2626' : (isTargeted ? '#991b1b' : '#b91c1c')} 
+                    fontWeight="900"
+                    style={{ paintOrder: 'stroke fill', stroke: '#ffffff', strokeWidth: '4px', strokeLinejoin: 'round' }}
                   >
                     {' '}({a.val}%)
                   </tspan>
@@ -351,10 +353,10 @@ const RadarSkillChart: React.FC<{
                 <button
                   key={a.id}
                   onClick={() => setHoveredAxis(hoveredAxis === a.id ? null : a.id)}
-                  className="p-1 rounded-lg bg-gray-50 border border-gray-200 hover:border-amber-300 transition cursor-pointer"
+                  className="p-1.5 rounded-xl bg-gray-100/80 border border-gray-300 hover:border-gray-500 hover:bg-gray-100 transition cursor-pointer shadow-xs"
                 >
-                  <div className="text-[9px] text-[#111827] truncate uppercase font-bold">{a.label.split(' ')[0]}</div>
-                  <div className="text-xs font-mono font-black text-[#4b5563]">{a.val}%</div>
+                  <div className="text-[10px] text-[#0f172a] truncate uppercase font-extrabold font-sans">{a.label.split(' ')[0]}</div>
+                  <div className="text-xs font-mono font-black text-[#e20001]">{a.val}%</div>
                 </button>
               ))}
             </div>
