@@ -303,14 +303,19 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
       return;
     }
 
-    if (candidateStream === 'NON_TECHNICAL') {
+    if (ingestMode === 'live_site') {
+      if (!liveSiteUrl.trim()) {
+        setErrorMessage('Please enter a target live website URL to evaluate.');
+        return;
+      }
+    } else if (candidateStream === 'NON_TECHNICAL') {
       if (!deliverableUrl.trim() && !resumeFile && !resumeData) {
         setErrorMessage('Please provide a portfolio / case study / deliverable URL (e.g. https://hritiksakpal.github.io/portfolio/).');
         return;
       }
     } else {
       if (ingestMode === 'github' && !githubUrl.trim()) {
-        setErrorMessage('Please enter a public GitHub repository link.');
+        setErrorMessage('Please enter a public GitHub repository link or live website URL.');
         return;
       }
 
@@ -319,13 +324,8 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
         return;
       }
 
-      if (ingestMode === 'resume' && !resumeFile && !resumeData) {
-        setErrorMessage('Please upload a candidate resume (PDF or DOCX) to proceed.');
-        return;
-      }
-
-      if (ingestMode === 'live_site' && !liveSiteUrl.trim()) {
-        setErrorMessage('Please enter a target live website URL to evaluate.');
+      if (ingestMode === 'resume' && !resumeFile && !resumeData && !liveSiteUrl.trim()) {
+        setErrorMessage('Please upload a candidate resume (PDF or DOCX) or enter a live website link to proceed.');
         return;
       }
     }
@@ -652,7 +652,20 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
           };
         }
       } else {
-        profile = await analyzeGithubUrl(githubUrl.trim(), candidateName || 'GitHub Contributor', college || 'University', consentGranted, undefined, emailParam);
+        const inputUrl = githubUrl.trim();
+        if (inputUrl && !inputUrl.includes('github.com')) {
+          // Auto-detect live website entered in repository box
+          profile = await evaluateLiveSite({
+            url: inputUrl,
+            candidate_name: candidateName.trim() || undefined,
+            candidate_email: emailParam,
+            college: college.trim() || undefined,
+            stream_track: candidateStream,
+            apify_token: apifyToken.trim() || undefined,
+          });
+        } else {
+          profile = await analyzeGithubUrl(inputUrl, candidateName || 'GitHub Contributor', college || 'University', consentGranted, undefined, emailParam);
+        }
       }
 
       // Authoritative n8n dispatch is handled by backend to provide luxury HTML payload
@@ -945,39 +958,9 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
             >
               <div className="flex items-center gap-2.5">
                 <GitBranch className={`w-4 h-4 ${ingestMode === 'github' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
-                <span className="text-sm font-bold text-[#111827] font-bold">GitHub Repository</span>
+                <span className="text-sm font-bold text-[#111827]">GitHub Repository</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-1">Direct AST & Git-DNA code scan</p>
-            </button>
-
-            <button
-              onClick={() => setIngestMode('zip')}
-              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                ingestMode === 'zip'
-                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
-                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <UploadCloud className={`w-4 h-4 ${ingestMode === 'zip' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
-                <span className="text-sm font-bold text-[#111827] font-bold">Upload Code ZIP</span>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1">Offline project archive (.zip)</p>
-            </button>
-
-            <button
-              onClick={() => setIngestMode('resume')}
-              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                ingestMode === 'resume'
-                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
-                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <FileText className={`w-4 h-4 ${ingestMode === 'resume' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
-                <span className="text-sm font-bold text-[#111827] font-bold">Resume PDF / DOCX</span>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1">Multi-domain auto-fill & viva</p>
             </button>
 
             <button
@@ -992,7 +975,37 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 <Globe className={`w-4 h-4 ${ingestMode === 'live_site' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
                 <span className="text-sm font-bold text-[#111827]">Live Website URL</span>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">Apify Web & Clone Scanner</p>
+              <p className="text-[11px] text-gray-500 mt-1">Direct Link • Apify Clone Scanner</p>
+            </button>
+
+            <button
+              onClick={() => setIngestMode('resume')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                ingestMode === 'resume'
+                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
+                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <FileText className={`w-4 h-4 ${ingestMode === 'resume' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
+                <span className="text-sm font-bold text-[#111827]">Resume PDF / DOCX</span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Auto-fill identity, skills & links</p>
+            </button>
+
+            <button
+              onClick={() => setIngestMode('zip')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                ingestMode === 'zip'
+                  ? 'bg-red-50/70 border-2 border-[#e20001] shadow-sm'
+                  : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-[#111827]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <UploadCloud className={`w-4 h-4 ${ingestMode === 'zip' ? 'text-[#e20001]' : 'text-neutral-500'}`} />
+                <span className="text-sm font-bold text-[#111827]">Upload Code ZIP</span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Offline project archive (.zip)</p>
             </button>
           </div>
 
@@ -1103,7 +1116,7 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               </div>
             </div>
 
-            {candidateStream === 'NON_TECHNICAL' ? (
+            {candidateStream === 'NON_TECHNICAL' && ingestMode !== 'live_site' ? (
               <div className="space-y-4 p-5 rounded-2xl bg-purple-50/40 border border-purple-200">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-purple-900 font-sans flex items-center gap-1.5">
@@ -1174,16 +1187,44 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
               </div>
             ) : ingestMode === 'github' ? (
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-                  GitHub Repository Link
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    GitHub Repository Link
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIngestMode('live_site')}
+                    className="text-[11px] font-bold text-red-700 hover:text-red-800 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Have a Live Website instead? Put Link Here →</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={githubUrl}
                   onChange={(e) => handleGithubUrlChange(e.target.value)}
-                  placeholder="https://github.com/username/repository"
+                  placeholder="https://github.com/username/repository or https://your-site.vercel.app"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-[#111827] placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#e20001] focus:ring-2 focus:ring-[#e20001]/20 transition font-mono"
                 />
+                {githubUrl.trim() && !githubUrl.includes('github.com') && (
+                  <div className="mt-2.5 p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      Live website URL detected! Pariksha will evaluate it via Apify Google Crawler (No GitHub needed).
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLiveSiteUrl(githubUrl);
+                        setIngestMode('live_site');
+                      }}
+                      className="text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded cursor-pointer shrink-0 ml-2"
+                    >
+                      Switch to Live Tab
+                    </button>
+                  </div>
+                )}
 
                 {/* Quick Test Repository Buttons */}
                 <div className="mt-3.5 flex flex-wrap items-center gap-2">
@@ -1355,6 +1396,39 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Direct Link Input Option inside Resume Section */}
+                  <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                        Or Enter Working Live Link / Portfolio URL Directly
+                      </label>
+                      <span className="text-[11px] text-emerald-700 font-bold font-mono">
+                        No GitHub Required • Analyzed via Apify
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={liveSiteUrl}
+                        onChange={(e) => setLiveSiteUrl(e.target.value)}
+                        placeholder="e.g. https://myportfolio.vercel.app or https://candidate-project.com"
+                        className="flex-1 bg-white border border-gray-200 rounded-xl p-2.5 text-xs text-[#111827] placeholder-gray-400 focus:outline-none focus:border-[#e20001] focus:ring-2 focus:ring-[#e20001]/20 font-mono"
+                      />
+                      {liveSiteUrl.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => setIngestMode('live_site')}
+                          className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                        >
+                          Evaluate Link →
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      If you have a working website link, you can enter it right here (or upload a resume file above).
+                    </p>
                   </div>
                 </div>
 
@@ -1574,11 +1648,23 @@ export const CandidateIngestion: React.FC<CandidateIngestionProps> = ({
                 {isScanning ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>{candidateStream === 'TECHNICAL' ? 'Scanning Code & Running Checks...' : 'Verifying Deliverables & Strategic ROI...'}</span>
+                    <span>
+                      {ingestMode === 'live_site' || (ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url))
+                        ? 'Auditing Live Website & Scanning Google via Apify...'
+                        : candidateStream === 'TECHNICAL'
+                        ? 'Scanning Code & Running Checks...'
+                        : 'Verifying Deliverables & Strategic ROI...'}
+                    </span>
                   </>
                 ) : (
                   <>
-                    <span>{candidateStream === 'TECHNICAL' ? '⚡ Scan Code & Proceed to Viva' : '💼 Verify Strategy & Proceed to Viva'}</span>
+                    <span>
+                      {ingestMode === 'live_site' || (ingestMode === 'resume' && (liveSiteUrl.trim() || resumeData?.live_url) && !githubUrl.trim())
+                        ? '🌐 Evaluate Live Website & Proceed to Viva'
+                        : candidateStream === 'TECHNICAL'
+                        ? '⚡ Scan Code & Proceed to Viva'
+                        : '💼 Verify Strategy & Proceed to Viva'}
+                    </span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
