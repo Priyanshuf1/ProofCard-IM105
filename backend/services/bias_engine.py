@@ -1,3 +1,4 @@
+from backend.services.college_classifier import CollegeTierClassifier
 from typing import List, Dict, Any, Tuple
 
 class BiasEngine:
@@ -37,7 +38,10 @@ class BiasEngine:
         tier3_shortlisted = 0
 
         for d in decisions:
-            tier = d.get("college_tier", "Tier-3")
+            tier = d.get("college_tier")
+            if not tier and d.get("college"):
+                tier = CollegeTierClassifier.classify(d["college"])[0]
+            tier = tier or "Tier-3" 
             shortlisted = d.get("recruiter_shortlisted", False)
             if "tier-1" in tier.lower() or "iit" in tier.lower() or "nit" in tier.lower() or "bits" in tier.lower():
                 tier1_total += 1

@@ -17,6 +17,7 @@ from backend.services.readiness_engine import ReadinessEngine
 from backend.services.n8n_service import N8nService
 from backend.services.adversarial_defense import AdversarialDefensePipeline
 from backend.services.injection_scanner import InjectionScanner
+from backend.services.college_classifier import CollegeTierClassifier
 
 router = APIRouter(prefix="/api/github", tags=["GitHub Ingestion"])
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -554,10 +555,11 @@ async def analyze_github_repo(req: IngestionURLRequest):
             detail="Invalid GitHub URL format. Expected: https://github.com/owner or https://github.com/owner/repository"
         )
 
-    candidate_name = req.candidate_name
-    if not candidate_name or candidate_name.strip() in ["Priyanshu Awasthi", "Ananya Patel", "Rohan Sharma", "Candidate Name"]:
+    candidate_name = (req.candidate_name or "").strip()
+    if not candidate_name or candidate_name.lower() in ["candidate name", "author", "contributor"]:
         candidate_name = owner
     college_name = req.college or "Verified Institution"
+    college_tier, college_tier_label = CollegeTierClassifier.classify(college_name)
 
     live_success = False
     resolved_repo = repo
@@ -894,7 +896,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
 
     # When live analysis succeeds, synthesize verified profile from live GitHub AST data
     resolved_repo_name = resolved_repo or "primary-repository"
-    cid = f"cand_gh_{hashlib.md5(f'{owner}/{resolved_repo_name}'.encode()).hexdigest()[:8]}"
+    cid_seed = f"{candidate_name}:{req.email or owner}:{resolved_repo_name}"
+    cid = f"cand_gh_{hashlib.md5(cid_seed.encode()).hexdigest()[:8]}"
     test_files_detected = sum(
         1 for f in (raw_files or detected_files)
         if "test" in f.lower() or "spec" in f.lower()
@@ -1117,14 +1120,14 @@ async def analyze_github_repo(req: IngestionURLRequest):
         if history_available and source_available:
             verification_status = "UNORIGINAL_FORK" if untouched_fork else ("VERIFIED_EXEMPLARY" if (git_dna.get("organic_growth") or auth_score >= 90) else "VERIFIED_COMPETENT")
             verification_headline = (
-                f"Verified engineering signals with clean AST modularity and Git progression across {resolved_repo_name}."
+                f"Demonstrated authentic software development with steady commit history, structured code organization, and verified implementation of core application logic across {resolved_repo_name}."
             )
             if untouched_fork:
                 verification_headline = f"Untouched fork of {repo_meta.get('fork_parent')}; no repository-specific commits were verified."
             verification_strengths = [
-                f"{git_dna.get('total_commits', 0)} verified commits over {git_dna.get('time_span_days', 0)} days",
-                f"Extracted {len(complex_functions)} non-trivial AST control blocks directly from {resolved_repo_name}",
-                f"Iterative refactoring ratio of {int(git_dna.get('deletion_ratio', 0) * 100)}%",
+                f"{git_dna.get('total_commits', 0)} authentic commits developed over {git_dna.get('time_span_days', 0)} days",
+                f"Verified {len(complex_functions)} key functions with strong algorithmic logic and clear separation of concerns",
+                f"Active code refinement with {int(git_dna.get('deletion_ratio', 0) * 100)}% refactoring and optimization",
             ]
         else:
             verification_status = "VERIFICATION_INCOMPLETE"
@@ -1140,8 +1143,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
             "status": verification_status,
             "headline": verification_headline,
             "strengths": verification_strengths,
-            "growth_area": "Expand automated boundary mocking for external third-party dependencies.",
-            "specific_action": "Add integration test fixtures verifying failure isolation under network latency.",
+            "growth_area": "Expand automated unit test suites and mock coverage for external API integrations.",
+            "specific_action": "Add automated tests to verify how the application handles network timeouts and error states.",
             "tamper_proof_hash": tamper_proof_hash,
             "email": req.email
         }
@@ -1177,6 +1180,8 @@ async def analyze_github_repo(req: IngestionURLRequest):
         "candidate_name": candidate_name or owner,
         "email": req.email,
         "college": college_name,
+        "college_tier": college_tier,
+        "college_tier_label": college_tier_label,
         "repo_url": raw_url,
         "project_name": resolved_repo_name,
         "project_type": project_type,

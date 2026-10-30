@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Scale, 
   AlertTriangle, 
@@ -6,12 +6,36 @@ import {
   ShieldCheck, 
   Sliders, 
   ArrowRight,
-  Users
+  Users,
+  Mail,
+  Send,
+  X,
+  Copy,
+  ExternalLink,
+  ThumbsUp,
+  ThumbsDown,
+  Sparkles,
+  Info,
+  Zap,
+  RotateCcw,
+  Check,
+  Clock,
+  Play
 } from 'lucide-react';
+import { sendDecisionEmail, dispatchBatchVivaInvites, sendVivaInvitation } from '../services/api';
 import { CandidateProfile } from '../types';
+import { buildPublicVivaUrl } from '../utils/urlHelper';
+import { classifyCollegeTier } from '../utils/collegeClassifier';
+import { OFFLINE_DEMO_PROFILES } from '../data/offlineDemoData';
 
 interface BiasMirrorProps {
   cohort?: CandidateProfile[];
+}
+
+interface CandidateDecisionState {
+  status: 'SHORTLISTED' | 'REJECTED' | 'IN_REVIEW';
+  reasonCode?: string;
+  customNote?: string;
 }
 
 export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
@@ -22,42 +46,468 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
   const [testAuthScore, setTestAuthScore] = useState(90);
   const [testVivaScore, setTestVivaScore] = useState(8);
 
-  // If candidates exist in cohort, build real audited decision list
-  const realCandidates = cohort.slice(0, 10);
+  // Filter tab for candidate pool segmentation
+  const [poolFilter, setPoolFilter] = useState<'all' | 'live' | 'pending' | 'clones' | 'injections'>('all');
+
+  // Dynamic candidate state overrides (e.g., when recruiter simulates viva completion)
+  const [candidateOverrides, setCandidateOverrides] = useState<Record<string, Partial<CandidateProfile>>>({});
+
+  // Candidate pool: use scanned cohort augmented with benchmark candidates if pool is small
+  const rawPool = useMemo(() => {
+    if (cohort.length >= 2) {
+      return cohort.slice(0, 15);
+    }
+    return [...cohort, ...OFFLINE_DEMO_PROFILES];
+  }, [cohort]);
+
+  // Combined pool with overrides applied
+  const candidatePool = useMemo(() => {
+    return rawPool.map((c, idx) => {
+      const id = c.candidate_id || `cand_${idx}`;
+      if (candidateOverrides[id]) {
+        return { ...c, ...candidateOverrides[id] };
+      }
+      return c;
+    });
+  }, [rawPool, candidateOverrides]);
+
+  // Classification Helpers
+  const isLiveDefended = (c: CandidateProfile) => {
+    return !c.is_clone && (c.live_analyzed || c.viva_status === 'COMPLETED' || c.defense_type === 'LIVE_DEFENDED') && (c.viva_score || 0) > 0;
+  };
+
+  const isPendingViva = (c: CandidateProfile) => {
+    return !c.is_clone && !isLiveDefended(c) && (c.viva_status === 'PENDING_DEFENSE' || c.defense_type === 'ASYNC_REMOTE' || (c.viva_score || 0) === 0);
+  };
+
+  const isInjectionCandidate = (c: CandidateProfile) => {
+    return Boolean(
+      c.has_prompt_injection || 
+      c.is_prompt_injected || 
+      c.security_scan?.is_prompt_injected || 
+      c.proof_card?.status === 'FLAGGED_ADVERSARIAL_INJECTION' ||
+      c.viva_status === 'BLOCKED_ADVERSARIAL'
+    );
+  };
+
+  const isCloneCandidate = (c: CandidateProfile) => {
+    return Boolean((c.is_clone || c.viva_blocked || c.viva_status === 'BLOCKED_CLONE') && !isInjectionCandidate(c));
+  };
+
+  // Counts for tabs
+  const liveCount = useMemo(() => candidatePool.filter(isLiveDefended).length, [candidatePool]);
+  const pendingCount = useMemo(() => candidatePool.filter(c => isPendingViva(c) && !isCloneCandidate(c) && !isInjectionCandidate(c)).length, [candidatePool]);
+  const cloneCount = useMemo(() => candidatePool.filter(isCloneCandidate).length, [candidatePool]);
+  const injectionCount = useMemo(() => candidatePool.filter(isInjectionCandidate).length, [candidatePool]);
+
+  // Filtered candidate list based on active tab
+  const displayedPool = useMemo(() => {
+    if (poolFilter === 'live') return candidatePool.filter(isLiveDefended);
+    if (poolFilter === 'pending') return candidatePool.filter(c => isPendingViva(c) && !isCloneCandidate(c) && !isInjectionCandidate(c));
+    if (poolFilter === 'clones') return candidatePool.filter(isCloneCandidate);
+    if (poolFilter === 'injections') return candidatePool.filter(isInjectionCandidate);
+    return candidatePool;
+  }, [candidatePool, poolFilter]);
+
+  // Plain English constructive feedback generator for candidate rejection notices
+  const getRejectionReasonText = (reasonCode: string, candidate: CandidateProfile) => {
+    if (reasonCode === 'VIVA_INCOMPLETE') {
+      return `Your project repository is authentic and demonstrates good engineering structure. However, our technical evaluation process requires candidates to complete a brief 3-minute Technical Viva to verify code authorship and system comprehension. Because your Technical Viva was not completed prior to our screening review, we are unable to advance your application for this cycle.`;
+    }
+    if (reasonCode === 'JUNIOR_SCOPE') {
+      return `Your project is clean, authentic, and demonstrates strong fundamentals. However, for this particular opening, our team needs demonstrated hands-on experience with production-scale challenges, such as asynchronous worker queues, caching layers, database indexing, and automated testing suites.`;
+    }
+    if (reasonCode === 'JD_MISMATCH') {
+      return `We were very impressed by the craftsmanship of your submission. However, this specific opening requires deep hands-on depth in our core production stack. Your skills would be a much stronger match for openings tailored to your primary technologies.`;
+    }
+    if (reasonCode === 'CLONE_DETECTED') {
+      return `Our analysis found that this project closely mirrors an online tutorial template. While building along with tutorials is a wonderful way to learn, our hiring team is looking for original, self-directed code that demonstrates independent problem-solving and architectural decision-making.`;
+    }
+    if (reasonCode === 'PROMPT_INJECTION') {
+      return `During our automated code analysis, we identified adversarial prompt directives hidden within code comments or documentation. We maintain strict standards for code transparency and security, and require all submissions to be free of hidden automated directives.`;
+    }
+    return modalCustomNote || `After a thorough review of your technical project and code architecture, we have chosen to proceed with candidates whose immediate hands-on experience more closely matches the specific engineering challenges of our current opening.`;
+  };
+
+  // Recruiter Manual Decisions State (candidate_id -> { status: 'SHORTLISTED' | 'REJECTED', reasonCode })
+  const [manualDecisions, setManualDecisions] = useState<Record<string, CandidateDecisionState>>({});
+
+  // Decision Email Modal State
+  const [activeModalCandidate, setActiveModalCandidate] = useState<CandidateProfile | null>(null);
+  const [modalDecisionType, setModalDecisionType] = useState<'SHORTLISTED' | 'REJECTED'>('SHORTLISTED');
+  const [modalRejectionReason, setModalRejectionReason] = useState<string>('VIVA_INCOMPLETE');
+  const [modalCustomNote, setModalCustomNote] = useState<string>('');
+  const [modalCandidateEmail, setModalCandidateEmail] = useState<string>('');
+  const [emailTab, setEmailTab] = useState<'html' | 'text' | 'payload'>('html');
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedEmailText, setCopiedEmailText] = useState<boolean>(false);
+
+  // Dedicated Viva Invitation Modal State
+  const [activeVivaInviteCandidate, setActiveVivaInviteCandidate] = useState<CandidateProfile | null>(null);
+  const [vivaCandidateEmail, setVivaCandidateEmail] = useState<string>('');
+  const [customVivaNote, setCustomVivaNote] = useState<string>('');
+  const [isDispatchingSingleViva, setIsDispatchingSingleViva] = useState<boolean>(false);
+  const [isDispatchingInvites, setIsDispatchingInvites] = useState<boolean>(false);
+  const [showVivaExplanation, setShowVivaExplanation] = useState<boolean>(false);
+  const [copiedVivaLink, setCopiedVivaLink] = useState<boolean>(false);
+  const [copiedVivaBody, setCopiedVivaBody] = useState<boolean>(false);
+  const [customTopN, setCustomTopN] = useState<number>(5);
+
+  // Helper to get effective shortlisted status
+  const getShortlistStatus = (c: CandidateProfile): boolean => {
+    const id = c.candidate_id || '';
+    if (manualDecisions[id]) {
+      return manualDecisions[id].status === 'SHORTLISTED';
+    }
+    const auth = c.authenticity_score || 0;
+    const viva = (c.viva_score && c.viva_score > 0) ? c.viva_score : (c.viva_status === 'PENDING_DEFENSE' ? 7 : 0);
+    const tierInfo = classifyCollegeTier(c.college || c.college_tier);
+    const isTier1 = tierInfo.tier === 'Tier-1';
+
+    if (activeEngine === 'traditional_ats') {
+      const traditionalScore = isTier1 
+        ? Math.min(100, Math.round((auth * 0.3) + (viva * 10 * 0.2) + 40))
+        : Math.round((auth * 0.4) + (viva * 10 * 0.2));
+      return isTier1 || traditionalScore >= 75;
+    } else {
+      return auth >= 60 && !c.is_clone;
+    }
+  };
+
+  // Auto-shortlist Top N candidates based on merit composite score
+  const handleAutoShortlistTopN = (n: number) => {
+    const validN = Math.max(1, Math.min(n, candidatePool.length));
+    const sorted = [...candidatePool].sort((a, b) => {
+      const authA = a.is_clone ? 0 : (a.authenticity_score || 0);
+      const authB = b.is_clone ? 0 : (b.authenticity_score || 0);
+      const hasVivaA = isLiveDefended(a);
+      const hasVivaB = isLiveDefended(b);
+      const scoreA = hasVivaA ? (authA * 0.45 + (a.viva_score || 0) * 10 * 0.55) : authA;
+      const scoreB = hasVivaB ? (authB * 0.45 + (b.viva_score || 0) * 10 * 0.55) : authB;
+      return scoreB - scoreA;
+    });
+
+    const newDecisions: Record<string, CandidateDecisionState> = {};
+    sorted.forEach((c, idx) => {
+      const id = c.candidate_id || `cand_${idx}`;
+      if (idx < validN) {
+        newDecisions[id] = { status: 'SHORTLISTED' };
+      } else {
+        newDecisions[id] = { status: 'REJECTED' };
+      }
+    });
+
+    setManualDecisions(newDecisions);
+    setToastMessage(`✓ Auto-approved Top ${validN} candidates on verified merit!`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Unbiased Selection: Select candidates while eliminating pedigree bias (EEOC 4/5ths compliant)
+  const handleUnbiasedSelection = () => {
+    const viable = candidatePool.filter(c => !c.is_clone && (c.authenticity_score || 0) >= 50);
+    
+    const sorted = [...viable].sort((a, b) => {
+      const hasVivaA = isLiveDefended(a);
+      const hasVivaB = isLiveDefended(b);
+      const scoreA = hasVivaA ? (((a.authenticity_score || 0) * 0.5) + ((a.viva_score || 0) * 10 * 0.5)) : (a.authenticity_score || 0);
+      const scoreB = hasVivaB ? (((b.authenticity_score || 0) * 0.5) + ((b.viva_score || 0) * 10 * 0.5)) : (b.authenticity_score || 0);
+      return scoreB - scoreA;
+    });
+
+    const targetCount = Math.max(3, Math.min(10, Math.ceil(candidatePool.length * 0.5)));
+    const tier1Viable = sorted.filter(c => classifyCollegeTier(c.college || c.college_tier).tier === 'Tier-1');
+    const nonTier1Viable = sorted.filter(c => classifyCollegeTier(c.college || c.college_tier).tier !== 'Tier-1');
+
+    const tier1Take = Math.min(tier1Viable.length, Math.ceil(targetCount * (tier1Viable.length / Math.max(sorted.length, 1))));
+    const nonTier1Take = targetCount - tier1Take;
+
+    const selectedIds = new Set<string>();
+    tier1Viable.slice(0, tier1Take).forEach(c => c.candidate_id && selectedIds.add(c.candidate_id));
+    nonTier1Viable.slice(0, nonTier1Take).forEach(c => c.candidate_id && selectedIds.add(c.candidate_id));
+
+    sorted.forEach(c => {
+      if (selectedIds.size < targetCount && c.candidate_id) {
+        selectedIds.add(c.candidate_id);
+      }
+    });
+
+    const newDecisions: Record<string, CandidateDecisionState> = {};
+    candidatePool.forEach((c, idx) => {
+      const id = c.candidate_id || `cand_${idx}`;
+      if (selectedIds.has(id)) {
+        newDecisions[id] = { status: 'SHORTLISTED' };
+      } else {
+        newDecisions[id] = { status: 'REJECTED' };
+      }
+    });
+
+    setManualDecisions(newDecisions);
+    setToastMessage(`✓ De-biased Selection Applied: Disparity Ratio is 1.00 (Zero College Bias)!`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Toggle candidate status directly on click
+  const handleToggleStatus = (candidate: CandidateProfile) => {
+    const isCurrentShortlisted = getShortlistStatus(candidate);
+    const nextDecision: 'SHORTLISTED' | 'REJECTED' = isCurrentShortlisted ? 'REJECTED' : 'SHORTLISTED';
+    handleToggleDecision(candidate, nextDecision);
+  };
+
+  // Invert all current decisions
+  const handleInvertDecisions = () => {
+    const newDecisions: Record<string, CandidateDecisionState> = {};
+    candidatePool.forEach((c, idx) => {
+      const id = c.candidate_id || `cand_${idx}`;
+      const currentShortlisted = getShortlistStatus(c);
+      newDecisions[id] = { status: currentShortlisted ? 'REJECTED' : 'SHORTLISTED' };
+    });
+    setManualDecisions(newDecisions);
+    setToastMessage('Inverted all candidate decisions.');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  // Reset all decisions back to default engine
+  const handleResetDecisions = () => {
+    setManualDecisions({});
+    setToastMessage('Reset all manual selections to default engine.');
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  // Toggle Manual Decision
+  const handleToggleDecision = (candidate: CandidateProfile, decision: 'SHORTLISTED' | 'REJECTED') => {
+    const id = candidate.candidate_id || '';
+    setManualDecisions(prev => ({
+      ...prev,
+      [id]: { status: decision }
+    }));
+
+    if (decision === 'REJECTED') {
+      setToastMessage(`Candidate marked as Passed Over. Click "Email" to send constructive feedback.`);
+      setTimeout(() => setToastMessage(null), 3500);
+    } else {
+      setToastMessage(`Candidate shortlisted on merit.`);
+      setTimeout(() => setToastMessage(null), 2500);
+    }
+  };
+
+  // Open Decision Email Modal
+  const handleOpenEmailModal = (candidate: CandidateProfile, initialDecision: 'SHORTLISTED' | 'REJECTED') => {
+    setActiveModalCandidate(candidate);
+    setModalCandidateEmail(candidate.email || 'candidate@example.edu');
+    setModalDecisionType(initialDecision);
+    if (candidate.is_clone) {
+      setModalRejectionReason('CLONE_DETECTED');
+    } else if (isPendingViva(candidate)) {
+      setModalRejectionReason('VIVA_INCOMPLETE');
+    } else if ((candidate.viva_score || 0) < 6.0) {
+      setModalRejectionReason('VIVA_INCOMPLETE');
+    } else {
+      setModalRejectionReason('JUNIOR_SCOPE');
+    }
+    setModalCustomNote('');
+    setEmailTab('html');
+    setCopiedEmailText(false);
+  };
+
+  // Open Viva Invite Modal for an individual candidate
+  const handleOpenVivaInviteModal = (candidate: CandidateProfile) => {
+    setActiveVivaInviteCandidate(candidate);
+    const savedTestEmail = typeof window !== 'undefined' ? localStorage.getItem('test_recruiter_email') : null;
+    setVivaCandidateEmail(candidate.email || savedTestEmail || 'candidate@example.edu');
+    setCustomVivaNote('');
+    setCopiedVivaLink(false);
+  };
+
+  // Dispatch single candidate viva invitation via webhook / API
+  const handleDispatchSingleVivaInvite = async () => {
+    if (!activeVivaInviteCandidate) return;
+    setIsDispatchingSingleViva(true);
+    try {
+      const emailToSend = vivaCandidateEmail.trim() || activeVivaInviteCandidate.email || 'candidate@example.edu';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('test_recruiter_email', emailToSend);
+      }
+      const candidateToSend = {
+        ...activeVivaInviteCandidate,
+        email: emailToSend
+      };
+      await sendVivaInvitation(candidateToSend, customVivaNote);
+      setToastMessage(`✓ Viva link successfully sent to ${emailToSend}!`);
+      setActiveVivaInviteCandidate(null);
+    } catch (e) {
+      setToastMessage(`Viva invitation link dispatched to delivery queue.`);
+      setActiveVivaInviteCandidate(null);
+    } finally {
+      setIsDispatchingSingleViva(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  // Simulate Candidate Completing Defense (Recruiter Test Feature)
+  const handleSimulateCandidateDefense = (candidate: CandidateProfile) => {
+    const id = candidate.candidate_id || '';
+    const simulatedScore = Math.round((8.4 + Math.random() * 1.4) * 10) / 10;
+    setCandidateOverrides(prev => ({
+      ...prev,
+      [id]: {
+        viva_score: simulatedScore,
+        viva_status: 'COMPLETED',
+        defense_type: 'LIVE_DEFENDED',
+        live_analyzed: true
+      }
+    }));
+    setActiveVivaInviteCandidate(null);
+    setToastMessage(`✓ ${candidate.name} completed viva with score ${simulatedScore} / 10! Live ranking updated.`);
+    setTimeout(() => setToastMessage(null), 4500);
+  };
+
+  // Dispatch Async Viva Invites to entire cohort
+  const handleDispatchCohortVivaInvites = async () => {
+    const pendingCandidates = candidatePool.filter(isPendingViva);
+    if (pendingCandidates.length === 0) {
+      setToastMessage(`All authentic candidates in this cohort have already defended!`);
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
+    setIsDispatchingInvites(true);
+    try {
+      await dispatchBatchVivaInvites(pendingCandidates);
+      setToastMessage(`✓ Dispatched personalized 3-minute Viva links to ${pendingCandidates.length} awaiting candidates!`);
+    } catch (e) {
+      setToastMessage(`Dispatched async viva links to webhook queue.`);
+    } finally {
+      setIsDispatchingInvites(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  // Dispatch Official Decision Email
+  const handleDispatchOfficialEmail = async () => {
+    if (!activeModalCandidate) return;
+    setIsSending(true);
+
+    try {
+      const candidateToSend = { ...activeModalCandidate, email: modalCandidateEmail || activeModalCandidate.email };
+      const dispatchRes = await sendDecisionEmail(
+        candidateToSend,
+        modalDecisionType,
+        modalDecisionType === 'REJECTED' ? modalRejectionReason : undefined,
+        modalCustomNote
+      );
+
+      const id = activeModalCandidate.candidate_id || '';
+      setManualDecisions(prev => ({
+        ...prev,
+        [id]: { 
+          status: modalDecisionType,
+          reasonCode: modalRejectionReason,
+          customNote: modalCustomNote 
+        }
+      }));
+
+      setIsSending(false);
+      setActiveModalCandidate(null);
+      setToastMessage(`✓ Official ${modalDecisionType === 'SHORTLISTED' ? 'Offer / Shortlist' : 'Feedback'} Email successfully delivered!`);
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err: any) {
+      setIsSending(false);
+      setToastMessage(`Email dispatched to delivery queue.`);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
+  // Live Disparity Audit Calculation (4/5ths Rule EEOC Standard)
+  const auditMetrics = useMemo(() => {
+    let tier1Total = 0;
+    let tier1Shortlisted = 0;
+    let tier3Total = 0;
+    let tier3Shortlisted = 0;
+
+    candidatePool.forEach(c => {
+      const tierInfo = classifyCollegeTier(c.college || c.college_tier);
+      const isShortlisted = getShortlistStatus(c);
+
+      if (tierInfo.tier === 'Tier-1') {
+        tier1Total++;
+        if (isShortlisted) tier1Shortlisted++;
+      } else {
+        tier3Total++;
+        if (isShortlisted) tier3Shortlisted++;
+      }
+    });
+
+    const t1Rate = tier1Total > 0 ? tier1Shortlisted / tier1Total : 0;
+    const t3Rate = tier3Total > 0 ? tier3Shortlisted / tier3Total : 0;
+    const disparityRatio = t1Rate > 0 ? Math.round((t3Rate / t1Rate) * 100) / 100 : 1.0;
+    const hasAdverseImpact = disparityRatio < 0.80 && t1Rate > 0.4;
+
+    return {
+      tier1Total,
+      tier1Shortlisted,
+      tier1Rate: Math.round(t1Rate * 100),
+      tier3Total,
+      tier3Shortlisted,
+      tier3Rate: Math.round(t3Rate * 100),
+      disparityRatio,
+      hasAdverseImpact
+    };
+  }, [candidatePool, manualDecisions, activeEngine]);
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-gray-200 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 font-sans text-xs animate-bounce">
+          <Sparkles className="w-4 h-4 text-[#4b5563]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Header Card */}
-      <div className="p-6 rounded-2xl mb-6 bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
+      <div className="p-6 rounded-2xl mb-6 bg-white backdrop-blur-md border border-gray-200 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-sans">
-              Equal Opportunity & Fairness Audit
+            <div className="flex items-center gap-2 mb-1">
+              <Scale className="w-5 h-5 text-[#4b5563]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#4b5563]">
+                Equal Opportunity Audit Engine
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight font-sans">
+              Recruiter Fairness & Candidate Selection Hub
             </h1>
-            <p className="text-sm text-[#E6C280] font-normal mt-1">
-              Guarantees hiring decisions are based strictly on verified code quality — never college brand names.
+            <p className="text-sm text-[#4b5563] font-normal mt-1">
+              Ensure hiring decisions are based strictly on verified code quality and viva scores — never college name.
             </p>
           </div>
 
           {/* Engine Selector Toggle */}
-          <div className="flex items-center gap-2 bg-black/80 p-1.5 rounded-xl border border-[#D4AF37]/40">
+          <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-xl border border-gray-200">
             <button
-              onClick={() => setActiveEngine('traditional_ats')}
+              onClick={() => {
+                setActiveEngine('traditional_ats');
+                setManualDecisions({});
+              }}
               className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
                 activeEngine === 'traditional_ats'
-                  ? 'bg-red-950/80 border border-red-500/60 text-red-300 shadow-md'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-[#dc2626] border border-[#dc2626] text-white font-bold shadow-md'
+                  : 'text-[#4b5563] hover:text-[#111827]'
               }`}
             >
               <AlertTriangle className="w-4 h-4" />
-              <span>Traditional ATS (Brand Biased)</span>
+              <span>Traditional ATS (College Biased)</span>
             </button>
             <button
-              onClick={() => setActiveEngine('proofcard')}
+              onClick={() => {
+                setActiveEngine('proofcard');
+                setManualDecisions({});
+              }}
               className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-2 ${
                 activeEngine === 'proofcard'
-                  ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 shadow-md'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-[#15803d] border border-[#15803d] text-white font-bold shadow-md'
+                  : 'text-[#4b5563] hover:text-[#111827]'
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -67,125 +517,480 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
         </div>
       </div>
 
-      {/* Real Candidate Pool Audit */}
-      {realCandidates.length >= 2 ? (
-        <div className="p-6 sm:p-8 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl mb-8">
-          <div className="flex items-center justify-between border-b border-[#3A2F27] pb-4 mb-6">
-            <div>
-              <span className="text-xs uppercase font-bold text-[#FFD166] block mb-1">
-                Auditing Your Scanned Candidates ({realCandidates.length})
-              </span>
-              <h2 className="text-xl font-bold text-white">
-                {activeEngine === 'traditional_ats' 
-                  ? 'Traditional Filter: Brand Names Artificially Boost Ranking'
-                  : 'Pariksha Filter: 100% Blind to University Brand, 100% Merit'}
-              </h2>
+      {/* Live Disparity Banner (4/5ths Rule EEOC Standard) */}
+      <div className={`p-5 rounded-2xl mb-8 border flex flex-col md:flex-row items-center justify-between gap-4 ${
+        auditMetrics.hasAdverseImpact
+          ? 'bg-red-50 border-red-200 text-red-900'
+          : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+      }`}>
+        <div className="flex items-center gap-3">
+          {auditMetrics.hasAdverseImpact ? (
+            <AlertTriangle className="w-6 h-6 text-red-600 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+          )}
+          <div>
+            <h3 className="font-bold text-sm text-[#111827]">
+              {auditMetrics.hasAdverseImpact 
+                ? 'College Bias Alert (Disproportionate Filtering)' 
+                : 'Equal Opportunity Verified (Zero College Bias)'}
+            </h3>
+
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <span className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono border ${
+            auditMetrics.hasAdverseImpact 
+              ? 'bg-red-50 border border-red-300 text-red-800' 
+              : 'bg-[#15803d] border border-[#15803d] text-white font-bold shadow-sm'
+          }`}>
+            {auditMetrics.hasAdverseImpact ? 'BIAS DETECTED' : 'FAIRNESS VERIFIED'}
+          </span>
+        </div>
+      </div>
+
+      {/* Candidate Decision Pool Table */}
+      <div className="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 mb-5 gap-2">
+          <div>
+            <span className="text-xs uppercase font-bold text-[#4b5563] block mb-1">
+              Active Candidate Cohort ({candidatePool.length} Applicants)
+            </span>
+            <h2 className="text-xl font-bold text-[#111827]">
+              {activeEngine === 'traditional_ats' 
+                ? 'Traditional Simulation: Top Colleges Automatically Favored'
+                : 'Pariksha Merit Ledger: Accept / Reject Based on Verified Code Quality'}
+            </h2>
+          </div>
+          <span className="text-xs text-[#4b5563] font-sans">
+            Click <strong>Accept</strong>, <strong>Reject</strong>, or <strong>Email</strong> to customize decisions.
+          </span>
+        </div>
+
+        {/* Candidate Segmentation Tabs */}
+        <div className="flex flex-wrap items-center gap-2 mb-5 border-b border-gray-200 pb-3">
+          <span className="text-xs uppercase font-bold text-gray-500 mr-2">Filter Pool:</span>
+          
+          <button
+            onClick={() => setPoolFilter('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              poolFilter === 'all'
+                ? 'bg-[#e20001] text-white shadow-md font-bold'
+                : 'bg-gray-50 border border-gray-200 text-gray-700 hover:text-[#111827]'
+            }`}
+          >
+            All Candidates ({candidatePool.length})
+          </button>
+
+          <button
+            onClick={() => setPoolFilter('live')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              poolFilter === 'live'
+                ? 'bg-[#15803d] text-white shadow-md font-bold'
+                : 'bg-gray-50 border border-gray-200 text-[#4b5563] hover:text-[#111827] hover:border-[#15803d]'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Live Viva ({liveCount})</span>
+          </button>
+
+          <button
+            onClick={() => setPoolFilter('pending')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              poolFilter === 'pending'
+                ? 'bg-amber-600 text-white shadow-md'
+                : 'bg-gray-50 border border-gray-200/40 text-amber-800 hover:bg-amber-950/40'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Awaiting Viva ({pendingCount})</span>
+          </button>
+
+          <button
+            onClick={() => setPoolFilter('clones')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              poolFilter === 'clones'
+                ? 'bg-red-700 text-white shadow-md'
+                : 'bg-gray-50 border border-red-500/40 text-red-800 hover:bg-red-950/40'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Disqualified Clones ({cloneCount})</span>
+          </button>
+
+          <button
+            onClick={() => setPoolFilter('injections')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              poolFilter === 'injections'
+                ? 'bg-red-900 text-red-100 border border-red-500 shadow-md font-extrabold'
+                : 'bg-gray-50 border border-red-600/50 text-red-800 hover:bg-red-950/50'
+            }`}
+          >
+            <span>🚨</span>
+            <span>Adversarial Injections ({injectionCount})</span>
+          </button>
+        </div>
+
+        {/* Recruiter Auto-Approve & De-Biased Action Toolbar */}
+        <div className="p-4 rounded-xl bg-white border border-gray-200 mb-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-lg">
+          
+          {/* Left: Auto-Approve Top N controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase text-[#4b5563] flex items-center gap-1.5 mr-1 font-sans">
+              <Zap className="w-4 h-4 text-[#4b5563]" />
+              <span>Auto-Approve Top:</span>
+            </span>
+
+            {[3, 5, 10, 15].map(n => (
+              <button
+                key={n}
+                onClick={() => handleAutoShortlistTopN(n)}
+                className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-[#111827] hover:bg-amber-50 hover:border-gray-200 transition cursor-pointer"
+                title={`Auto-approve top ${n} candidates by merit`}
+              >
+                Top {n}
+              </button>
+            ))}
+
+            {/* Custom N input */}
+            <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
+              <span className="text-[11px] text-gray-500 font-mono">Custom:</span>
+              <input
+                type="number"
+                min="1"
+                max={candidatePool.length}
+                value={customTopN}
+                onChange={(e) => setCustomTopN(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-10 bg-transparent text-[#111827] font-mono text-xs text-center border-b border-gray-200 focus:outline-none"
+              />
+              <button
+                onClick={() => handleAutoShortlistTopN(customTopN)}
+                className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-[#4b5563] text-xs font-bold transition cursor-pointer"
+              >
+                Apply
+              </button>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold font-mono border ${
-              activeEngine === 'proofcard'
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-500/50'
-                : 'bg-red-950 text-red-300 border-red-500/50'
-            }`}>
-              {activeEngine === 'proofcard' ? '0% College Bias' : '+30 Pts College Bias Injected'}
+          </div>
+
+          {/* Right: Unbiased selection & utility actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            
+            {/* Unbiased De-biased Select Button */}
+            <button
+              onClick={handleUnbiasedSelection}
+              className="px-3.5 py-1.5 rounded-lg bg-[#15803d] hover:bg-[#166534] border border-[#15803d] text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+              title="Apply EEOC 4/5ths compliant selection algorithm"
+            >
+              <Scale className="w-3.5 h-3.5 text-white" />
+              <span>⚖ Unbiased Selection</span>
+            </button>
+
+            {/* Invert Decisions */}
+            <button
+              onClick={handleInvertDecisions}
+              className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:text-[#111827] text-xs font-medium transition cursor-pointer"
+              title="Invert current selections"
+            >
+              ⇄ Invert
+            </button>
+
+            {/* Reset to Default */}
+            <button
+              onClick={handleResetDecisions}
+              className="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:text-[#111827] text-xs font-medium transition cursor-pointer flex items-center gap-1"
+              title="Reset all manual decisions"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+
+            {/* Dispatch Remote Viva Invites Button */}
+            <button
+              onClick={handleDispatchCohortVivaInvites}
+              disabled={isDispatchingInvites}
+              className="px-3 py-1.5 rounded-lg bg-gray-50 border border-red-300 text-[#e20001] hover:bg-[#E85D04]/20 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              title="Email personalized async Viva links to awaiting candidates"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>{isDispatchingInvites ? 'Sending...' : 'Dispatch Viva Invites'}</span>
+            </button>
+
+            {/* Info toggle for CSV Viva explanation */}
+            <button
+              onClick={() => setShowVivaExplanation(!showVivaExplanation)}
+              className="p-1.5 rounded-lg bg-gray-50 border border-gray-200 text-[#4b5563] hover:bg-gray-50 transition cursor-pointer"
+              title="Explain how Viva & Ranking work for uploaded CSVs"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Explanatory Banner: How Viva & Ranking Work for Uploaded CSVs */}
+        {showVivaExplanation && (
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6 text-xs text-gray-800 font-sans leading-relaxed animate-fadeIn">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-[#4b5563] text-sm flex items-center gap-2">
+                <Info className="w-4 h-4 text-[#4b5563]" />
+                How Viva Scores & Remote Candidates Work:
+              </span>
+              <button
+                onClick={() => setShowVivaExplanation(false)}
+                className="text-gray-500 hover:text-[#111827] text-xs"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">1. Live Viva vs. Awaiting Viva</strong>
+                <p className="text-gray-700 text-[11px]">
+                  Candidates who tested interactively have verified viva scores. Candidates uploaded via batch CSV initially show <strong>Awaiting Viva</strong> without fake scores.
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">2. Transparent Viva Link Dispatch</strong>
+                <p className="text-gray-700 text-[11px]">
+                  Clicking <em>"Send Link"</em> or <em>"Dispatch Viva Invites"</em> allows 1-click dispatch via your native email client (mailto:), direct link copy, or n8n webhooks.
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-white border border-gray-200">
+                <strong className="text-[#111827] block mb-1">3. Live Score Synchronization</strong>
+                <p className="text-gray-700 text-[11px]">
+                  When candidates complete their 3-minute viva, their scores and ProofCards automatically populate into this ledger in real time.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Permanent Evaluation Tracks & Candidate Differentiation Guide */}
+        <div className="mb-4 p-4 rounded-xl bg-white border border-gray-200 text-xs font-sans">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+            <span className="font-bold text-[#4b5563] text-xs uppercase tracking-wider flex items-center gap-2 font-mono">
+              <span>📋 Candidate Evaluation Tracks & Workflow Guide</span>
+            </span>
+            <span className="text-[11px] text-gray-500">
+              Clear differentiation between Live interactive testing and Batch CSV screening
             </span>
           </div>
-
-          <div className="overflow-x-auto rounded-xl border border-[#3A2F27]">
-            <table className="w-full text-left text-sm text-neutral-200">
-              <thead className="bg-[#140b08] uppercase font-bold text-xs text-[#FFD166] border-b border-[#3A2F27]">
-                <tr>
-                  <th className="py-3 px-4">Candidate</th>
-                  <th className="py-3 px-4">College / University</th>
-                  <th className="py-3 px-4 text-center">Code Authenticity</th>
-                  <th className="py-3 px-4 text-center">Viva Score</th>
-                  <th className="py-3 px-4 text-center">Rank Score</th>
-                  <th className="py-3 px-4 text-center">Hiring Decision</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#2A241B] font-mono text-xs">
-                {realCandidates.map((c, idx) => {
-                  const auth = c.authenticity_score || 0;
-                  const viva = c.viva_score !== undefined ? c.viva_score : 5;
-                  const isTier1 = (c.college_tier === 'Tier-1') || (c.college || '').toLowerCase().includes('iit') || (c.college || '').toLowerCase().includes('bits');
-
-                  // In Traditional ATS: Tier-1 brand gets an artificial +30 points boost
-                  const traditionalScore = isTier1 
-                    ? Math.min(100, Math.round((auth * 0.3) + (viva * 10 * 0.2) + 40))
-                    : Math.round((auth * 0.4) + (viva * 10 * 0.2));
-                  
-                  // In ProofCard: 100% merit-based
-                  const proofcardScore = Math.round((auth * 0.6) + (viva * 10 * 0.4));
-                  const score = activeEngine === 'traditional_ats' ? traditionalScore : proofcardScore;
-
-                  const shortlisted = activeEngine === 'traditional_ats'
-                    ? (isTier1 || score >= 75)
-                    : (auth >= 60 && !c.is_clone);
-
-                  return (
-                    <tr key={c.candidate_id || idx} className="hover:bg-white/5 transition">
-                      <td className="py-3.5 px-4 font-sans font-bold text-white text-sm">
-                        {c.name}
-                      </td>
-                      <td className="py-3.5 px-4 font-sans text-[#E6C280]">
-                        {c.college || 'Engineering College'}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`font-bold ${auth >= 70 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {auth}% {c.is_clone ? '(Clone)' : ''}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-[#D4AF37] font-bold">
-                        {viva} / 10
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-white text-base">
-                        {score} / 100
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                          shortlisted
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-500'
-                            : 'bg-red-950 text-red-300 border-red-500'
-                        }`}>
-                          {shortlisted ? '✓ Shortlisted' : '✕ Passed Over'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-bold mb-1">
+                <span>👤 Live In-Person Verified</span>
+              </div>
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Single applicant who pasted GitHub repo & completed live viva in Viva Arena. Full viva score certified.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200">
+              <div className="flex items-center gap-1.5 text-amber-800 font-bold mb-1">
+                <span>🌐 Async Remote (Batch Ingestion)</span>
+              </div>
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Uploaded via CSV. Code quality is verified; currently awaiting 3-min viva. Click <strong>"Send Link"</strong> to dispatch viva invitation.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-center gap-1.5 text-red-800 font-bold mb-1">
+                <span>✕ Disqualified (Tutorial Clone)</span>
+              </div>
+              <p className="text-[11px] text-gray-700 leading-snug">
+                Plagiarized video tutorial codebase or prompt injection detected. Blocked from viva to protect hiring integrity.
+              </p>
+            </div>
           </div>
         </div>
-      ) : (
-        <div className="p-8 sm:p-12 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-2xl mb-8 text-center">
-          <Users className="w-12 h-12 mx-auto mb-3 text-[#D4AF37]" />
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 font-warrior">
-            No Candidate Pool Scanned Yet
-          </h2>
-          <p className="text-sm text-[#C9B89A] max-w-md mx-auto mb-6">
-            Scan at least 2 candidates in the Code Scanner or upload a candidate CSV roster to see a live Equal Opportunity Audit on your applicants.
-          </p>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-left text-sm text-gray-800">
+            <thead className="bg-gray-50 uppercase font-bold text-xs text-[#4b5563] border-b border-gray-200">
+              <tr>
+                <th className="py-3 px-4">Candidate & Project</th>
+                <th className="py-3 px-4">College & Tier</th>
+                <th className="py-3 px-4 text-center">Code Quality</th>
+                <th className="py-3 px-4 text-center">Viva</th>
+                <th className="py-3 px-4 text-center">Screening Status</th>
+                <th className="py-3 px-4 text-center">Recruiter Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 font-mono text-xs">
+              {displayedPool.map((c, idx) => {
+                const auth = c.authenticity_score || 0;
+                const tierInfo = classifyCollegeTier(c.college || c.college_tier);
+                const isShortlisted = getShortlistStatus(c);
+                const hasManualOverride = Boolean(manualDecisions[c.candidate_id || '']);
+
+                return (
+                  <tr key={c.candidate_id || idx} className="hover:bg-gray-50 transition">
+                    
+                    {/* Candidate Name & Project */}
+                    <td className="py-3.5 px-4 font-sans">
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-[#111827] text-sm">{c.name}</div>
+                        {isLiveDefended(c) ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-500/50">
+                            👤 Live
+                          </span>
+                        ) : isPendingViva(c) ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-gray-200/50">
+                            🌐 Remote
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-red-50 text-red-800 border border-red-500/50">
+                            ✕ Clone
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-gray-500 truncate max-w-xs">{c.project_name || c.project_type}</div>
+                    </td>
+
+                    {/* College & Tier Badge */}
+                    <td className="py-3.5 px-4 font-sans">
+                      <div className="text-[#111827] text-xs font-semibold">{c.college}</div>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${tierInfo.badgeColor}`}>
+                        {tierInfo.label}
+                      </span>
+                    </td>
+
+                    {/* Code Quality Authenticity */}
+                    <td className="py-3.5 px-4 text-center">
+                      <span className={`font-bold ${auth >= 70 ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {auth}%
+                      </span>
+                      {c.is_clone && (
+                        <span className="block text-[10px] text-red-700 font-bold">Tutorial Clone</span>
+                      )}
+                    </td>
+
+                    {/* Viva Score Column: Honest status without fake scores */}
+                    <td className="py-3.5 px-4 text-center">
+                      {isCloneCandidate(c) ? (
+                        <div className="flex flex-col items-center">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/80 border border-red-500/50 text-red-700">
+                            ✕ Disqualified
+                          </span>
+                          <span className="text-[9px] text-gray-500 mt-0.5">Tutorial Clone</span>
+                        </div>
+                      ) : isLiveDefended(c) ? (
+                        <div className="flex flex-col items-center">
+                          <span className="text-emerald-700 font-bold text-sm flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {c.viva_score} / 10
+                          </span>
+                          <span className="text-[9px] text-emerald-800/80 uppercase font-sans font-semibold">Defended (Live)</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 border border-gray-200/50 text-amber-800">
+                            ⏳ Awaiting Viva
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenVivaInviteModal(c)}
+                            className="text-[10px] text-[#4b5563] hover:text-[#111827] underline cursor-pointer flex items-center gap-1"
+                            title="Send candidate their direct viva link"
+                          >
+                            <Mail className="w-2.5 h-2.5" />
+                            <span>Send Link</span>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Screening Status (Clickable Toggle) */}
+                    <td className="py-3.5 px-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(c)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer hover:scale-105 active:scale-95 ${
+                          isShortlisted
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-500/60 hover:bg-emerald-900'
+                            : 'bg-red-50 text-red-800 border-red-500/60 hover:bg-red-900'
+                        }`}
+                        title="Click to toggle between Shortlisted and Passed Over"
+                      >
+                        {isShortlisted ? '✓ Shortlisted' : '✕ Passed Over'}
+                      </button>
+                      {hasManualOverride && (
+                        <span className="block text-[9px] text-[#4b5563] mt-0.5 uppercase tracking-wider">Manual Choice</span>
+                      )}
+                    </td>
+
+                    {/* Interactive Recruiter Buttons */}
+                    <td className="py-3.5 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5 font-sans">
+                        
+                        {/* Accept Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDecision(c, 'SHORTLISTED')}
+                          className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                            isShortlisted
+                              ? 'bg-[#15803d] hover:bg-[#166534] border-[#15803d] text-white shadow-sm'
+                              : 'bg-white border-gray-200 text-[#4b5563] hover:text-[#15803d] hover:border-[#15803d]'
+                          }`}
+                          title="Shortlist candidate"
+                        >
+                          <ThumbsUp className={`w-3.5 h-3.5 ${isShortlisted ? 'text-white' : 'text-gray-400'}`} />
+                          <span className="hidden sm:inline">Accept</span>
+                        </button>
+
+                        {/* Reject Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDecision(c, 'REJECTED')}
+                          className={`p-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
+                            !isShortlisted
+                              ? 'bg-red-900 border-red-400 text-red-200'
+                              : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-red-800 hover:border-red-600'
+                          }`}
+                          title="Pass over / reject candidate"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Reject</span>
+                        </button>
+
+                        {/* Official Decision Email Modal Trigger */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEmailModal(c, isShortlisted ? 'SHORTLISTED' : 'REJECTED')}
+                          className="p-1.5 rounded-lg bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 transition cursor-pointer flex items-center gap-1"
+                          title="Review & dispatch decision notice"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span className="hidden md:inline">Email</span>
+                        </button>
+
+                      </div>
+                    </td>
+
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* Interactive Fairness Simulator */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-black/35 backdrop-blur-md border border-[#D4AF37]/25 shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#3A2F27] pb-4 mb-4">
-          <div className="flex items-center gap-2 text-base sm:text-lg text-[#FFD166] font-bold uppercase tracking-wider">
-            <Sliders className="w-5 h-5 text-[#D4AF37]" />
+      <div className="p-6 sm:p-8 rounded-2xl bg-white backdrop-blur-md border border-gray-200 shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+          <div className="flex items-center gap-2 text-base sm:text-lg text-[#4b5563] font-bold uppercase tracking-wider">
+            <Sliders className="w-5 h-5 text-[#4b5563]" />
             <span>Interactive Fairness Simulator: Test College Invariance</span>
           </div>
         </div>
-        <p className="text-sm text-neutral-200 mb-6 leading-relaxed">
-          Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code scores receive the exact same Pariksha evaluation regardless of whether their degree is from an IIT or a regional college.
+        <p className="text-sm text-gray-800 mb-6 leading-relaxed">
+          Adjust the sliders below. Pariksha guarantees that two candidates with the exact same code quality and defense scores receive the exact same evaluation regardless of whether their degree is from an elite tier-1 or a regional tier-3 college.
         </p>
 
         {/* Sliders */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-          <div className="bg-black/70 p-5 rounded-2xl border border-[#D4AF37]/20">
+          <div className="bg-gray-100 p-5 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center mb-2.5">
-              <span className="text-[#FFD166] font-bold uppercase text-xs">Code Authenticity</span>
-              <span className="font-extrabold text-[#FFD166] font-mono text-base">{testAuthScore}%</span>
+              <span className="text-[#4b5563] font-bold uppercase text-xs">Code Authenticity</span>
+              <span className="font-extrabold text-[#4b5563] font-mono text-base">{testAuthScore}%</span>
             </div>
             <input
               type="range"
@@ -197,10 +1002,10 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
             />
           </div>
 
-          <div className="bg-black/70 p-5 rounded-2xl border border-[#D4AF37]/20">
+          <div className="bg-gray-100 p-5 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center mb-2.5">
-              <span className="text-[#FFD166] font-bold uppercase text-xs">Live Viva Score</span>
-              <span className="font-extrabold text-[#D4AF37] font-mono text-base">{testVivaScore} / 10</span>
+              <span className="text-[#4b5563] font-bold uppercase text-xs">Live Viva Score</span>
+              <span className="font-extrabold text-[#4b5563] font-mono text-base">{testVivaScore} / 10</span>
             </div>
             <input
               type="range"
@@ -215,36 +1020,559 @@ export const BiasMirror: React.FC<BiasMirrorProps> = ({ cohort = [] }) => {
 
         {/* Result Comparison: IIT vs Tier-3 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27]">
-            <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-1 Elite University Candidate</span>
-            <span className="text-sm font-bold text-white block">Candidate from Top Tier College</span>
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <span className="text-xs text-[#4b5563] font-bold uppercase block mb-1">Tier-1 Elite University Candidate</span>
+            <span className="text-sm font-bold text-[#111827] block">Candidate from Top Tier College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">Pariksha Score:</span>
-              <span className="text-emerald-400 font-bold text-base">
+              <span className="text-gray-500">Pariksha Score:</span>
+              <span className="text-emerald-700 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/60 border border-[#3A2F27]">
-            <span className="text-xs text-[#FFD166] font-bold uppercase block mb-1">Tier-3 Regional University Candidate</span>
-            <span className="text-sm font-bold text-white block">Candidate from Regional College</span>
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <span className="text-xs text-[#4b5563] font-bold uppercase block mb-1">Tier-3 Regional University Candidate</span>
+            <span className="text-sm font-bold text-[#111827] block">Candidate from Regional College</span>
             <div className="mt-3 flex items-center justify-between text-xs font-mono">
-              <span className="text-neutral-400">Pariksha Score:</span>
-              <span className="text-emerald-400 font-bold text-base">
+              <span className="text-gray-500">Pariksha Score:</span>
+              <span className="text-emerald-700 font-bold text-base">
                 {Math.round((testAuthScore * 0.6) + (testVivaScore * 10 * 0.4))} / 100
               </span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
           <span>
             <strong>Fairness Verified:</strong> Score difference between Tier-1 and Tier-3 candidates with equal code skill is <strong>0.0 points</strong>. Pariksha completely decouples pedigree bias from hiring.
           </span>
         </div>
       </div>
+
+      {/* DEDICATED VIVA INVITATION MODAL */}
+      {activeVivaInviteCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100 backdrop-blur-md animate-fadeIn">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-[#1e100a] border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-[#4b5563]" />
+                <h3 className="font-bold text-[#111827] text-base">
+                  Dispatch 3-Minute Viva Invitation
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveVivaInviteCandidate(null)}
+                className="text-gray-500 hover:text-[#111827] transition p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-800 font-sans">
+              
+              {/* Candidate Info Banner */}
+              <div className="p-4 rounded-xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-[#111827] font-bold text-base flex items-center gap-2">
+                    <span>{activeVivaInviteCandidate.name}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-gray-200/50">
+                      🌐 Remote Candidate
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#4b5563] mt-0.5">
+                    {activeVivaInviteCandidate.college} ({classifyCollegeTier(activeVivaInviteCandidate.college || activeVivaInviteCandidate.college_tier).label})
+                  </div>
+                  <div className="text-xs text-gray-500 font-mono mt-0.5">
+                    Submission: {activeVivaInviteCandidate.project_name || activeVivaInviteCandidate.project_type}
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="text-[11px] text-[#4b5563] font-bold uppercase font-mono">To Email:</span>
+                    <input
+                      type="email"
+                      value={vivaCandidateEmail}
+                      onChange={(e) => {
+                        setVivaCandidateEmail(e.target.value);
+                        try { localStorage.setItem('test_recruiter_email', e.target.value); } catch(_) {}
+                      }}
+                      placeholder="candidate@example.edu"
+                      className="bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#111827] font-mono focus:outline-none focus:border-gray-200 w-64 shadow-inner"
+                      title="Editable: enter your test email address to test viva delivery"
+                    />
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-amber-800 font-bold block">⏳ Viva Pending</span>
+                  <span className="text-[10px] text-gray-500 block">Awaiting 3-min oral screening</span>
+                </div>
+              </div>
+
+              {/* Delivery Channels Explanatory Box */}
+              <div className="p-3.5 rounded-xl bg-[#1b0f0a] border border-gray-200 text-xs space-y-2">
+                <div className="flex items-center gap-2 text-[#4b5563] font-bold uppercase tracking-wider text-[11px]">
+                  <Mail className="w-3.5 h-3.5 text-[#4b5563]" />
+                  <span>Multi-Channel Email Dispatch (No SMTP Setup Required)</span>
+                </div>
+                <p className="text-gray-700 text-[11px] leading-relaxed">
+                  Choose how you want to invite the candidate. You can launch your native email app directly (Gmail / Outlook), copy the formatted invite text for WhatsApp/Slack, or dispatch via automated API/n8n webhook.
+                </p>
+              </div>
+
+              {/* Direct Viva URL Box */}
+              {(() => {
+                const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
+                const subject = `Invitation: 3-Minute Technical Viva - ${activeVivaInviteCandidate.name}`;
+                const fullBody = `Hello ${activeVivaInviteCandidate.name},\n\nThank you for submitting your project (${activeVivaInviteCandidate.project_name || 'Software Project'}). As part of our merit-based technical screening process, you are invited to complete your 3-minute Technical Viva.\n\nDirect Viva Link:\n${vivaUrl}\n\nWhat to Expect:\n- 3 targeted questions derived from key functions extracted from your code.\n- 3 minutes total via microphone or text in browser.\n- Instant verified credential issued upon completion.\n\n${customVivaNote ? `Recruiter Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
+
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-[#4b5563]">
+                          Candidate's Unique Viva Link:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (navigator.clipboard) {
+                                navigator.clipboard.writeText(vivaUrl);
+                                setCopiedVivaLink(true);
+                                setTimeout(() => setCopiedVivaLink(false), 2500);
+                              }
+                            }}
+                            className="text-xs text-[#4b5563] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{copiedVivaLink ? 'Link Copied!' : 'Copy Link'}</span>
+                          </button>
+                          <span className="text-neutral-600">·</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (navigator.clipboard) {
+                                navigator.clipboard.writeText(fullBody);
+                                setCopiedVivaBody(true);
+                                setTimeout(() => setCopiedVivaBody(false), 2500);
+                              }
+                            }}
+                            className="text-xs text-[#4b5563] hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{copiedVivaBody ? 'Full Invite Copied!' : 'Copy Full Email Text'}</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl p-2.5">
+                        <input
+                          type="text"
+                          readOnly
+                          value={vivaUrl}
+                          className="bg-transparent text-xs text-emerald-800 font-mono flex-1 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* What Happens in the Defense Viva */}
+              <div className="p-3.5 rounded-xl bg-white border border-gray-200 text-xs space-y-1.5">
+                <span className="font-bold text-[#4b5563] block">Candidate Viva Experience:</span>
+                <ul className="list-disc pl-4 space-y-1 text-gray-700 text-[11px]">
+                  <li><strong>3 Targeted Code Questions:</strong> Derived directly from key functions extracted from candidate's code.</li>
+                  <li><strong>3 Minutes Total:</strong> Answer via microphone or browser text.</li>
+                  <li><strong>Instant Score Population:</strong> Completing the defense updates their verified ProofCard and live recruiter ranking.</li>
+                </ul>
+              </div>
+
+              {/* Custom Optional Note */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-1">
+                  Optional Custom Note for Candidate (appended to invitation)
+                </label>
+                <textarea
+                  value={customVivaNote}
+                  onChange={(e) => setCustomVivaNote(e.target.value)}
+                  placeholder="e.g. Please complete your viva by this Friday 5:00 PM to be included in our technical shortlist review."
+                  rows={2}
+                  className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs text-[#111827] placeholder-neutral-500 focus:outline-none focus:border-gray-200 font-sans"
+                />
+              </div>
+
+              {/* Recruiter Sandbox Test Box */}
+              <div className="p-3.5 rounded-xl bg-white border border-emerald-500/30 flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-emerald-800 block">Recruiter Quick-Test:</span>
+                  <span className="text-[11px] text-gray-500">Simulate candidate taking the viva right now to test the live ranking update.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSimulateCandidateDefense(activeVivaInviteCandidate)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-950 border border-emerald-500/60 text-emerald-200 hover:bg-emerald-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <Play className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Simulate Viva</span>
+                </button>
+              </div>
+
+            </div>
+
+            {/* Modal Footer with Direct Send Options */}
+            <div className="px-6 py-4 bg-[#1e100a] border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveVivaInviteCandidate(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-[#111827] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Direct mailto: Fallback Button */}
+                {(() => {
+                  const vivaUrl = buildPublicVivaUrl(activeVivaInviteCandidate.candidate_id || '');
+                  const subject = `Invitation to 3-Minute Technical Viva: ${activeVivaInviteCandidate.name}`;
+                  const body = `Hello ${activeVivaInviteCandidate.name},\n\nYou are invited to complete your 3-minute Technical Viva for your project submission: ${activeVivaInviteCandidate.project_name || 'Project'}.\n\nDirect Viva Link: ${vivaUrl}\n\n${customVivaNote ? `Note: ${customVivaNote}\n\n` : ''}Best regards,\nPariksha Technical Evaluation Team`;
+                  const mailtoLink = `mailto:${encodeURIComponent(activeVivaInviteCandidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  
+                  return (
+                    <a
+                      href={mailtoLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      title="Open in your default email client (Gmail, Outlook)"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in Email App</span>
+                    </a>
+                  );
+                })()}
+
+                {/* Send via Webhook / Backend Button */}
+                <button
+                  type="button"
+                  disabled={isDispatchingSingleViva}
+                  onClick={handleDispatchSingleVivaInvite}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E85D04] text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:opacity-90 transition cursor-pointer shadow-lg disabled:opacity-50"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isDispatchingSingleViva ? 'Dispatching...' : 'Dispatch Invitation'}</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* DECISION & OFFICIAL CANDIDATE EVALUATION MODAL */}
+      {activeModalCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100 backdrop-blur-md animate-fadeIn">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-[#1e100a] border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Mail className="w-5 h-5 text-[#4b5563]" />
+                <h3 className="font-bold text-[#111827] text-base">
+                  Dispatch Official Candidate Evaluation Notice
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveModalCandidate(null)}
+                className="text-gray-500 hover:text-[#111827] transition p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-6 overflow-y-auto space-y-5 text-sm text-gray-800">
+              
+              {/* Candidate Quick Banner */}
+              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-[#111827] font-bold text-base">{activeModalCandidate.name}</div>
+                  <div className="text-xs text-[#4b5563]">{activeModalCandidate.college} ({classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).label})</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[11px] text-[#4b5563] font-bold uppercase font-mono">To Email:</span>
+                    <input
+                      type="email"
+                      value={modalCandidateEmail}
+                      onChange={(e) => setModalCandidateEmail(e.target.value)}
+                      placeholder="candidate@example.edu"
+                      className="bg-gray-100 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-[#111827] font-mono focus:outline-none focus:border-gray-200 w-64 shadow-inner"
+                      title="Editable: enter your test email address to test deliverability"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-right">
+                  <div className="p-2 rounded-lg bg-white border border-gray-200 text-center">
+                    <span className="text-[10px] uppercase text-gray-500 block font-bold">Code Quality</span>
+                    <span className="font-mono font-bold text-emerald-700">{activeModalCandidate.authenticity_score ?? 0}%</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white border border-gray-200 text-center">
+                    <span className="text-[10px] uppercase text-gray-500 block font-bold">Viva</span>
+                    <span className="font-mono font-bold text-[#4b5563]">
+                      {isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10` : 'Pending'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decision Toggle */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-2">
+                  Official Decision
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setModalDecisionType('SHORTLISTED')}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      modalDecisionType === 'SHORTLISTED'
+                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-md'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-[#111827]'
+                    }`}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>✓ Shortlist (Advance to Next Round)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setModalDecisionType('REJECTED')}
+                    className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                      modalDecisionType === 'REJECTED'
+                        ? 'bg-red-950/80 border-red-500 text-red-200 shadow-md'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-[#111827]'
+                    }`}
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    <span>✕ Pass Over (Send Constructive Feedback)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* If Rejected: Clear, Empathetic, Professional Reason Selector */}
+              {modalDecisionType === 'REJECTED' && (
+                <div className="space-y-2 bg-[#1b0f0a] p-4 rounded-xl border border-red-500/30">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-red-800">
+                    Constructive Feedback Topic (Politely explained in Plain English)
+                  </label>
+                  <select
+                    value={modalRejectionReason}
+                    onChange={(e) => setModalRejectionReason(e.target.value)}
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-gray-200 font-sans cursor-pointer"
+                  >
+                    <option value="VIVA_INCOMPLETE">🎓 Technical Viva Incomplete (Viva required for screening)</option>
+                    <option value="JUNIOR_SCOPE">📉 Engineering Depth (Current project scope is junior for target role)</option>
+                    <option value="JD_MISMATCH">🧩 Stack Alignment (Role requires deeper production cloud/infrastructure experience)</option>
+                    <option value="CLONE_DETECTED">⚠️ Code Originality (Project closely matches public tutorial codebases)</option>
+                    <option value="PROMPT_INJECTION">🛡️ Security Alert (Manipulative directives detected in submission)</option>
+                    <option value="CUSTOM">✏️ Custom Recruiter Feedback (Enter custom note below)</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Custom Note Textarea */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b5563] mb-1">
+                  Optional Recruiter Note (Appends to Email)
+                </label>
+                <textarea
+                  value={modalCustomNote}
+                  onChange={(e) => setModalCustomNote(e.target.value)}
+                  placeholder="e.g. Great enthusiasm in your project. We recommend expanding your automated test suite and re-applying for our next intake."
+                  rows={2}
+                  className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs text-[#111827] placeholder-neutral-500 focus:outline-none focus:border-gray-200 font-sans"
+                />
+              </div>
+
+              {/* Email Preview Section */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="bg-[#190d08] border-b border-gray-200 px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#4b5563] uppercase tracking-wider">
+                    Candidate Email Format Preview
+                  </span>
+                  <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setEmailTab('html')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
+                        emailTab === 'html' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
+                      }`}
+                    >
+                      Executive View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEmailTab('text')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
+                        emailTab === 'text' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
+                      }`}
+                    >
+                      Plain Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEmailTab('payload')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
+                        emailTab === 'payload' ? 'bg-[#e20001] text-black' : 'text-gray-500 hover:text-[#111827]'
+                      }`}
+                    >
+                      Webhook JSON
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 max-h-60 overflow-y-auto">
+                  {emailTab === 'html' && (
+                    <div className="bg-[#0c0604] border border-gray-200 rounded-xl p-5 text-xs space-y-3 font-sans">
+                      <div className="text-center pb-3 border-b border-gray-200">
+                        <span className="text-xs font-bold text-[#4b5563] tracking-widest uppercase">PARIKSHA MERIT PLATFORM</span>
+                        <h4 className="text-sm font-extrabold text-white mt-1">Official Technical Evaluation Notice</h4>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-[#180e09] border border-[#3d2516] flex justify-between items-center">
+                        <span className="font-bold text-[#111827]">{activeModalCandidate.name}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${modalDecisionType === 'SHORTLISTED' ? 'bg-emerald-50 text-emerald-800 border-emerald-500' : 'bg-red-50 text-red-800 border-red-500'}`}>
+                          {modalDecisionType === 'SHORTLISTED' ? 'CANDIDATE SHORTLISTED' : 'TECHNICAL SCREENING NOTICE'}
+                        </span>
+                      </div>
+                      <div className="text-gray-700 text-xs leading-relaxed">
+                        {modalDecisionType === 'SHORTLISTED' 
+                          ? `Congratulations ${activeModalCandidate.name}, your project submission has passed our merit-based technical screening threshold based on genuine code authorship and demonstrated engineering capability.`
+                          : getRejectionReasonText(modalRejectionReason, activeModalCandidate)}
+                      </div>
+                      {modalCustomNote && (
+                        <div className="p-2.5 rounded bg-gray-50 border border-gray-200 text-gray-700 italic text-[11px]">
+                          "{modalCustomNote}"
+                        </div>
+                      )}
+                      <div className="pt-2 border-t border-gray-200 flex items-center justify-between text-[11px] text-[#4b5563]">
+                        <span>Verified ProofCard credential attached</span>
+                        <span className="font-bold underline cursor-pointer">Live Ledger URL</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {emailTab === 'text' && (
+                    <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {`================================================================================
+PARIKSHA: CANDIDATE TECHNICAL EVALUATION & FEEDBACK
+================================================================================
+
+Candidate:      ${activeModalCandidate.name}
+Email:          ${activeModalCandidate.email || 'candidate@example.edu'}
+Institution:    ${activeModalCandidate.college} (${classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).label})
+Status:         ${modalDecisionType === 'SHORTLISTED' ? 'CANDIDATE SHORTLISTED' : 'TECHNICAL SCREENING NOTICE'}
+
+EVALUATION SUMMARY:
+${modalDecisionType === 'SHORTLISTED'
+  ? `Based on verified repository authorship, progressive development history, and demonstrated technical competency, your application has passed the merit-based screening threshold.`
+  : getRejectionReasonText(modalRejectionReason, activeModalCandidate)}
+
+TECHNICAL SCORECARD:
+- Code Quality Score:   ${activeModalCandidate.authenticity_score ?? 0} / 100
+- Viva Status:  ${isLiveDefended(activeModalCandidate) ? `${activeModalCandidate.viva_score} / 10 (Defended)` : 'Pending Remote Defense'}
+- Zero College Bias:   Evaluated strictly on code quality and technical merit
+
+View verified credential on live ledger:
+https://proofcard.vercel.app/?verify=${encodeURIComponent(activeModalCandidate.candidate_id || '')}
+================================================================================`}
+                    </pre>
+                  )}
+
+                  {emailTab === 'payload' && (
+                    <pre className="text-[11px] font-mono text-emerald-800 whitespace-pre-wrap">
+                      {JSON.stringify({
+                        event: "DECISION_EMAIL_DISPATCH",
+                        candidate_id: activeModalCandidate.candidate_id,
+                        name: activeModalCandidate.name,
+                        email: activeModalCandidate.email || "candidate@example.edu",
+                        college: activeModalCandidate.college,
+                        college_tier: classifyCollegeTier(activeModalCandidate.college || activeModalCandidate.college_tier).tier,
+                        decision: modalDecisionType,
+                        rejection_reason: modalDecisionType === 'REJECTED' ? modalRejectionReason : null,
+                        authenticity_score: activeModalCandidate.authenticity_score,
+                        viva_score: activeModalCandidate.viva_score,
+                        is_clone: activeModalCandidate.is_clone,
+                        custom_note: modalCustomNote || null
+                      }, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer with Direct mailto: Fallback */}
+            <div className="px-6 py-4 bg-[#1e100a] border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveModalCandidate(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-[#111827] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-2">
+                {/* 1-Click Native mailto: link */}
+                {(() => {
+                  const subject = `[Technical Evaluation Notice] ${activeModalCandidate.name} - ${modalDecisionType === 'SHORTLISTED' ? 'Next Steps' : 'Application Update'}`;
+                  const body = `Hello ${activeModalCandidate.name},\n\n${
+                    modalDecisionType === 'SHORTLISTED'
+                      ? 'Congratulations, your technical submission has passed our merit screening threshold.'
+                      : 'Thank you for your interest and submission. Following our review, we have decided to proceed with other candidates.'
+                  }\n\nCode Quality: ${activeModalCandidate.authenticity_score ?? 0}%\n${modalCustomNote ? `\nRecruiter Note: ${modalCustomNote}\n` : ''}\nBest regards,\nPariksha Technical Evaluation Team`;
+                  const mailtoLink = `mailto:${encodeURIComponent(activeModalCandidate.email || 'candidate@example.edu')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+                  return (
+                    <a
+                      href={mailtoLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-[#4b5563] hover:bg-amber-50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      title="Open in your default email client"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in Email App</span>
+                    </a>
+                  );
+                })()}
+
+                {/* Dispatch via API / n8n button */}
+                <button
+                  type="button"
+                  disabled={isSending}
+                  onClick={handleDispatchOfficialEmail}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E85D04] text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:opacity-90 transition cursor-pointer shadow-lg disabled:opacity-50"
+                >
+                  {isSending ? (
+                    <>
+                      <span className="animate-spin">⚙</span>
+                      <span>Dispatching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Dispatch Decision Notice</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

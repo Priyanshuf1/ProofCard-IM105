@@ -52,3 +52,6 @@ Thumbs.db
 # Scratch & Logs
 *.log
 scratch/
+.vercel
+
+.agents/

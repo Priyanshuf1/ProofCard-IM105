@@ -120,6 +120,7 @@ export interface CandidateProfile {
   anonymised_name?: string;
   college: string;
   college_tier?: string;
+  college_tier_label?: string;
   repo_url?: string;
   project_name?: string;
   project_type: string;
@@ -141,6 +142,8 @@ export interface CandidateProfile {
   complex_functions?: ComplexFunction[];
   viva_questions?: VivaQuestion[];
   viva_score: number;
+  viva_status?: 'PENDING_DEFENSE' | 'COMPLETED' | 'BLOCKED_CLONE' | 'PRE_VIVA_ESTIMATED' | string;
+  defense_type?: 'LIVE_DEFENDED' | 'ASYNC_REMOTE' | 'DISQUALIFIED_CLONE' | string;
   proof_card: ProofCardContent;
   consent_recorded?: boolean;
   consent_verified?: boolean;
@@ -220,6 +223,8 @@ export interface BattleCandidateResult {
   authenticity_score: number;
   jd_match_pct: number;
   viva_score: number;
+  viva_status?: 'PENDING_DEFENSE' | 'COMPLETED' | 'BLOCKED_CLONE' | 'PRE_VIVA_ESTIMATED' | string;
+  defense_type?: 'LIVE_DEFENDED' | 'ASYNC_REMOTE' | 'DISQUALIFIED_CLONE' | string;
   composite_score: number;
   verified_skills: string[];
   missing_skills: string[];

@@ -1,3 +1,6 @@
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import sys
 
 # Prevent Windows ProactorEventLoop from terminating the server socket on client disconnects (WinError 64 / 10054)
@@ -82,7 +85,9 @@ from backend.routers import (
     gemini_ai,
     jobs,
     forensics,
-    grading
+    grading,
+    resume_parser,
+    ai_tolerance
 )
 
 
@@ -130,9 +135,17 @@ app.include_router(gemini_ai.router)
 app.include_router(jobs.router)
 app.include_router(forensics.router)
 app.include_router(grading.router)
+app.include_router(resume_parser.router)
+app.include_router(ai_tolerance.router)
 
-@app.get("/")
-def root():
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "uptime": "100%", "mode": "production_ready"}
+
+@app.get("/api")
+def api_root():
     return {
         "project": "ProofCard",
         "competition": "Deviathon 2.0",
@@ -156,10 +169,14 @@ def root():
         ]
     }
 
+@app.get("/")
+def root():
+    return api_root()
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy", "uptime": "100%", "mode": "production_ready"}
+# Optional static file serving for local standalone production run
+dist_dir = Path(__file__).resolve().parent.parent / "web" / "dist"
+if dist_dir.exists() and (dist_dir / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=dist_dir / "assets"), name="assets")
 
 if __name__ == "__main__":
     import uvicorn

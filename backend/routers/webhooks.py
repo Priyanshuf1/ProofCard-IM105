@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from backend.models.schemas import IngestionURLRequest
 from backend.services.n8n_service import N8nService
+from backend.services.email_formatter import EmailFormatter
 from backend.routers.github_analysis import analyze_github_repo
 
 router = APIRouter(prefix="/api/webhooks", tags=["n8n & Continuous Verification Webhooks"])
@@ -112,3 +113,69 @@ async def trigger_continuous_verification(
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Continuous verification failed: {str(e)}")
+
+class DecisionEmailRequest(BaseModel):
+    candidate: Dict[str, Any]
+    decision: str = "FEEDBACK"  # "SHORTLISTED", "REJECTED", "FEEDBACK"
+    rejection_reason_code: Optional[str] = None
+    custom_note: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+@router.post("/send-decision-email")
+async def send_decision_email(req: DecisionEmailRequest):
+    """
+    Generates luxury HTML and text candidate decision report,
+    and dispatches via n8n webhook or returns formatted payload.
+    """
+    email_data = EmailFormatter.generate_email(
+        candidate=req.candidate,
+        decision=req.decision,
+        rejection_reason_code=req.rejection_reason_code,
+        custom_note=req.custom_note
+    )
+    event_type = "CANDIDATE_SHORTLISTED" if req.decision == "SHORTLISTED" else "FEEDBACK_DISPATCH"
+    dispatch_res = await N8nService.dispatch(
+        event_type=event_type,
+        payload=email_data,
+        webhook_url=req.webhook_url
+    )
+    return {
+        "status": "success",
+        "delivered": dispatch_res.get("delivered", False),
+        "email_data": email_data,
+        "dispatch_result": dispatch_res
+    }
+
+
+class VivaInvitationRequest(BaseModel):
+    candidate: Dict[str, Any]
+    custom_message: Optional[str] = None
+    webhook_url: Optional[str] = None
+
+@router.post("/send-viva-invitation")
+async def send_viva_invitation(req: VivaInvitationRequest):
+    """
+    Generates professional Viva Defense Invitation email with direct links and mailto fallback,
+    and dispatches via webhook or returns email payload.
+    """
+    invitation_data = EmailFormatter.generate_viva_invitation(
+        candidate=req.candidate,
+        custom_note=req.custom_message
+    )
+    payload = {
+        **invitation_data,
+        "findings_summary": invitation_data.get("headline", ""),
+        "action_plan": "Complete your 3-minute Technical Viva Defense to finalize your verified Pariksha credential.",
+        "verification_url": invitation_data.get("viva_url", "")
+    }
+    dispatch_res = await N8nService.dispatch(
+        event_type="FEEDBACK_DISPATCH",
+        payload=payload,
+        webhook_url=req.webhook_url
+    )
+    return {
+        "status": "success",
+        "delivered": dispatch_res.get("delivered", False),
+        "invitation_data": invitation_data,
+        "dispatch_result": dispatch_res
+    }

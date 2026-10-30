@@ -1,8 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+/* Enforce Inter globally as used in Global Logic Media */
+*, html, body, h1, h2, h3, h4, h5, h6, p, span, button, input, textarea, select, label {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+code, pre, .font-mono {
+  font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+
+
+html { scroll-behavior: smooth; }
 
 @layer base {
   :root {
-    --bg-battlefield: #0a0503;
+    --primary: #e20001;
+    --primary-rgb: 226, 0, 1;
+    --primary-hover: #b80001;
+    --secondary: #fbbf24;
+    --secondary-rgb: 251, 191, 36;
+    --card-dark-bg: #ffffff;
+    --card-dark-border: rgba(0, 0, 0, 0.08);
+    --card-cream: #FFFDF0;
+    --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+    --bg-battlefield: #ffffff;
     --surface-warrior-card: #150a06;
     --surface-card-hover: #1f0f09;
     --surface-inner: #0d0604;
@@ -17,15 +41,16 @@
   }
 
   body {
-    background-color: #0a0503;
-    color: #f7f3ee;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #ffffff;
+    background: #ffffff;
+    color: #111827;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     letter-spacing: -0.01em;
   }
 
@@ -45,7 +70,7 @@
 
   .feature-note {
     color: #d6c8af;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 0.9rem;
     line-height: 1.5;
   }
@@ -530,3 +555,440 @@
   }
 }
 
+
+
+/* ==========================================================================
+   GLOBAL LOGIC MEDIA (globallogicmedia.com) LUXURY DESIGN SYSTEM & ANIMATIONS
+   ========================================================================== */
+
+/* 1. BUTTONS & ACTIONS */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  padding: 13px 32px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 15px;
+  border: 1px solid var(--primary) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(226, 0, 1, 0.28);
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(226, 0, 1, 0.45);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(var(--primary-rgb), 0.08) !important;
+  border: 1px solid rgba(var(--primary-rgb), 0.28) !important;
+  color: #ff4d4f !important;
+  padding: 13px 32px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: rgba(var(--primary-rgb), 0.18) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+}
+
+.glb-call-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e20001 !important;
+  border: 1px solid #e20001 !important;
+  color: #ffffff !important;
+  padding: 9px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(226, 0, 1, 0.3);
+}
+.glb-call-btn:hover {
+  background: #b80001 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(226, 0, 1, 0.45);
+}
+
+/* 2. PILL BADGES */
+.badge-pill-red {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--primary) !important;
+  border: 1px solid var(--primary) !important;
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  box-shadow: 0 2px 10px rgba(226, 0, 1, 0.3);
+}
+
+.badge-pill-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgba(var(--secondary-rgb), 0.12) !important;
+  border: 1px solid rgba(var(--secondary-rgb), 0.35) !important;
+  color: var(--secondary) !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 9999px;
+}
+
+/* 3. FLOATING GLASS PILL NAVBAR */
+.glb-site-header {
+  position: fixed !important;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 95%;
+  max-width: 1240px;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 40px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.3s ease;
+}
+
+/* 4. INFINITE MARQUEE TICKER STRIP */
+.services-marquee-strip {
+  width: 100%;
+  overflow: hidden;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 16px 0;
+  background: #ffffff;
+}
+.services-marquee-track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  align-items: center;
+  animation: servicesMarqueeScroll 28s linear infinite;
+}
+.services-marquee-track:hover {
+  animation-play-state: paused;
+}
+.services-marquee-item {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #111111;
+  background: #FFFDF0;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 30px;
+  padding: 8px 22px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.services-marquee-item:hover {
+  transform: scale(1.04);
+  color: #e20001;
+}
+
+@keyframes servicesMarqueeScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* 5. 3D CARD TILT & RADIAL GLARE HOVER (RABTO FX) */
+.tilt-card, .glb-card {
+  position: relative;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+  color: #111827 !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.tilt-card:hover, .glb-card:hover {
+  border-color: rgba(226, 0, 1, 0.3) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 6. SECTION CONTAINERS & TYPOGRAPHY */
+.glm-section {
+  padding: 80px 20px;
+  position: relative;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.glm-section-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.glm-section-title {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #111827;
+  line-height: 1.15;
+}
+.glm-section-subtitle {
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* 7. ACCORDION FAQ */
+.faq-item {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+}
+.faq-item:hover {
+  border-color: rgba(226, 0, 1, 0.35);
+  box-shadow: 0 4px 15px rgba(226, 0, 1, 0.06);
+}
+.faq-question-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 20px 24px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  outline: none;
+  color: #111827;
+  font-weight: 700;
+  font-size: 16px;
+}
+.faq-answer {
+  padding: 0 24px 20px 24px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+
+/* ==========================================================================
+   STRICT GLOBAL LOGIC MEDIA (globallogicmedia.com) CONTAINER & BUTTON ENGINE
+   ========================================================================== */
+
+/* Universal light container resets */
+.bg-black\/35, .bg-black\/40, .bg-black\/50, .bg-black\/60, .bg-black\/70, .bg-black\/75, .bg-black\/80,
+.bg-\[\#100603\], .bg-\[\#150a06\], .bg-\[\#0d0604\], .bg-\[\#1f0f09\], .bg-\[\#180c07\], .bg-\[\#200e07\], .bg-\[\#2c140a\],
+.bg-\[\#140b08\], .bg-\[\#0c0806\], .bg-\[\#1a0c07\], .bg-\[\#220e06\], .bg-\[\#251008\], .bg-\[\#1c0c06\],
+.bg-neutral-900, .bg-neutral-950, .bg-gray-900 {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #111827 !important;
+}
+
+/* Reset dark/gold borders to clean light borders */
+.border-\[\#D4AF37\], .border-\[\#D4AF37\]\/25, .border-\[\#D4AF37\]\/35, .border-\[\#D4AF37\]\/40,
+.border-\[\#E6C280\]\/20, .border-\[\#E6C280\]\/35, .border-\[\#E85D04\]\/40, .border-\[\#E85D04\]\/60,
+.border-\[\#3A2F27\], .border-amber-500\/40, .border-amber-500\/50, .border-\[\#fbbf24\]\/15, .border-\[\#fbbf24\]\/40,
+.border-amber-400 {
+  border-color: #e5e7eb !important;
+}
+
+/* Reset out-of-box gold/amber text to clean dark / muted gray */
+.text-\[\#D4AF37\], .text-\[\#FFD166\], .text-\[\#E6C280\], .text-\[\#b45309\], .text-\[\#C9B89A\],
+.text-amber-200, .text-amber-300, .text-amber-400 {
+  color: #4b5563 !important;
+}
+
+/* Prevent invisible text across all sections while preserving white text on solid red, dark green, and black buttons/pills */
+.text-white:not(.btn-primary *):not(.btn-dev-primary *):not([class*="bg-[#e20001]"] *):not([class*="bg-red-600"] *):not([class*="bg-red-700"] *):not(.badge-pill-red *):not(button.bg-\[\#e20001\] *):not([class*="bg-[#15803d]"] *):not([class*="bg-[#166534]"] *):not([class*="bg-emerald"] *):not([class*="bg-green"] *):not([class*="bg-[#111827]"] *):not(span[class*="bg-[#15803d]"] *):not(span[class*="bg-[#111827]"] *) {
+  color: #111827 !important;
+}
+
+/* Enforce black high-contrast text on all code snippets and pre blocks */
+pre, code, pre code, pre *, code * {
+  color: #111827 !important;
+}
+
+/* All green buttons must be dark green (#15803d) with crisp bold white text */
+button[class*="bg-emerald"], button[class*="bg-green"], button[class*="bg-[#15803d]"], button[class*="bg-[#166534]"], .btn-green {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  border-color: #15803d !important;
+}
+button[class*="bg-emerald"]:hover, button[class*="bg-green"]:hover, button[class*="bg-[#15803d]"]:hover, button[class*="bg-[#166534]"]:hover, .btn-green:hover {
+  background-color: #166534 !important;
+  border-color: #166534 !important;
+  color: #ffffff !important;
+}
+button[class*="bg-emerald"] *, button[class*="bg-green"] *, button[class*="bg-[#15803d]"] *, button[class*="bg-[#166534]"] *, .btn-green * {
+  color: #ffffff !important;
+}
+
+/* All green pill badges (e.g. verified skills) must be solid dark green with white text */
+span[class*="bg-[#15803d]"] {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  border-color: #15803d !important;
+}
+span[class*="bg-[#15803d]"] * {
+  color: #ffffff !important;
+}
+
+/* Global input fields */
+input[type="text"], input[type="email"], input[type="url"], input[type="number"], input[type="password"], textarea, select {
+  background-color: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+input[type="text"]:focus, input[type="email"]:focus, input[type="url"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+  background-color: #ffffff !important;
+  border-color: #e20001 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(226, 0, 1, 0.12) !important;
+}
+input::placeholder, textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* All buttons inherit Global Logic Media Inter typography and pill shape */
+button, .btn {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Primary red button */
+.btn-primary, .btn-dev-primary, .btn-deviathon-flame {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: #e20001 !important;
+  color: #ffffff !important;
+  border: 1px solid #e20001 !important;
+  border-radius: 30px !important;
+  padding: 13px 32px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-transform: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(226, 0, 1, 0.2) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-primary:hover, .btn-dev-primary:hover, .btn-deviathon-flame:hover {
+  background: #b80001 !important;
+  border-color: #b80001 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(226, 0, 1, 0.35) !important;
+}
+.btn-primary *, .btn-dev-primary *, .btn-deviathon-flame * {
+  color: #ffffff !important;
+}
+
+/* Secondary outline button */
+.btn-secondary, .btn-dev-secondary, .btn-dev-outline, .btn-deviathon-armor {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 30px !important;
+  padding: 13px 32px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  text-transform: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-secondary:hover, .btn-dev-secondary:hover, .btn-dev-outline:hover, .btn-deviathon-armor:hover {
+  background: #f9fafb !important;
+  border-color: #e20001 !important;
+  color: #e20001 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(226, 0, 1, 0.15) !important;
+}
+.btn-secondary *, .btn-dev-secondary *, .btn-dev-outline * {
+  color: inherit !important;
+}
+
+/* Badges */
+.badge-pill-red {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 16px !important;
+  background: #e20001 !important;
+  border: 1px solid #e20001 !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 2px 10px rgba(226, 0, 1, 0.25) !important;
+}
+.badge-pill-red * {
+  color: #ffffff !important;
+}
+
+.badge-pill-gold {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 16px !important;
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  border-radius: 9999px !important;
+}
+.badge-pill-gold * {
+  color: #111827 !important;
+}

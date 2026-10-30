@@ -167,7 +167,6 @@ class BiasMirrorResponse(BaseModel):
     fairness_compliance_status: str
     remedy_recommendations: List[str]
 
-
 # -------------------------------------------------------------
 # Re-exports for Milestone 1 Resume Schemas Compatibility
 # -------------------------------------------------------------
@@ -184,4 +183,18 @@ from backend.models.resume_schemas import (
     IngestionResultItem,
     SandboxBulkIngestResponse,
 )
+
+class LiveUrlVerificationRequest(BaseModel):
+    url: Optional[str] = None
+    live_url: Optional[str] = None
+
+    def target_url(self) -> str:
+        return (self.url or self.live_url or '').strip()
+
+class LiveUrlVerificationResponse(BaseModel):
+    is_live: bool
+    status_code: Optional[int] = None
+    response_time_ms: Optional[float] = None
+    server: Optional[str] = None
+    error: Optional[str] = None
 
