@@ -146,15 +146,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Demo Credentials Reminder Box */}
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-[11px] text-gray-600 space-y-1">
-            <span className="font-bold text-gray-700 block">Default Hackathon Credentials:</span>
-            <div className="flex items-center justify-between font-mono text-[10px]">
-              <span>Username: <strong className="text-[#111827]">admin</strong></span>
-              <span>Passkey: <strong className="text-[#e20001]">Pariksha@Admin2026!</strong></span>
-            </div>
-          </div>
-
           {/* Submit Action */}
           <div className="pt-2 space-y-2.5">
             <button
